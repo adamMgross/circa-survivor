@@ -92,7 +92,7 @@ function fieldTimeline() {
   return out;
 }
 
-const VERSION = "1.8";
+const VERSION = "1.9";
 const STORAGE_KEY = "circa-survivor-2026-picks-v2";
 const DATA_KEY = "circa-survivor-2026-data-v1";
 const BLANK = () => [
@@ -476,6 +476,10 @@ const CSS = `
 .csp .audit th:first-child, .csp .audit td:first-child { text-align:left; font-weight:700; color:#1a1a1a; }
 .csp .audit td.fin { font-weight:700; color:#1a1a1a; }
 .csp .audit td.mut { color:#9a978f; }
+.csp .xfer { background:#fff; border-top:1px solid #e4e2dc; border-bottom:1px solid #e4e2dc; padding:10px 12px; }
+.csp .xfer .f { font-size:12px; color:#3a3833; margin-bottom:6px; }
+.csp .xfer textarea { width:100%; height:180px; font:11px ui-monospace, Menlo, monospace; border:1px solid #d9d6cf; border-radius:6px; padding:8px; box-sizing:border-box; }
+.csp .xfer .row { display:flex; gap:8px; margin-top:6px; }
 .csp .legend { background:#f3f2ee; display:flex; gap:16px; flex-wrap:wrap; padding:10px 12px; font-size:12px; color:#6f6c66; }
 .csp .legend span b { display:inline-block; width:10px; height:10px; margin-right:5px; vertical-align:-1px; border-radius:2px; }
 `;
@@ -523,20 +527,17 @@ export default function CircaSurvivorPlanner() {
     })();
   }, [entries, loaded]);
 
-  const exportState = async () => {
-    const blob = JSON.stringify({ version: VERSION, exportedAt: new Date().toISOString(), entries, data }, null, 2);
-    try { await navigator.clipboard.writeText(blob); setStatus("Copied full state to clipboard"); }
-    catch (e) { window.prompt("Copy this:", blob); }
-  };
-  const importState = async () => {
-    const txt = window.prompt("Paste an exported state JSON:");
-    if (!txt) return;
+  const [xfer, setXfer] = useState(null); // null | "export" | "import"
+  const [xferText, setXferText] = useState("");
+  const openExport = () => { setXferText(JSON.stringify({ version: VERSION, exportedAt: new Date().toISOString(), entries, data }, null, 2)); setXfer("export"); };
+  const openImport = () => { setXferText(""); setXfer("import"); };
+  const doImport = async () => {
     try {
-      const v = JSON.parse(txt);
+      const v = JSON.parse(xferText);
       if (!Array.isArray(v.entries) || !v.data) throw new Error("not a planner export");
       setEntries(v.entries); setData(v.data);
       try { await window.storage.set(DATA_KEY, JSON.stringify(v.data)); } catch (e) {}
-      setStatus("Imported");
+      setStatus("Imported"); setXfer(null);
     } catch (e) { setStatus("Import failed: " + e.message); }
   };
 
@@ -670,8 +671,8 @@ export default function CircaSurvivorPlanner() {
             {LEGS.map((l) => <option key={l.id} value={l.id}>{legLabel(l)}</option>)}
           </select>
           <button className="btn" onClick={refresh} disabled={busy || !loaded}>{busy ? "Refreshing…" : "Refresh lines & pick %"}</button>
-          <button className="ghost" onClick={exportState} title="Copy picks + all pulled data as JSON">Export</button>
-          <button className="ghost" onClick={importState} title="Paste a previously exported JSON">Import</button>
+          <button className={"ghost" + (xfer === "export" ? " on" : "")} onClick={() => (xfer === "export" ? setXfer(null) : openExport())} title="Show picks + all pulled data as JSON to copy">Export</button>
+          <button className={"ghost" + (xfer === "import" ? " on" : "")} onClick={() => (xfer === "import" ? setXfer(null) : openImport())} title="Paste a previously exported JSON">Import</button>
           <button className={"ghost" + (audit ? " on" : "")} onClick={() => setAudit((a) => !a)} title="Show how P% was built">
             {ACTUALS[legId] ? "P% = Circa actuals" : data.legs?.[legId]?.pick && Object.keys(data.legs[legId].pick).length ? `P% = model ${Math.round(100 * modelWeight(errs, /atlas|poolgenius|circa/i.test(data.legs[legId].src || "")))}% + search ${100 - Math.round(100 * modelWeight(errs, /atlas|poolgenius|circa/i.test(data.legs[legId].src || "")))}%` : "P% = field model"} {audit ? "▴" : "▾"}
           </button>
@@ -679,6 +680,16 @@ export default function CircaSurvivorPlanner() {
       </div>
 
       {view === "actuals" && <Actuals entries={entries} data={data} params={params} />}
+      {view === "planner" && xfer && (
+        <div className="xfer">
+          <div className="f">{xfer === "export" ? "Click in the box, select all (⌘A), copy (⌘C). Save it as data/state-export.json in your repo." : "Paste an exported JSON below, then Load."}</div>
+          <textarea value={xferText} onChange={(e) => setXferText(e.target.value)} readOnly={xfer === "export"} onFocus={(e) => xfer === "export" && e.target.select()} spellCheck={false} />
+          <div className="row">
+            {xfer === "import" && <button className="btn" onClick={doImport}>Load</button>}
+            <button className="ghost" onClick={() => setXfer(null)}>Close</button>
+          </div>
+        </div>
+      )}
       {view === "planner" && audit && <AuditPanel legId={legId} data={data} params={params} errs={errs} stats={stats} />}
       {view === "planner" && <>
 
