@@ -1,0 +1,22 @@
+{
+ "entries": [
+  {
+   "name": "CIRCAmcised-2",
+   "picks": {
+    "W1": "DET"
+   }
+  },
+  {
+   "name": "CIRCAmcised-3",
+   "picks": {
+    "W1": "JAX"
+   }
+  },
+  {
+   "name": "CIRCAmcised-4",
+   "picks": {
+    "W1": "PIT"
+   }
+  }
+ ]
+}

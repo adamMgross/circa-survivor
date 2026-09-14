@@ -1,0 +1,85 @@
+{
+ "contest": {
+  "start": 25017,
+  "pool": 25017000,
+  "share": 0.05
+ },
+ "legs": {
+  "W1": {
+   "asOf": "Sep 14 (MNF pending)",
+   "picks": {
+    "JAX": 8127,
+    "LAC": 7585,
+    "PIT": 4013,
+    "DET": 1771,
+    "LV": 1308,
+    "PHI": 784,
+    "CIN": 351,
+    "TEN": 213,
+    "SEA": 174,
+    "CHI": 128,
+    "BAL": 111,
+    "NYJ": 89,
+    "DAL": 81,
+    "MIN": 75,
+    "LAR": 49,
+    "MIA": 27,
+    "NE": 25,
+    "KC": 23,
+    "SF": 10,
+    "HOU": 10,
+    "NYG": 10,
+    "DEN": 7,
+    "IND": 7,
+    "TB": 5,
+    "CAR": 4,
+    "CLE": 4,
+    "ARI": 2,
+    "GB": 2,
+    "BUF": 2,
+    "NO": 1,
+    "ATL": 1,
+    "NOPICK": 18
+   },
+   "won": [
+    "SEA",
+    "SF",
+    "PIT",
+    "CHI",
+    "LV",
+    "MIN",
+    "PHI",
+    "ARI",
+    "CIN",
+    "DET",
+    "NYJ",
+    "BAL",
+    "JAX",
+    "BUF",
+    "NYG"
+   ],
+   "lost": [
+    "NE",
+    "LAR",
+    "ATL",
+    "CAR",
+    "MIA",
+    "GB",
+    "WAS",
+    "LAC",
+    "TB",
+    "NO",
+    "TEN",
+    "IND",
+    "CLE",
+    "HOU",
+    "DAL",
+    "NOPICK"
+   ],
+   "pending": [
+    "DEN",
+    "KC"
+   ]
+  }
+ }
+}

@@ -1,0 +1,34 @@
+// Field timeline + popularity model on the real data files.
+import { buildData, fieldTimeline, modelPick, fitParams, availability } from "../src/CircaSurvivorPlanner.jsx";
+import picks from "../data/picks.json";
+import actuals from "../data/actuals.json";
+import odds from "../data/odds.json";
+import ratings from "../data/ratings.json";
+let fails = 0; const ok = (name, cond, extra = "") => { console.log(name + ":", cond ? "OK" : "FAIL", extra); if (!cond) fails++; };
+
+const data = buildData({ picks, actuals, odds, ratings });
+ok("3 entries loaded", data.entries.length === 3 && data.entries.every((e) => e.name && e.picks));
+ok("32 ratings", Object.keys(data.ratings || {}).length === 32);
+const tl = fieldTimeline(data);
+ok("timeline has W1", tl.length >= 1 && tl[0].leg.id === "W1");
+const w1 = actuals.legs.W1, lostW1 = Object.entries(w1.picks).filter(([t]) => w1.lost.includes(t)).reduce((s, [, n]) => s + n, 0);
+ok("W1 eliminations add up", tl[0].lost === lostW1 && tl[0].after === actuals.contest.start - lostW1, `${tl[0].before} → ${tl[0].after}`);
+ok("value per entry = pool / live", Math.abs(tl[0].value - actuals.contest.pool / tl[0].after) < 1e-9);
+
+// availability after W1: winners' share is gone from the field for later legs
+const av = availability("W2", data);
+ok("JAX mostly burned after W1", av.JAX < 0.7 && av.JAX > 0, av.JAX.toFixed(3));
+ok("team nobody took is fully available", av.WAS === 1);
+
+// model on a leg with lines: probabilities over favored teams sum to 1, and a big favorite ranks first
+const legWithLines = Object.keys(data.legs).find((id) => !actuals.legs[id]);
+if (legWithLines) {
+  const p = modelPick(legWithLines, data, { a: 10, b: 1.5 });
+  const sum = Object.values(p).reduce((a, b) => a + b, 0);
+  ok(`model P% sums to 1 (${legWithLines})`, Math.abs(sum - 1) < 1e-9, sum.toFixed(6));
+  const top = Object.entries(p).sort((a, b) => b[1] - a[1])[0];
+  ok("top model pick is a favorite", top && data.legs[legWithLines].lines[top[0]].win > 0.5, `${top?.[0]} ${(100 * top?.[1]).toFixed(1)}%`);
+} else console.log("(no unlocked leg with lines in odds.json — model check skipped)");
+const params = fitParams(data);
+ok("fitParams returns a,b", Number.isFinite(params.a) && Number.isFinite(params.b), `a=${params.a} b=${params.b} legs=${params.legs}`);
+if (fails) { console.log(`${fails} FAILED`); process.exit(1); }

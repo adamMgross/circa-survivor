@@ -1,0 +1,413 @@
+{
+ "book": "draftkings",
+ "updatedAt": "2026-09-14T23:33:09.395Z",
+ "legs": {
+  "W1": {
+   "games": {
+    "DEN@KC": {
+     "kickoff": "2026-09-15T00:15:00Z",
+     "asof": "2026-09-14T23:32:16Z",
+     "ml": {
+      "DEN": 110,
+      "KC": -130
+     },
+     "spread": {
+      "DEN": 2.5,
+      "KC": -2.5
+     }
+    },
+    "NE@SEA": {
+     "kickoff": "2026-09-09T20:20",
+     "asof": "2026-09-09T20:20",
+     "ml": {
+      "NE": 140,
+      "SEA": -166
+     },
+     "spread": {
+      "SEA": -3,
+      "NE": 3
+     },
+     "source": "nflverse closing line"
+    },
+    "SF@LAR": {
+     "kickoff": "2026-09-10T20:35",
+     "asof": "2026-09-10T20:35",
+     "ml": {
+      "SF": 180,
+      "LAR": -218
+     },
+     "spread": {
+      "LAR": -3.5,
+      "SF": 3.5
+     },
+     "source": "nflverse closing line"
+    },
+    "CHI@CAR": {
+     "kickoff": "2026-09-13T13:00",
+     "asof": "2026-09-13T13:00",
+     "ml": {
+      "CHI": -166,
+      "CAR": 140
+     },
+     "spread": {
+      "CAR": 3,
+      "CHI": -3
+     },
+     "source": "nflverse closing line"
+    },
+    "TB@CIN": {
+     "kickoff": "2026-09-13T13:00",
+     "asof": "2026-09-13T13:00",
+     "ml": {
+      "TB": 170,
+      "CIN": -205
+     },
+     "spread": {
+      "CIN": -3.5,
+      "TB": 3.5
+     },
+     "source": "nflverse closing line"
+    },
+    "NO@DET": {
+     "kickoff": "2026-09-13T13:00",
+     "asof": "2026-09-13T13:00",
+     "ml": {
+      "NO": 260,
+      "DET": -325
+     },
+     "spread": {
+      "DET": -7,
+      "NO": 7
+     },
+     "source": "nflverse closing line"
+    },
+    "BUF@HOU": {
+     "kickoff": "2026-09-13T13:00",
+     "asof": "2026-09-13T13:00",
+     "ml": {
+      "BUF": -112,
+      "HOU": -108
+     },
+     "spread": {
+      "HOU": 1.5,
+      "BUF": -1.5
+     },
+     "source": "nflverse closing line"
+    },
+    "BAL@IND": {
+     "kickoff": "2026-09-13T13:00",
+     "asof": "2026-09-13T13:00",
+     "ml": {
+      "BAL": -162,
+      "IND": 136
+     },
+     "spread": {
+      "IND": 3,
+      "BAL": -3
+     },
+     "source": "nflverse closing line"
+    },
+    "CLE@JAX": {
+     "kickoff": "2026-09-13T13:00",
+     "asof": "2026-09-13T13:00",
+     "ml": {
+      "CLE": 360,
+      "JAX": -470
+     },
+     "spread": {
+      "JAX": -8.5,
+      "CLE": 8.5
+     },
+     "source": "nflverse closing line"
+    },
+    "ATL@PIT": {
+     "kickoff": "2026-09-13T13:00",
+     "asof": "2026-09-13T13:00",
+     "ml": {
+      "ATL": 240,
+      "PIT": -298
+     },
+     "spread": {
+      "PIT": -6.5,
+      "ATL": 6.5
+     },
+     "source": "nflverse closing line"
+    },
+    "NYJ@TEN": {
+     "kickoff": "2026-09-13T13:00",
+     "asof": "2026-09-13T13:00",
+     "ml": {
+      "NYJ": -102,
+      "TEN": -118
+     },
+     "spread": {
+      "TEN": -1.5,
+      "NYJ": 1.5
+     },
+     "source": "nflverse closing line"
+    },
+    "ARI@LAC": {
+     "kickoff": "2026-09-13T16:25",
+     "asof": "2026-09-13T16:25",
+     "ml": {
+      "ARI": 350,
+      "LAC": -455
+     },
+     "spread": {
+      "LAC": -8.5,
+      "ARI": 8.5
+     },
+     "source": "nflverse closing line"
+    },
+    "MIA@LV": {
+     "kickoff": "2026-09-13T16:25",
+     "asof": "2026-09-13T16:25",
+     "ml": {
+      "MIA": 142,
+      "LV": -170
+     },
+     "spread": {
+      "LV": -3,
+      "MIA": 3
+     },
+     "source": "nflverse closing line"
+    },
+    "GB@MIN": {
+     "kickoff": "2026-09-13T16:25",
+     "asof": "2026-09-13T16:25",
+     "ml": {
+      "GB": 105,
+      "MIN": -125
+     },
+     "spread": {
+      "MIN": -1.5,
+      "GB": 1.5
+     },
+     "source": "nflverse closing line"
+    },
+    "WAS@PHI": {
+     "kickoff": "2026-09-13T16:25",
+     "asof": "2026-09-13T16:25",
+     "ml": {
+      "WAS": 200,
+      "PHI": -245
+     },
+     "spread": {
+      "PHI": -6,
+      "WAS": 6
+     },
+     "source": "nflverse closing line"
+    },
+    "DAL@NYG": {
+     "kickoff": "2026-09-13T20:20",
+     "asof": "2026-09-13T20:20",
+     "ml": {
+      "DAL": -166,
+      "NYG": 140
+     },
+     "spread": {
+      "NYG": 3,
+      "DAL": -3
+     },
+     "source": "nflverse closing line"
+    }
+   }
+  },
+  "W2": {
+   "games": {
+    "DET@BUF": {
+     "kickoff": "2026-09-18T00:15:00Z",
+     "asof": "2026-09-14T23:32:16Z",
+     "ml": {
+      "BUF": -205,
+      "DET": 170
+     },
+     "spread": {
+      "BUF": -4.5,
+      "DET": 4.5
+     }
+    },
+    "CAR@ATL": {
+     "kickoff": "2026-09-20T17:00:00Z",
+     "asof": "2026-09-14T23:32:16Z",
+     "ml": {
+      "ATL": 105,
+      "CAR": -125
+     },
+     "spread": {
+      "ATL": 1.5,
+      "CAR": -1.5
+     }
+    },
+    "NO@BAL": {
+     "kickoff": "2026-09-20T17:00:00Z",
+     "asof": "2026-09-14T23:32:16Z",
+     "ml": {
+      "BAL": -360,
+      "NO": 285
+     },
+     "spread": {
+      "BAL": -8.5,
+      "NO": 8.5
+     }
+    },
+    "MIN@CHI": {
+     "kickoff": "2026-09-20T17:00:00Z",
+     "asof": "2026-09-14T23:32:16Z",
+     "ml": {
+      "CHI": -218,
+      "MIN": 180
+     },
+     "spread": {
+      "CHI": -5.5,
+      "MIN": 5.5
+     }
+    },
+    "CIN@HOU": {
+     "kickoff": "2026-09-20T17:00:00Z",
+     "asof": "2026-09-14T23:32:16Z",
+     "ml": {
+      "CIN": 130,
+      "HOU": -155
+     },
+     "spread": {
+      "CIN": 3,
+      "HOU": -3
+     }
+    },
+    "CLE@TB": {
+     "kickoff": "2026-09-20T17:00:00Z",
+     "asof": "2026-09-14T23:32:16Z",
+     "ml": {
+      "CLE": 295,
+      "TB": -375
+     },
+     "spread": {
+      "CLE": 8.5,
+      "TB": -8.5
+     }
+    },
+    "GB@NYJ": {
+     "kickoff": "2026-09-20T17:00:00Z",
+     "asof": "2026-09-14T23:32:16Z",
+     "ml": {
+      "GB": -218,
+      "NYJ": 180
+     },
+     "spread": {
+      "GB": -4.5,
+      "NYJ": 4.5
+     }
+    },
+    "PIT@NE": {
+     "kickoff": "2026-09-20T17:00:00Z",
+     "asof": "2026-09-14T23:32:16Z",
+     "ml": {
+      "NE": -238,
+      "PIT": 195
+     },
+     "spread": {
+      "NE": -5.5,
+      "PIT": 5.5
+     }
+    },
+    "PHI@TEN": {
+     "kickoff": "2026-09-20T17:00:00Z",
+     "asof": "2026-09-14T23:32:16Z",
+     "ml": {
+      "PHI": -310,
+      "TEN": 250
+     },
+     "spread": {
+      "PHI": -7,
+      "TEN": 7
+     }
+    },
+    "JAX@DEN": {
+     "kickoff": "2026-09-20T20:05:00Z",
+     "asof": "2026-09-14T23:32:16Z",
+     "ml": {
+      "DEN": -148,
+      "JAX": 124
+     },
+     "spread": {
+      "DEN": -2.5,
+      "JAX": 2.5
+     }
+    },
+    "LV@LAC": {
+     "kickoff": "2026-09-20T20:05:00Z",
+     "asof": "2026-09-14T23:32:16Z",
+     "ml": {
+      "LV": 240,
+      "LAC": -298
+     },
+     "spread": {
+      "LV": 7,
+      "LAC": -7
+     }
+    },
+    "SEA@ARI": {
+     "kickoff": "2026-09-20T20:25:00Z",
+     "asof": "2026-09-14T23:32:16Z",
+     "ml": {
+      "ARI": 185,
+      "SEA": -225
+     },
+     "spread": {
+      "ARI": 4.5,
+      "SEA": -4.5
+     }
+    },
+    "WAS@DAL": {
+     "kickoff": "2026-09-20T20:25:00Z",
+     "asof": "2026-09-14T23:32:16Z",
+     "ml": {
+      "DAL": -205,
+      "WAS": 170
+     },
+     "spread": {
+      "DAL": -3.5,
+      "WAS": 3.5
+     }
+    },
+    "MIA@SF": {
+     "kickoff": "2026-09-20T20:25:00Z",
+     "asof": "2026-09-14T23:32:16Z",
+     "ml": {
+      "MIA": 650,
+      "SF": -1000
+     },
+     "spread": {
+      "MIA": 13.5,
+      "SF": -13.5
+     }
+    },
+    "IND@KC": {
+     "kickoff": "2026-09-21T00:20:00Z",
+     "asof": "2026-09-14T23:32:16Z",
+     "ml": {
+      "IND": 235,
+      "KC": -290
+     },
+     "spread": {
+      "IND": 6.5,
+      "KC": -6.5
+     }
+    },
+    "NYG@LAR": {
+     "kickoff": "2026-09-22T00:15:00Z",
+     "asof": "2026-09-14T23:32:16Z",
+     "ml": {
+      "LAR": -355,
+      "NYG": 280
+     },
+     "spread": {
+      "LAR": -7,
+      "NYG": 7
+     }
+    }
+   }
+  }
+ }
+}
