@@ -3,3 +3,4 @@ dist
 .env
 test/*.png
 test/*.cjs
+.DS_Store
