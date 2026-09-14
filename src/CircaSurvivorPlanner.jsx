@@ -92,7 +92,7 @@ function fieldTimeline() {
   return out;
 }
 
-const VERSION = "1.7";
+const VERSION = "1.8";
 const STORAGE_KEY = "circa-survivor-2026-picks-v2";
 const DATA_KEY = "circa-survivor-2026-data-v1";
 const BLANK = () => [
@@ -117,10 +117,31 @@ function projected(legId, team, ratings) {
   const margin = ratings[team] - ratings[g.opp] + (g.neutral ? 0 : g.home ? HFA : -HFA);
   return { spread: -margin, win: winFromMargin(margin), proj: true };
 }
+// lineFor: any line for display / future-value projection. Live market line if captured, else a projection
+// from power ratings (proj: true). NEVER use this for the selected leg's True Win % — use marketLine().
 function lineFor(legId, team, data) {
   const live = data?.legs?.[legId]?.lines?.[team];
   if (live) return { ...live, proj: false };
   return projected(legId, team, data?.ratings);
+}
+
+// ---------- True Win %: two-sided no-vig moneyline ----------
+const impliedProb = (ml) => (ml > 0 ? 100 / (ml + 100) : -ml / (-ml + 100));
+const validML = (ml) => Number.isFinite(ml) && Math.abs(ml) >= 100;
+function devig(mlA, mlB) {
+  if (!validML(mlA) || !validML(mlB)) return null;
+  const qA = impliedProb(mlA), qB = impliedProb(mlB);
+  return { a: qA / (qA + qB), b: qB / (qA + qB) };
+}
+// Market-derived line for a team in a leg, or null. A stored line counts as market only if it carries
+// both raw moneylines (market: true). Legacy lines (pre-1.8, LLM-reported win %) are accepted ONLY for
+// legs that are already locked with Circa actuals, where they serve solely to fit the popularity model.
+function marketLine(legId, team, data) {
+  const ln = data?.legs?.[legId]?.lines?.[team];
+  if (!ln || ln.win == null) return null;
+  if (ln.market) return { ...ln, proj: false };
+  if (ACTUALS[legId] && ln.legacy !== false) return { ...ln, proj: false, legacy: true };
+  return null;
 }
 function defaultLeg() {
   const now = Date.now();
@@ -163,7 +184,7 @@ function modelPick(legId, data, params) {
   const sc = {};
   let tot = 0;
   for (const t of Object.keys(OPP[legId])) {
-    const ln = lineFor(legId, t, data); if (!ln || ln.win < 0.5) continue;
+    const ln = marketLine(legId, t, data); if (!ln || ln.win < 0.5) continue;
     const v = Math.pow(ln.win, a) * Math.exp(-b * fvFor(legId, t, data)) * av[t];
     sc[t] = v; tot += v;
   }
@@ -173,7 +194,7 @@ function modelPick(legId, data, params) {
 }
 // fit a, b to every leg that has both actuals and lines (grid search, minimize L1 distance)
 function fitParams(data) {
-  const legs = Object.keys(ACTUALS).filter((id) => Object.keys(OPP[id]).some((t) => lineFor(id, t, data)));
+  const legs = Object.keys(ACTUALS).filter((id) => Object.keys(OPP[id]).some((t) => marketLine(id, t, data)));
   const DEF = { a: 10, b: 1.5, legs: 0 };
   if (!legs.length) return DEF;
   let best = null;
@@ -270,31 +291,55 @@ function toPct(vals, sumCheck) {
   return (v) => (v == null ? null : frac ? v * 100 : v);
 }
 
+// pull [ "AWY", ml, "HOM", ml ] game tuples out of the "ml" section
+function extractML(txt) {
+  const i = txt.search(/"ml"\s*:/); if (i < 0) return [];
+  let seg = txt.slice(i + 5);
+  const nxt = seg.search(/"(?:l|p|r|src|book|asof|lines|picks?|ratings)"\s*:/i); if (nxt > 0) seg = seg.slice(0, nxt);
+  const out = [];
+  const re = /\[\s*"([A-Za-z]{2,3})"\s*,\s*"?([+-]?\d{3,5}|EVEN|EV|PK)"?\s*,\s*"([A-Za-z]{2,3})"\s*,\s*"?([+-]?\d{3,5}|EVEN|EV|PK)"?\s*\]/g;
+  const num = (v) => (/^(EVEN|EV|PK)$/i.test(v) ? 100 : parseInt(v, 10));
+  let m; while ((m = re.exec(seg))) out.push([norm(m[1]), num(m[2]), norm(m[3]), num(m[4])]);
+  return out;
+}
 async function fetchLeg(leg) {
   const games = leg.g.split(" ").map((t) => t.replace("*", "")).join(" ");
   const legName = leg.id === "TG" ? "Thanksgiving leg (Wed Nov 25 – Fri Nov 27)" : leg.id === "XM" ? "Christmas leg (Dec 24–25)" : `Week ${leg.label}`;
   const teams = Object.keys(OPP[leg.id]);
   const prompt = `NFL 2026 ${legName}. Games (away@home): ${games}.
-Task 1: current consensus point spread and de-vigged moneyline win probability for every team.
-Task 2: projected pick popularity for this leg SPECIFICALLY for the Circa Survivor contest. Search Survivor Atlas, PoolGenius "Circa Survivor", or Circa-specific writeups first. Only if none exist, fall back to a general survivor-pool consensus (Yahoo/ESPN/SurvivorGrid) and say so.
+Task 1 (most important): the current pregame American MONEYLINE for BOTH teams of every game, all taken from ONE sportsbook and one page load (prefer Circa Sports; otherwise DraftKings or FanDuel). Report the raw numbers exactly as shown (e.g. -175 and +150). Do not compute probabilities. If a game has no two-sided moneyline posted, omit that game rather than estimating.
+Task 2: the point spread for each game from the same book (display only).
+Task 3: projected pick popularity for this leg SPECIFICALLY for the Circa Survivor contest. Search Survivor Atlas, PoolGenius "Circa Survivor", or Circa-specific writeups first. Only if none exist, fall back to a general survivor-pool consensus (Yahoo/ESPN/SurvivorGrid) and say so.
 Output format (arrays, not objects, to keep it short):
-{"l":[["SEA",-3.5,62],["NE",3.5,38],...],"p":[["LAC",28],["JAX",23],...],"src":"Survivor Atlas"}
-"l" = [team, spread from that team's view (negative=favorite), win% as integer]. Include all ${teams.length} teams: ${teams.join(",")}.
+{"ml":[["NE",150,"SEA",-175],...],"l":[["SEA",-3.5],["NE",3.5],...],"p":[["LAC",28],["JAX",23],...],"book":"DraftKings","asof":"Sep 14 2026 1:55 PM ET","src":"Survivor Atlas"}
+"ml" = [away, awayML, home, homeML] for every game with both sides posted.
+"l" = [team, spread from that team's view (negative=favorite)] for all ${teams.length} teams: ${teams.join(",")}.
 "p" = [team, pick% as integer] for teams at 1% or more, largest first.
+"book" = the sportsbook the moneylines came from. "asof" = when those odds were displayed.
 "src" = where the pick % came from: the site name if Circa-specific, "public pool" if general consensus, or "estimate" if you had to guess.`;
   const txt = await askClaude(prompt);
   const lines = {}, pick = {};
-  const L = extract(txt, "l", true), P = extract(txt, "p", false);
-  const wPct = (v) => (v == null ? null : v <= 1 ? v * 100 : v), pPct = toPct(Object.values(P).map((x) => x[0]), true); // a win prob ≤ 1 is always a fraction; picks decided per set
-  for (const t of Object.keys(L)) { const [sp, w] = L[t]; if (OPP[leg.id][t] && sp != null) lines[t] = { spread: sp, win: w == null ? winFromMargin(-sp) : Math.max(0.01, Math.min(0.99, wPct(w) / 100)) }; }
+  // --- True Win %: deterministic, from raw two-sided moneylines only ---
+  let games_ok = 0;
+  for (const [a, mlA, h, mlH] of extractML(txt)) {
+    if (!a || !h || !OPP[leg.id][a] || OPP[leg.id][a].opp !== h) continue;
+    const d = devig(mlA, mlH); if (!d) continue;
+    lines[a] = { win: d.a, ml: mlA, oppMl: mlH, market: true };
+    lines[h] = { win: d.b, ml: mlH, oppMl: mlA, market: true };
+    games_ok++;
+  }
+  // --- spreads: display only; never turned into a probability for this leg ---
+  const L = extract(txt, "l", true);
+  for (const t of Object.keys(L)) { const [sp] = L[t]; if (OPP[leg.id][t] && sp != null) lines[t] = { ...(lines[t] || { win: null, market: false }), spread: sp }; }
+  // --- pick popularity (LLM/search estimate; separate from Win %) ---
+  const P = extract(txt, "p", false);
+  const pPct = toPct(Object.values(P).map((x) => x[0]), true);
   for (const t of Object.keys(P)) { const [pp] = P[t]; if (OPP[leg.id][t] && pp != null) pick[t] = pPct(pp) / 100; }
-  // never let the field sum past 100%
-  const tot = Object.values(pick).reduce((a, b) => a + b, 0);
+  const tot = Object.values(pick).reduce((x, y) => x + y, 0);
   if (tot > 1) for (const t of Object.keys(pick)) pick[t] /= tot;
-  for (const t of teams) if (!lines[t] && lines[OPP[leg.id][t].opp]) { const o = lines[OPP[leg.id][t].opp]; lines[t] = { spread: -o.spread, win: 1 - o.win }; }
-  if (Object.keys(lines).length < 2) { const r = window.__lastRaw || {}; throw new Error(`No usable lines. stop=${r.stop} blocks=${r.types} text=${(r.txt || "").slice(-300)}`); }
-  const sm = txt.match(/"src"\s*:\s*"([^"]{0,60})"/);
-  return { lines, pick, src: sm ? sm[1] : "unknown" };
+  if (games_ok === 0) { const r = window.__lastRaw || {}; throw new Error(`No two-sided moneylines found. stop=${r.stop} text=${(r.txt || "").slice(-300)}`); }
+  const bm = txt.match(/"book"\s*:\s*"([^"]{0,60})"/), am = txt.match(/"asof"\s*:\s*"([^"]{0,60})"/), sm = txt.match(/"src"\s*:\s*"([^"]{0,60})"/);
+  return { lines, pick, src: sm ? sm[1] : "unknown", book: bm ? bm[1] : "unknown", asof: am ? am[1] : "", games: games_ok, gamesTotal: leg.g.split(" ").length };
 }
 async function fetchRatings() {
   const prompt = `Current NFL 2026 power ratings for all 32 teams as points above/below an average team on a neutral field. Search for a current market-based or model rating (sportsbook power ratings, Inpredictable, Massey, ESPN FPI, etc.).
@@ -507,10 +552,11 @@ export default function CircaSurvivorPlanner() {
         try { const r = await fetchRatings(); if (r.ratings) { ratings = r.ratings; ratingsErr = null; break; } }
         catch (e) { ratingsErr = e.message; }
       }
-      const next = { legs: { ...data.legs, [legId]: { lines: legData.lines || {}, pick: legData.pick || {}, src: legData.src, at: Date.now() } }, ratings, ratingsAt: ratingsErr ? data.ratingsAt : Date.now(), updatedAt: Date.now() };
+      const next = { legs: { ...data.legs, [legId]: { lines: legData.lines || {}, pick: legData.pick || {}, src: legData.src, book: legData.book, asof: legData.asof, games: legData.games, gamesTotal: legData.gamesTotal, at: Date.now() } }, ratings, ratingsAt: ratingsErr ? data.ratingsAt : Date.now(), updatedAt: Date.now() };
       setData(next);
       try { await window.storage.set(DATA_KEY, JSON.stringify(next)); } catch (e) {}
-      setStatus(ratingsErr ? "Lines updated; ratings failed: " + ratingsErr : "Data updated");
+      const miss = legData.gamesTotal - legData.games;
+      setStatus((miss ? `Moneylines for ${legData.games}/${legData.gamesTotal} games (${miss} missing → Win % unavailable)` : "Data updated") + (ratingsErr ? "; ratings failed: " + ratingsErr : ""));
     } catch (e) {
       setStatus("Refresh failed: " + e.message);
     }
@@ -538,8 +584,10 @@ export default function CircaSurvivorPlanner() {
     else { wm = modelWeight(errs, circaSrc); pick = {}; for (const t of Object.keys(OPP[legId])) { const v = wm * (modelP[t] || 0) + (1 - wm) * (searchP[t] || 0); if (v > 0) pick[t] = v; } }
     const rows = {};
     for (const t of ALL_TEAMS) {
-      const ln = lineFor(legId, t, data);
-      rows[t] = { win: ln ? ln.win : null, pick: pick[t] ?? (ln ? 0 : null), spread: ln ? ln.spread : null, proj: ln ? ln.proj : false, pm: modelP[t], ps: searchP[t], src, wm, act: !!act };
+      const mk = marketLine(legId, t, data);          // True Win % (market only) — null if no valid two-sided ML
+      const disp = lineFor(legId, t, data);           // spread for display; may be a projection
+      rows[t] = { win: mk ? mk.win : null, ml: mk ? mk.ml : null, oppMl: mk ? mk.oppMl : null, legacy: !!(mk && mk.legacy),
+        pick: (act || hasModel || hasSearch) ? (pick[t] ?? (disp ? 0 : null)) : null, spread: disp ? disp.spread : null, proj: disp ? disp.proj : false, pm: modelP[t], ps: searchP[t], src, wm, act: !!act };
     }
     // EV_i = w_i / (p_i + sum over other games of p_j w_j)
     const teams = Object.keys(OPP[legId]);
@@ -585,7 +633,7 @@ export default function CircaSurvivorPlanner() {
   const Header = () => (
     <>
       <th className={"L ev" + (sort.key === "ev" ? " sorted" : "")} onClick={() => clickSort("ev")} title={`EV for ${legLabel(cur)}`}>EV</th>
-      <th className={"L wp" + (sort.key === "wp" ? " sorted" : "")} onClick={() => clickSort("wp")} title="Win probability">W%</th>
+      <th className={"L wp" + (sort.key === "wp" ? " sorted" : "")} onClick={() => clickSort("wp")} title={`True Win % — two-sided no-vig moneyline${data.legs?.[legId]?.book ? ` · ${data.legs[legId].book}${data.legs[legId].asof ? " · " + data.legs[legId].asof : ""}` : ""}`}>W%</th>
       <th className={"L pp" + (sort.key === "pp" ? " sorted" : "")} onClick={() => clickSort("pp")} title="Projected Circa pick popularity">P%</th>
       <th className={"L team" + (sort.key === "team" ? " sorted" : "")} onClick={() => clickSort("team")}>Team</th>
       {LEGS.map((l) => (
@@ -668,7 +716,7 @@ export default function CircaSurvivorPlanner() {
               return (
                 <tr key={team} className={usedLeg ? "gone" : ""}>
                   <td className={"L ev num" + (st.ev == null ? " blank" : st.ev === topEv ? " top" : "")}>{st.ev == null ? (inLeg ? "–" : "") : st.ev.toFixed(2)}</td>
-                  <td className={"L wp num" + (st.win == null ? " blank" : "")}>{inLeg ? pct(st.win) : ""}</td>
+                  <td className={"L wp num" + (st.win == null ? " blank" : "")} title={inLeg ? (st.win == null ? "No valid two-sided moneyline captured — refresh, or unavailable" : st.legacy ? "Legacy value (pre-market capture); used only to fit the popularity model" : `ML ${fmtSp(st.ml)} vs ${fmtSp(st.oppMl)} → ${pct(st.win)} no-vig`) : ""}>{inLeg ? pct(st.win) : ""}</td>
                   <td className={"L pp num" + (st.pick == null ? " blank" : "")} title={inLeg ? `model ${pct(st.pm)} · search ${pct(st.ps)}${st.src ? " (" + st.src + ")" : ""}` : ""}>{inLeg ? (st.pick == null ? "–" : st.pick < 0.005 ? "<1%" : Math.round(st.pick * 100) + "%") : ""}</td>
                   <td className="L team" style={{ background: COLORS[team][0], color: COLORS[team][1] }}>
                     <span className="nm">{team}</span>
@@ -689,12 +737,12 @@ export default function CircaSurvivorPlanner() {
                     const label = !g ? "" : (g.neutral ? "n " : g.home ? "vs " : "@ ") + g.opp;
                     const fav = ln && ln.spread < 0 && !dead ? Math.min(1, -ln.spread / 14) : 0;
                     const tip = !g ? `${team} bye` : dead ? `${team} already used (${legLabel(LEGS.find((x) => x.id === usedLeg))})`
-                      : `${legLabel(l)}: ${team} ${g.home || g.neutral ? "vs" : "at"} ${g.opp}${g.neutral ? " (neutral)" : ""}${ln ? ` · ${fmtSp(ln.spread)} · ${pct(ln.win)}${ln.proj ? " (projected)" : ""}` : ""}`;
+                      : `${legLabel(l)}: ${team} ${g.home || g.neutral ? "vs" : "at"} ${g.opp}${g.neutral ? " (neutral)" : ""}${ln ? ` · ${fmtSp(ln.spread)}${ln.market ? ` · ML ${fmtSp(ln.ml)} / ${fmtSp(ln.oppMl)} · True Win ${pct(ln.win)} (${data.legs[l.id]?.book || "market"})` : ln.proj ? ` · projected ${pct(ln.win)} (ratings, not market)` : ln.win == null ? " · Win % unavailable (no two-sided moneyline)" : ""}` : ""}`;
                     return (
                       <td key={l.id} className={cls} title={tip} onClick={() => g && !dead && setPick(l.id, team)}>
                         {fav > 0 && <span className="fb" style={{ background: `rgba(46,122,51,${0.15 + 0.85 * fav})` }} />}
                         {label}
-                        {ln && <span className={"sp" + (ln.proj ? " proj" : "")}>{fmtSp(ln.spread)}</span>}
+                        {ln && <span className={"sp" + (ln.proj ? " proj" : "")}>{ln.spread != null ? fmtSp(ln.spread) : ln.market ? "ML " + fmtSp(ln.ml) : ""}</span>}
                         {others && <span className="oth">{others}</span>}
                       </td>
                     );
@@ -713,7 +761,7 @@ export default function CircaSurvivorPlanner() {
         <span><b style={{ background: "#c9edc7" }} />this entry's pick</span>
         <span><s style={{ color: "#c4c1ba" }}>@ KC</s>&nbsp; team already burned</span>
         <span><b style={{ background: "#fff6e1", border: "1px solid #e3d5ae" }} />holiday leg</span>
-        <span><b style={{ background: "#2e7a33", width: 4 }} />favorite strength (live line, <i>projected</i> in italics)</span>
+        <span><b style={{ background: "#2e7a33", width: 4 }} />favorite strength (market line; <i>projected from ratings</i> in italics — projections never feed W%)</span>
         <span><b style={{ background: "#e3a83a", borderRadius: "50%" }} />plays Thanksgiving&nbsp; <b style={{ background: "#c0392b", borderRadius: "50%" }} />plays Christmas</span>
         <span style={{ color: "#8a5a00" }}>¹²³ = another entry has this pick</span>
       </div>
@@ -731,6 +779,7 @@ function AuditPanel({ legId, data, params, errs, stats }) {
   const hasSearch = Object.keys(searchP).length > 0;
   const av = availability(legId);
   const wm = act ? null : hasSearch ? modelWeight(errs, circaSrc) : 1;
+  const mlTxt = (v) => (v == null ? "" : v > 0 ? "+" + v : String(v));
   const teams = Object.keys(OPP[legId]).filter((t) => stats[t].win != null).sort((a, b) => (stats[b].pick || 0) - (stats[a].pick || 0));
   // raw model score so the reader can follow the arithmetic
   const raw = {}; let tot = 0;
@@ -744,13 +793,15 @@ function AuditPanel({ legId, data, params, errs, stats }) {
           <br /><b>Search</b>: {hasSearch ? <>source reported as <code>{src}</code>{circaSrc ? " (Circa-specific)" : " (not Circa-specific)"}</> : "no numbers returned for this leg"}.
           <br /><b>Final P%</b> = {hasSearch ? <>{pc(wm)} model + {pc(1 - wm)} search</> : "model only"}.
         </>}
+        <br /><b>True Win %</b>: {leg.book ? <>two-sided no-vig moneylines from <code>{leg.book}</code>{leg.asof ? <> as of {leg.asof}</> : null}, captured {leg.at ? new Date(leg.at).toLocaleString() : ""} — {leg.games}/{leg.gamesTotal} games</> : teams.some((t) => stats[t].legacy) ? "legacy LLM-reported values (before v1.8); this leg is locked, so they only feed the model fit" : "not captured yet — refresh this leg"}. Spreads and future weeks are display/projection only and never feed Win %.
       </div>
       <table>
-        <thead><tr><th>Team</th><th>Win</th><th>Future value</th><th>Field holding</th><th>Model raw</th><th>Model %</th><th>Search %</th><th>Final</th></tr></thead>
+        <thead><tr><th>Team</th><th>ML</th><th>Win</th><th>Future value</th><th>Field holding</th><th>Model raw</th><th>Model %</th><th>Search %</th><th>Final</th></tr></thead>
         <tbody>
           {teams.map((t) => (
             <tr key={t}>
               <td>{t}</td>
+              <td className="mut">{stats[t].ml != null ? `${mlTxt(stats[t].ml)} / ${mlTxt(stats[t].oppMl)}` : "–"}</td>
               <td>{pc(stats[t].win)}</td>
               <td>{stats[t].fv == null ? "–" : stats[t].fv.toFixed(2)}</td>
               <td title="share of the live field that has not used this team yet">{pc(av[t])}</td>

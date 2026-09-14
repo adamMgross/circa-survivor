@@ -1,4 +1,4 @@
-# How the planner works (v1.7)
+# How the planner works (v1.8)
 
 ## Legs
 20 legs per Circa rules: NFL Weeks 1–18 plus a Thanksgiving leg (Wed–Fri games) and a Christmas leg (Dec 24–25),
@@ -6,7 +6,11 @@ each with its own pick. Each team once per entry. Tie = loss. Schedule is hard-c
 
 ## Refresh (Planner tab)
 Two calls to the Anthropic API (Claude Sonnet + web search), parsed leniently (`extract()`):
-1. Selected leg: spread + de-vigged win % per team, plus a pick-popularity guess and its `src`.
+1. Selected leg: raw American moneylines for both sides of every game from one sportsbook (book + time recorded),
+   spreads (display only), and a pick-popularity guess with its `src`. The LLM only transcribes the moneylines;
+   the app computes True Win % itself (`impliedProb`, `devig`): implied = 100/(ML+100) or −ML/(−ML+100), then
+   normalize the two sides so they sum to 100%. No spread/model/LLM fallback — a game without valid two-sided
+   moneylines has no Win %.
 2. Power ratings for all 32 teams → projected spreads for every future cell (italic) and the Future column.
 
 ## P% (pick popularity) — one number per leg, chosen automatically
