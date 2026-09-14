@@ -285,7 +285,7 @@ Output format (arrays, not objects, to keep it short):
   const txt = await askClaude(prompt);
   const lines = {}, pick = {};
   const L = extract(txt, "l", true), P = extract(txt, "p", false);
-  const wPct = toPct(Object.values(L).map((x) => x[1]), false), pPct = toPct(Object.values(P).map((x) => x[0]), true);
+  const wPct = (v) => (v == null ? null : v <= 1 ? v * 100 : v), pPct = toPct(Object.values(P).map((x) => x[0]), true); // a win prob ≤ 1 is always a fraction; picks decided per set
   for (const t of Object.keys(L)) { const [sp, w] = L[t]; if (OPP[leg.id][t] && sp != null) lines[t] = { spread: sp, win: w == null ? winFromMargin(-sp) : Math.max(0.01, Math.min(0.99, wPct(w) / 100)) }; }
   for (const t of Object.keys(P)) { const [pp] = P[t]; if (OPP[leg.id][t] && pp != null) pick[t] = pPct(pp) / 100; }
   // never let the field sum past 100%
