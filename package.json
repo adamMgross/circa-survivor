@@ -1,0 +1,13 @@
+{
+  "name": "circa-survivor-planner",
+  "private": true,
+  "version": "1.7.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "test": "node --input-type=module -e \"import('./test/run.mjs')\""
+  },
+  "dependencies": { "react": "^18.3.1", "react-dom": "^18.3.1" },
+  "devDependencies": { "vite": "^5.4.0", "@vitejs/plugin-react": "^4.3.0", "esbuild": "^0.23.0" }
+}
