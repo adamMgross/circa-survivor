@@ -1,0 +1,415 @@
+{
+  "version": "1.9",
+  "exportedAt": "2026-09-14T22:46:40.222Z",
+  "entries": [
+    {
+      "name": "CIRCAmcised-2",
+      "picks": {
+        "W1": "DET"
+      }
+    },
+    {
+      "name": "CIRCAmcised-3",
+      "picks": {
+        "W1": "JAX"
+      }
+    },
+    {
+      "name": "CIRCAmcised-4",
+      "picks": {
+        "W1": "PIT"
+      }
+    }
+  ],
+  "data": {
+    "legs": {
+      "W1": {
+        "lines": {
+          "SEA": {
+            "spread": -3.5,
+            "win": 0.62
+          },
+          "NE": {
+            "spread": 3.5,
+            "win": 0.38
+          },
+          "LAR": {
+            "spread": -3.5,
+            "win": 0.64
+          },
+          "SF": {
+            "spread": 3.5,
+            "win": 0.36
+          },
+          "CHI": {
+            "spread": -2.5,
+            "win": 0.55
+          },
+          "CAR": {
+            "spread": 2.5,
+            "win": 0.45
+          },
+          "CIN": {
+            "spread": -3.5,
+            "win": 0.64
+          },
+          "TB": {
+            "spread": 3.5,
+            "win": 0.36
+          },
+          "BAL": {
+            "spread": -3,
+            "win": 0.57
+          },
+          "IND": {
+            "spread": 3,
+            "win": 0.43
+          },
+          "BUF": {
+            "spread": -1.5,
+            "win": 0.54
+          },
+          "HOU": {
+            "spread": 1.5,
+            "win": 0.46
+          },
+          "DET": {
+            "spread": -6.5,
+            "win": 0.71
+          },
+          "NO": {
+            "spread": 6.5,
+            "win": 0.29
+          },
+          "TEN": {
+            "spread": -1.5,
+            "win": 0.54
+          },
+          "NYJ": {
+            "spread": 1.5,
+            "win": 0.46
+          },
+          "PIT": {
+            "spread": -3,
+            "win": 0.58
+          },
+          "ATL": {
+            "spread": 3,
+            "win": 0.42
+          },
+          "JAX": {
+            "spread": -8.5,
+            "win": 0.75
+          },
+          "CLE": {
+            "spread": 8.5,
+            "win": 0.25
+          },
+          "LAC": {
+            "spread": -9.5,
+            "win": 0.77
+          },
+          "ARI": {
+            "spread": 9.5,
+            "win": 0.23
+          },
+          "MIN": {
+            "spread": -1.5,
+            "win": 0.54
+          },
+          "GB": {
+            "spread": 1.5,
+            "win": 0.46
+          },
+          "LV": {
+            "spread": -3.5,
+            "win": 0.6
+          },
+          "MIA": {
+            "spread": 3.5,
+            "win": 0.4
+          },
+          "PHI": {
+            "spread": -5,
+            "win": 0.67
+          },
+          "WAS": {
+            "spread": 5,
+            "win": 0.33
+          },
+          "DAL": {
+            "spread": -3,
+            "win": 0.58
+          },
+          "NYG": {
+            "spread": 3,
+            "win": 0.42
+          },
+          "KC": {
+            "spread": -2.5,
+            "win": 0.57
+          },
+          "DEN": {
+            "spread": 2.5,
+            "win": 0.43
+          }
+        },
+        "pick": {
+          "LAC": 0.32,
+          "JAX": 0.26,
+          "DET": 0.13,
+          "LV": 0.08,
+          "PHI": 0.05,
+          "PIT": 0.04,
+          "KC": 0.03,
+          "SEA": 0.02,
+          "BUF": 0.02,
+          "MIN": 0.02,
+          "DAL": 0.01,
+          "CHI": 0.01,
+          "BAL": 0.01
+        },
+        "at": 1788992817877
+      },
+      "W2": {
+        "lines": {
+          "DET": {
+            "win": 0.3775334481388264,
+            "ml": 154,
+            "oppMl": -185,
+            "market": true,
+            "spread": 3.5
+          },
+          "BUF": {
+            "win": 0.6224665518611737,
+            "ml": -185,
+            "oppMl": 154,
+            "market": true,
+            "spread": -3.5
+          },
+          "MIN": {
+            "win": 0.31460674157303364,
+            "ml": 205,
+            "oppMl": -250,
+            "market": true,
+            "spread": 5.5
+          },
+          "CHI": {
+            "win": 0.6853932584269663,
+            "ml": -250,
+            "oppMl": 205,
+            "market": true,
+            "spread": -5.5
+          },
+          "CLE": {
+            "win": 0.2428115015974441,
+            "ml": 295,
+            "oppMl": -375,
+            "market": true,
+            "spread": 8.5
+          },
+          "TB": {
+            "win": 0.7571884984025559,
+            "ml": -375,
+            "oppMl": 295,
+            "market": true,
+            "spread": -8.5
+          },
+          "NO": {
+            "win": 0.2428115015974441,
+            "ml": 295,
+            "oppMl": -375,
+            "market": true,
+            "spread": 8.5
+          },
+          "BAL": {
+            "win": 0.7571884984025559,
+            "ml": -375,
+            "oppMl": 295,
+            "market": true,
+            "spread": -8.5
+          },
+          "IND": {
+            "win": 0.28644876973925815,
+            "ml": 235,
+            "oppMl": -290,
+            "market": true,
+            "spread": 7
+          },
+          "KC": {
+            "win": 0.7135512302607419,
+            "ml": -290,
+            "oppMl": 235,
+            "market": true,
+            "spread": -7
+          },
+          "PHI": {
+            "win": null,
+            "market": false,
+            "spread": -7
+          },
+          "TEN": {
+            "win": null,
+            "market": false,
+            "spread": 7
+          },
+          "GB": {
+            "win": null,
+            "market": false,
+            "spread": 3
+          },
+          "NYJ": {
+            "win": null,
+            "market": false,
+            "spread": -3
+          },
+          "CAR": {
+            "win": null,
+            "market": false,
+            "spread": 1.5
+          },
+          "ATL": {
+            "win": null,
+            "market": false,
+            "spread": -1.5
+          },
+          "CIN": {
+            "win": null,
+            "market": false,
+            "spread": 3
+          },
+          "HOU": {
+            "win": null,
+            "market": false,
+            "spread": -3
+          },
+          "PIT": {
+            "win": null,
+            "market": false,
+            "spread": 5.5
+          },
+          "NE": {
+            "win": null,
+            "market": false,
+            "spread": -5.5
+          },
+          "LV": {
+            "win": null,
+            "market": false,
+            "spread": 3
+          },
+          "LAC": {
+            "win": null,
+            "market": false,
+            "spread": -3
+          },
+          "JAX": {
+            "win": null,
+            "market": false,
+            "spread": 3
+          },
+          "DEN": {
+            "win": null,
+            "market": false,
+            "spread": -3
+          },
+          "WAS": {
+            "win": null,
+            "market": false,
+            "spread": 4.5
+          },
+          "DAL": {
+            "win": null,
+            "market": false,
+            "spread": -4.5
+          },
+          "SEA": {
+            "win": null,
+            "market": false,
+            "spread": -3
+          },
+          "ARI": {
+            "win": null,
+            "market": false,
+            "spread": 3
+          },
+          "MIA": {
+            "win": null,
+            "market": false,
+            "spread": 11
+          },
+          "SF": {
+            "win": null,
+            "market": false,
+            "spread": -11
+          },
+          "NYG": {
+            "win": null,
+            "market": false,
+            "spread": 7
+          },
+          "LAR": {
+            "win": null,
+            "market": false,
+            "spread": -7
+          }
+        },
+        "pick": {
+          "BAL": 0.21999999999999995,
+          "CHI": 0.17999999999999997,
+          "SF": 0.16999999999999998,
+          "TB": 0.11999999999999997,
+          "KC": 0.09999999999999998,
+          "NE": 0.06999999999999999,
+          "DAL": 0.04999999999999999,
+          "DEN": 0.029999999999999992,
+          "ATL": 0.019999999999999997,
+          "HOU": 0.019999999999999997,
+          "LAC": 0.019999999999999997
+        },
+        "src": "estimate",
+        "book": "DraftKings",
+        "asof": "Sep 14 2026 ~6 AM ET (ESPN article)",
+        "games": 5,
+        "gamesTotal": 16,
+        "at": 1789425925101
+      }
+    },
+    "ratings": {
+      "LAR": 7,
+      "SEA": 5.5,
+      "DEN": 5,
+      "BAL": 4.5,
+      "BUF": 4,
+      "KC": 3.5,
+      "DET": 3.5,
+      "CIN": 3,
+      "GB": 3,
+      "SF": 3,
+      "NE": 2.5,
+      "JAX": 2,
+      "PHI": 2,
+      "CHI": 2,
+      "LAC": 1.5,
+      "HOU": 1.5,
+      "DAL": 1,
+      "PIT": 0.5,
+      "IND": 0,
+      "MIN": 0,
+      "WAS": -1,
+      "TB": -2,
+      "ARI": -2,
+      "NYG": -2.5,
+      "CAR": -3,
+      "ATL": -3.5,
+      "NO": -4,
+      "LV": -5,
+      "CLE": -5,
+      "MIA": -6,
+      "NYJ": -7,
+      "TEN": -7
+    },
+    "ratingsAt": 1789425925101,
+    "updatedAt": 1789425925101
+  }
+}
