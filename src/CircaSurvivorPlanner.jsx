@@ -39,7 +39,7 @@ function projected(legId, team, ratings) {
   const g = OPP[legId][team];
   if (!g || !ratings || ratings[team] == null || ratings[g.opp] == null) return null;
   const margin = ratings[team] - ratings[g.opp] + (g.neutral ? 0 : g.home ? HFA : -HFA);
-  return { spread: -margin, win: winFromMargin(margin), proj: true };
+  return { spread: Math.round(-margin * 10) / 10, win: winFromMargin(margin), proj: true };
 }
 
 // ---------- True Win %: two-sided no-vig moneyline ----------
@@ -375,7 +375,7 @@ export default function CircaSurvivorPlanner() {
     try {
       const sha = await writeFile(PATHS[kind], f.json, f.sha, token, message);
       setFiles((prev) => ({ ...prev, [kind]: { ...prev[kind], sha } }));
-      say(`Saved ${fmtTime(new Date().toISOString())} · friends see it after the site rebuilds (~1 min)`);
+      say(`Saved ${fmtTime(new Date().toISOString())}`);
     } catch (e) { say("Save failed: " + e.message, true); }
   };
   const setJson = (kind, fn) => setFiles((prev) => ({ ...prev, [kind]: { ...prev[kind], json: fn(prev[kind].json) } }));
@@ -679,9 +679,9 @@ function Actuals({ data, params, canEdit, onSave }) {
     <div className="act">
       <div className="cards">
         <div className="card"><div className="k">Starting entries</div><div className="v">{num(contest.start)}</div><div className="d">{money(contest.pool)} pool</div></div>
-        <div className="card"><div className="k">Live entries</div><div className="v">{num(last ? last.after : contest.start)}</div><div className="d">{last ? `${pctOf(contest.start - last.after, contest.start)} eliminated${last.pending ? ` · ${num(last.pending)} pending` : ""}` : ""}</div></div>
-        <div className="card"><div className="k">Implied value / entry</div><div className="v">{money(last ? last.value : value0)}</div><div className="d">pool ÷ live entries</div></div>
-        <div className="card"><div className="k">Your equity</div><div className={"v" + (equityNow > equity0 ? " up" : "")}>{money(equityNow)}</div><div className="d">{nAlive}/{entries.length} entries alive · {Math.round(contest.share * 100)}% each · started {money(equity0)}</div></div>
+        <div className="card"><div className="k">Live entries</div><div className="v">{num(last ? last.after : contest.start)}</div><div className="d">{last ? `${pctOf(contest.start - last.after, contest.start)} eliminated` : ""}</div></div>
+        <div className="card"><div className="k">Implied value / entry</div><div className="v">{money(last ? last.value : value0)}</div></div>
+        <div className="card"><div className="k">Your equity</div><div className={"v" + (equityNow > equity0 ? " up" : "")}>{money(equityNow)}</div></div>
         {canEdit && <div className="card" style={{ display: "flex", flexDirection: "column", gap: 6, justifyContent: "center" }}>
           {nextLeg && <button className="ghost" onClick={() => setEditing(nextLeg.id)}>+ Enter {legLabel(nextLeg)} results</button>}
           {selLeg && <button className="ghost" onClick={() => setEditing(selLeg)}>Edit {legLabel(LEGS.find((l) => l.id === selLeg))}</button>}
@@ -711,7 +711,7 @@ function Actuals({ data, params, canEdit, onSave }) {
               <select className="legsel" value={selLeg} onChange={(e) => setSelLeg(e.target.value)}>
                 {tl.map((q) => <option key={q.leg.id} value={q.leg.id}>{legLabel(q.leg)}</option>)}
               </select>
-              <span className="m"><b>{num(r.before)}</b> in → <b>{num(r.lost)}</b> out ({pctOf(r.lost, r.before)}){r.pending ? <> → <b>{num(r.pending)}</b> pending</> : null} → <b>{num(r.after)}</b> live · {a.asOf}</span>
+              <span className="m"><b>{num(r.before)}</b> in → <b>{num(r.lost)}</b> out ({pctOf(r.lost, r.before)}) → <b>{num(r.after)}</b> live</span>
             </div>
             <table className="dist">
               <thead><tr><th>Team</th><th>Entries</th><th>% of field</th><th style={{ textAlign: "left" }}></th>{hasM && <th title={`win^${params.a} · e^(−${params.b}·FV) · availability`}>Model est.</th>}<th>Result</th><th>Eliminated</th></tr></thead>
@@ -751,7 +751,6 @@ function LegEditor({ legId, current, onSave, onCancel }) {
     return rows;
   };
   const [rows, setRows] = useState(init);
-  const [asOf, setAsOf] = useState(current?.asOf || "");
   const set = (t, k, v) => setRows((p) => ({ ...p, [t]: { ...p[t], [k]: v } }));
   const total = teams.reduce((s, t) => s + (parseInt(rows[t].n, 10) || 0), 0);
   const submit = () => {
@@ -761,7 +760,7 @@ function LegEditor({ legId, current, onSave, onCancel }) {
       if (n > 0) picks[t] = n;
       if (rows[t].r === "won") won.push(t); else if (rows[t].r === "lost") lost.push(t); else if (rows[t].r === "pending") pending.push(t);
     }
-    onSave({ asOf: asOf.trim() || new Date().toLocaleDateString([], { month: "short", day: "numeric" }), picks, won, lost, pending });
+    onSave({ asOf: new Date().toLocaleDateString([], { month: "short", day: "numeric" }), picks, won, lost, pending });
   };
   // quick fills: mark every team with entries but no result
   const fillRest = (r) => setRows((p) => { const q = { ...p }; for (const t of teams) if (!q[t].r) q[t] = { ...q[t], r }; return q; });
@@ -769,7 +768,6 @@ function LegEditor({ legId, current, onSave, onCancel }) {
     <div className="editor">
       <h3>{legLabel(leg)} — Circa's posted selections</h3>
       <div className="row">
-        <label>As of <input type="text" value={asOf} onChange={(e) => setAsOf(e.target.value)} placeholder="e.g. Sep 21 (MNF pending)" style={{ width: 200 }} /></label>
         <span style={{ color: "#6f6c66" }}>Entries so far: <b>{total.toLocaleString()}</b></span>
         <button className="ghost" onClick={() => fillRest("pending")}>Rest = pending</button>
         <button className="ghost" onClick={() => fillRest("lost")}>Rest = lost</button>
