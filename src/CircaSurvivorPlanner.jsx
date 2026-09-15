@@ -294,11 +294,9 @@ const CSS = `
 .csp th.hol .lsub { color:#d9b46a; }
 .csp th.hol.sorted { background:#6e5418; }
 /* selected week: outline the whole column, like a bordered column in a spreadsheet */
-.csp th.curcol { box-shadow: inset 2px 2px 0 #1a1a1a, inset -2px 0 0 #1a1a1a; }
-.csp th.curcol.sorted { box-shadow: inset 2px 2px 0 #1a1a1a, inset -2px 0 0 #1a1a1a, inset 0 -3px 0 #c9edc7; }
-.csp td.curcol { box-shadow: inset 2px 0 0 #1a1a1a, inset -2px 0 0 #1a1a1a; }
-.csp td.curcol.last { box-shadow: inset 2px 0 0 #1a1a1a, inset -2px 0 0 #1a1a1a, inset 0 -2px 0 #1a1a1a; }
-.csp:not(.ro) td.c.curcol:not(.bye):not(.dead):hover { box-shadow: inset 0 0 0 2px #1a1a1a; }
+.csp th.curcol { border-top:2px solid #1a1a1a; border-left:2px solid #1a1a1a; border-right:2px solid #1a1a1a; }
+.csp td.curcol { border-left:2px solid #1a1a1a; border-right:2px solid #1a1a1a; }
+.csp td.curcol.last { border-bottom:2px solid #1a1a1a; }
 
 /* sticky left block: EV | W% | P% | Team */
 .csp .L { position:sticky; z-index:2; background:#fff; height:30px; text-align:center; }
@@ -308,10 +306,11 @@ const CSS = `
 .csp .L.team { left:142px; text-align:left; padding:0 8px 0 14px; min-width:118px; font-weight:600; border-bottom-color:rgba(0,0,0,.25); }
 .csp th.L { z-index:4; background:#2b2f33; color:#e9e8e3; border-bottom-color:#3d4247; height:38px; vertical-align:middle; }
 .csp th.L.team { text-align:left; padding-left:14px; }
-.csp .L.entry { left:0; width:260px; min-width:260px; text-align:center; padding:0; }
+.csp .L.entry { left:46px; width:214px; min-width:214px; text-align:center; padding:0; }
 .csp th.entry { cursor:default; }
 /* the upper table has no Future column: a borderless white cell keeps the scrolling rows beneath from showing through */
 .csp th.blank, .csp .sum td.blank { background:#fff; border:none; cursor:default; box-shadow:none; }
+.csp .sum td.L.blank { z-index:5; }
 .csp td.L.num { color:#3a3833; font-size:12px; }
 .csp td.L.num.blank { color:#c9c6bf; }
 .csp td.L.num.top { font-weight:700; color:#1f5a22; }
@@ -539,7 +538,7 @@ export default function CircaSurvivorPlanner() {
 
   const Header = ({ top }) => (
     <>
-      {top ? <th className="L entry" colSpan={4}>Entry</th> : <>
+      {top ? <><th className="L ev blank" /><th className="L entry" colSpan={3}>Entry</th></> : <>
         <th className={"L ev" + (sort.key === "ev" ? " sorted" : "") + (evNote ? " partial" : "")} onClick={() => clickSort("ev")} title={evNote || `EV for ${legLabel(cur)}`}>EV{evNote ? "*" : ""}</th>
         <th className={"L wp" + (sort.key === "wp" ? " sorted" : "")} onClick={() => clickSort("wp")} title={`True Win % — median of each book's no-vig moneyline probability · ${stamp}`}>W%</th>
         <th className={"L pp" + (sort.key === "pp" ? " sorted" : "")} onClick={() => clickSort("pp")} title="Circa pick popularity (actual once posted, field model before)">P%</th>
@@ -624,7 +623,7 @@ export default function CircaSurvivorPlanner() {
           <tbody className="sum">
             {entries.map((e, i) => (
               <tr key={"s" + i} style={{ "--top": 38 + i * 30 + "px" }}>
-                <td className={"L entry" + (i === active ? " on" : "")} colSpan={4} onClick={() => setActive(i)} title="Click to plan this entry">{e.name}</td>
+                <td className="L ev blank" /><td className={"L entry" + (i === active ? " on" : "")} colSpan={3} onClick={() => setActive(i)} title="Click to plan this entry">{e.name}</td>
                 {LEGS.map((l) => {
                   const t = e.picks[l.id];
                   const dupe = t && entries.some((o, j) => j !== i && o.picks[l.id] === t);
