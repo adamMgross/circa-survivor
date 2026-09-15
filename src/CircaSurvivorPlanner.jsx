@@ -635,7 +635,7 @@ export default function CircaSurvivorPlanner() {
           <thead><tr><Header top /></tr></thead>
           <tbody className="sum">
             {entries.map((e, i) => (
-              <tr key={"s" + i} style={{ "--top": 38 + i * 30 + "px" }}>
+              <tr key={"s" + i} style={{ "--top": `calc(var(--th) + ${i} * var(--rh))` }}>
                 <td className="L ev blank" /><td className={"L entry" + (i === active ? " on" : "")} colSpan={3} onClick={() => setActive(i)} title="Click to plan this entry">{e.name}</td>
                 {LEGS.map((l) => {
                   const t = e.picks[l.id];
