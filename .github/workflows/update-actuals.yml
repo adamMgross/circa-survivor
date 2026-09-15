@@ -1,0 +1,40 @@
+name: Update Circa results
+
+on:
+  schedule:
+    # every 3 hours Thu–Mon (picks post Saturday evening; games finish Thu/Sun/Mon), plus Tuesday morning
+    - cron: "41 */3 * * 0,1,4,5,6"
+    - cron: "41 15 * * 2"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: data
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: sudo apt-get install -y -qq poppler-utils >/dev/null
+      - name: Picks from Circa's Selections PDF, results from ESPN
+        run: node scripts/fetch-actuals.mjs
+      - name: Commit and redeploy
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/actuals.json data/picks.json
+          if git diff --cached --quiet; then echo "no changes"; exit 0; fi
+          git commit -m "Update Circa results"
+          git pull --rebase origin main
+          git push
+          gh workflow run deploy.yml

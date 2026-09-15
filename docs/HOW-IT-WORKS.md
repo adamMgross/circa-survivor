@@ -23,7 +23,13 @@ each with its own pick. Each team once per entry. Tie = loss. Schedule is hard-c
   line (nflverse) plus the current DraftKings spreads is an equation `home − away + 2 = spread`; a ridge fit solves
   for one number per team, shrunk toward last season's ratings early in the year. Ratings project spreads for every
   future cell (italic) and drive the Future column.
-- **Picks** (`picks.json`) and **Circa actuals** (`actuals.json`) are written by the app when the owner is signed in.
+- **Picks** (`picks.json`) are written by the app when the owner is signed in. After a week locks they are also
+  confirmed against Circa's file (below), which is the source of truth.
+- **Circa actuals** (`actuals.json`): a GitHub Action runs every 3 hours from Thursday to Monday. Circa posts a text
+  PDF of every entry's selection about two hours after each week's lock (`Circa-Survivor-2026-Week-N-Selections.pdf`;
+  holiday legs are `12a`/`12b` and `16a`/`16b`). The job downloads it, counts picks per team, derives the no-pick
+  count as entries alive minus picks listed, and takes each game's result from ESPN's public scoreboard (won, lost,
+  or pending; a tie is a loss). Circa's Tuesday Team Availability PDF is the independent cross-check.
 
 ## P% (pick popularity), one number per leg
 - Leg has Circa actuals → use them.
@@ -42,4 +48,4 @@ Contest size + Circa's posted selections per leg. `fieldTimeline()` derives live
 
 ## Weekly loop
 1. Lines refresh themselves; check the grid any time. 2. Set 3 picks (signed in), check dupes, enter at Circa.
-3. After lock: Actuals → Enter results, type Circa's selections (picks, won, lost, pending). 4. After MNF: edit the leg, update won/lost.
+3. After lock and after each game, picks and results arrive on their own. Check the Actuals tab Tuesday morning; the editor is there if Circa's file was late or wrong.
