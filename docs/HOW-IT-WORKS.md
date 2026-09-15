@@ -5,12 +5,20 @@
 each with its own pick. Each team once per entry. Tie = loss. Schedule is hard-coded in `src/schedule.js`.
 
 ## Data (all files in `data/`, all in the repo)
-- **Lines** (`odds.json`): a GitHub Action calls The Odds API twice a day for DraftKings moneylines and spreads on
-  every upcoming game and files each under its Circa leg. A game is only overwritten while it is still upcoming, so
-  each game keeps the last pre-kickoff line seen.
-- **True Win %** is computed in the app from the two raw moneylines (`devig`): implied = 100/(ML+100) or −ML/(−ML+100),
-  then the two sides are normalized to sum to 100%. No spread or model fallback: a game without valid two-sided
-  moneylines has no Win %.
+- **Lines** (`odds.json`): a GitHub Action calls The Odds API twice a day (2 credits per pull) for moneylines and
+  spreads from Pinnacle, BetMGM, DraftKings, FanDuel and Caesars on every upcoming game, and files each book's raw
+  quotes under the game's Circa leg. A game is never overwritten once it has kicked off, so it keeps the last
+  pre-kickoff quotes seen. Games that kicked off before they were ever captured are backfilled with nflverse's
+  closing moneyline, for history and model fitting only; the backfill never touches an upcoming game.
+- **True Win %** is computed in the app, per game: each book's two prices are de-vigged on their own (implied =
+  100/(ML+100) or −ML/(−ML+100), normalized to sum to 100%), the consensus is the **median** of the books' home-win
+  probabilities, and the away side is 1 − home (medians of the two sides need not sum to 1). Status: 3+ books =
+  normal, 2 = degraded, 1 = single-book (provisional, shown in amber), 0 = unavailable. A quote is excluded if it
+  lacks both prices, was taken after kickoff (in-game), or is more than 48 h older than the freshest book's quote.
+  No spread, rating or model fallback ever produces a Win %.
+- **EV** needs a Win % for every game in the leg to be exact; games without one drop out of the denominator and
+  flatter the rest. With partial coverage EV is still shown but the column is marked `EV*` with the coverage in its
+  tooltip; below 75% coverage EV is blanked.
 - **Power ratings** (`ratings.json`): fit by the same Action from market spreads. Every 2026 game with a closing
   line (nflverse) plus the current DraftKings spreads is an equation `home − away + 2 = spread`; a ridge fit solves
   for one number per team, shrunk toward last season's ratings early in the year. Ratings project spreads for every

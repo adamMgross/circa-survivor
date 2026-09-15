@@ -13,7 +13,7 @@ GitHub Action keeps the betting lines fresh. There is no server and no database.
   repo through the GitHub API when the owner is signed in.
 - `data/picks.json` — the three entries' picks. Written by the app.
 - `data/actuals.json` — contest size + Circa's posted selections per leg (entries per team, won/lost/pending). Written by the app.
-- `data/odds.json` — DraftKings moneylines and spreads per leg/game. Written by the `update-data` workflow.
+- `data/odds.json` — raw moneylines and spreads from five sportsbooks per leg/game. Written by the `update-data` workflow.
 - `data/ratings.json` — power ratings fit from market spreads. Written by the `update-data` workflow.
 - `scripts/fetch-odds.mjs`, `scripts/fit-ratings.mjs` — the two data jobs (The Odds API + nflverse).
 - `src/schedule.js` — the 2026 schedule grouped into Circa's 20 legs. Shared by the app and the scripts.

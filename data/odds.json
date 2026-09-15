@@ -1,215 +1,263 @@
 {
- "book": "draftkings",
- "updatedAt": "2026-09-14T23:36:22.282Z",
+ "updatedAt": "2026-09-15T00:21:10.926Z",
  "legs": {
   "W1": {
    "games": {
     "DEN@KC": {
      "kickoff": "2026-09-15T00:15:00Z",
-     "asof": "2026-09-14T23:35:42Z",
-     "ml": {
-      "DEN": 110,
-      "KC": -130
-     },
-     "spread": {
-      "DEN": 2.5,
-      "KC": -2.5
+     "books": {
+      "draftkings": {
+       "asof": "2026-09-14T23:35:42Z",
+       "ml": {
+        "DEN": 110,
+        "KC": -130
+       },
+       "spread": {
+        "DEN": 2.5,
+        "KC": -2.5
+       }
+      }
      }
     },
     "NE@SEA": {
      "kickoff": "2026-09-09T20:20",
-     "asof": "2026-09-09T20:20",
-     "ml": {
-      "NE": 140,
-      "SEA": -166
-     },
-     "spread": {
-      "SEA": -3,
-      "NE": 3
-     },
-     "source": "nflverse closing line"
+     "books": {
+      "nflverse": {
+       "asof": "2026-09-09T20:20",
+       "ml": {
+        "NE": 140,
+        "SEA": -166
+       },
+       "spread": {
+        "SEA": -3,
+        "NE": 3
+       }
+      }
+     }
     },
     "SF@LAR": {
      "kickoff": "2026-09-10T20:35",
-     "asof": "2026-09-10T20:35",
-     "ml": {
-      "SF": 180,
-      "LAR": -218
-     },
-     "spread": {
-      "LAR": -3.5,
-      "SF": 3.5
-     },
-     "source": "nflverse closing line"
+     "books": {
+      "nflverse": {
+       "asof": "2026-09-10T20:35",
+       "ml": {
+        "SF": 180,
+        "LAR": -218
+       },
+       "spread": {
+        "LAR": -3.5,
+        "SF": 3.5
+       }
+      }
+     }
     },
     "CHI@CAR": {
      "kickoff": "2026-09-13T13:00",
-     "asof": "2026-09-13T13:00",
-     "ml": {
-      "CHI": -166,
-      "CAR": 140
-     },
-     "spread": {
-      "CAR": 3,
-      "CHI": -3
-     },
-     "source": "nflverse closing line"
+     "books": {
+      "nflverse": {
+       "asof": "2026-09-13T13:00",
+       "ml": {
+        "CHI": -166,
+        "CAR": 140
+       },
+       "spread": {
+        "CAR": 3,
+        "CHI": -3
+       }
+      }
+     }
     },
     "TB@CIN": {
      "kickoff": "2026-09-13T13:00",
-     "asof": "2026-09-13T13:00",
-     "ml": {
-      "TB": 170,
-      "CIN": -205
-     },
-     "spread": {
-      "CIN": -3.5,
-      "TB": 3.5
-     },
-     "source": "nflverse closing line"
+     "books": {
+      "nflverse": {
+       "asof": "2026-09-13T13:00",
+       "ml": {
+        "TB": 170,
+        "CIN": -205
+       },
+       "spread": {
+        "CIN": -3.5,
+        "TB": 3.5
+       }
+      }
+     }
     },
     "NO@DET": {
      "kickoff": "2026-09-13T13:00",
-     "asof": "2026-09-13T13:00",
-     "ml": {
-      "NO": 260,
-      "DET": -325
-     },
-     "spread": {
-      "DET": -7,
-      "NO": 7
-     },
-     "source": "nflverse closing line"
+     "books": {
+      "nflverse": {
+       "asof": "2026-09-13T13:00",
+       "ml": {
+        "NO": 260,
+        "DET": -325
+       },
+       "spread": {
+        "DET": -7,
+        "NO": 7
+       }
+      }
+     }
     },
     "BUF@HOU": {
      "kickoff": "2026-09-13T13:00",
-     "asof": "2026-09-13T13:00",
-     "ml": {
-      "BUF": -112,
-      "HOU": -108
-     },
-     "spread": {
-      "HOU": 1.5,
-      "BUF": -1.5
-     },
-     "source": "nflverse closing line"
+     "books": {
+      "nflverse": {
+       "asof": "2026-09-13T13:00",
+       "ml": {
+        "BUF": -112,
+        "HOU": -108
+       },
+       "spread": {
+        "HOU": 1.5,
+        "BUF": -1.5
+       }
+      }
+     }
     },
     "BAL@IND": {
      "kickoff": "2026-09-13T13:00",
-     "asof": "2026-09-13T13:00",
-     "ml": {
-      "BAL": -162,
-      "IND": 136
-     },
-     "spread": {
-      "IND": 3,
-      "BAL": -3
-     },
-     "source": "nflverse closing line"
+     "books": {
+      "nflverse": {
+       "asof": "2026-09-13T13:00",
+       "ml": {
+        "BAL": -162,
+        "IND": 136
+       },
+       "spread": {
+        "IND": 3,
+        "BAL": -3
+       }
+      }
+     }
     },
     "CLE@JAX": {
      "kickoff": "2026-09-13T13:00",
-     "asof": "2026-09-13T13:00",
-     "ml": {
-      "CLE": 360,
-      "JAX": -470
-     },
-     "spread": {
-      "JAX": -8.5,
-      "CLE": 8.5
-     },
-     "source": "nflverse closing line"
+     "books": {
+      "nflverse": {
+       "asof": "2026-09-13T13:00",
+       "ml": {
+        "CLE": 360,
+        "JAX": -470
+       },
+       "spread": {
+        "JAX": -8.5,
+        "CLE": 8.5
+       }
+      }
+     }
     },
     "ATL@PIT": {
      "kickoff": "2026-09-13T13:00",
-     "asof": "2026-09-13T13:00",
-     "ml": {
-      "ATL": 240,
-      "PIT": -298
-     },
-     "spread": {
-      "PIT": -6.5,
-      "ATL": 6.5
-     },
-     "source": "nflverse closing line"
+     "books": {
+      "nflverse": {
+       "asof": "2026-09-13T13:00",
+       "ml": {
+        "ATL": 240,
+        "PIT": -298
+       },
+       "spread": {
+        "PIT": -6.5,
+        "ATL": 6.5
+       }
+      }
+     }
     },
     "NYJ@TEN": {
      "kickoff": "2026-09-13T13:00",
-     "asof": "2026-09-13T13:00",
-     "ml": {
-      "NYJ": -102,
-      "TEN": -118
-     },
-     "spread": {
-      "TEN": -1.5,
-      "NYJ": 1.5
-     },
-     "source": "nflverse closing line"
+     "books": {
+      "nflverse": {
+       "asof": "2026-09-13T13:00",
+       "ml": {
+        "NYJ": -102,
+        "TEN": -118
+       },
+       "spread": {
+        "TEN": -1.5,
+        "NYJ": 1.5
+       }
+      }
+     }
     },
     "ARI@LAC": {
      "kickoff": "2026-09-13T16:25",
-     "asof": "2026-09-13T16:25",
-     "ml": {
-      "ARI": 350,
-      "LAC": -455
-     },
-     "spread": {
-      "LAC": -8.5,
-      "ARI": 8.5
-     },
-     "source": "nflverse closing line"
+     "books": {
+      "nflverse": {
+       "asof": "2026-09-13T16:25",
+       "ml": {
+        "ARI": 350,
+        "LAC": -455
+       },
+       "spread": {
+        "LAC": -8.5,
+        "ARI": 8.5
+       }
+      }
+     }
     },
     "MIA@LV": {
      "kickoff": "2026-09-13T16:25",
-     "asof": "2026-09-13T16:25",
-     "ml": {
-      "MIA": 142,
-      "LV": -170
-     },
-     "spread": {
-      "LV": -3,
-      "MIA": 3
-     },
-     "source": "nflverse closing line"
+     "books": {
+      "nflverse": {
+       "asof": "2026-09-13T16:25",
+       "ml": {
+        "MIA": 142,
+        "LV": -170
+       },
+       "spread": {
+        "LV": -3,
+        "MIA": 3
+       }
+      }
+     }
     },
     "GB@MIN": {
      "kickoff": "2026-09-13T16:25",
-     "asof": "2026-09-13T16:25",
-     "ml": {
-      "GB": 105,
-      "MIN": -125
-     },
-     "spread": {
-      "MIN": -1.5,
-      "GB": 1.5
-     },
-     "source": "nflverse closing line"
+     "books": {
+      "nflverse": {
+       "asof": "2026-09-13T16:25",
+       "ml": {
+        "GB": 105,
+        "MIN": -125
+       },
+       "spread": {
+        "MIN": -1.5,
+        "GB": 1.5
+       }
+      }
+     }
     },
     "WAS@PHI": {
      "kickoff": "2026-09-13T16:25",
-     "asof": "2026-09-13T16:25",
-     "ml": {
-      "WAS": 200,
-      "PHI": -245
-     },
-     "spread": {
-      "PHI": -6,
-      "WAS": 6
-     },
-     "source": "nflverse closing line"
+     "books": {
+      "nflverse": {
+       "asof": "2026-09-13T16:25",
+       "ml": {
+        "WAS": 200,
+        "PHI": -245
+       },
+       "spread": {
+        "PHI": -6,
+        "WAS": 6
+       }
+      }
+     }
     },
     "DAL@NYG": {
      "kickoff": "2026-09-13T20:20",
-     "asof": "2026-09-13T20:20",
-     "ml": {
-      "DAL": -166,
-      "NYG": 140
-     },
-     "spread": {
-      "NYG": 3,
-      "DAL": -3
-     },
-     "source": "nflverse closing line"
+     "books": {
+      "nflverse": {
+       "asof": "2026-09-13T20:20",
+       "ml": {
+        "DAL": -166,
+        "NYG": 140
+       },
+       "spread": {
+        "NYG": 3,
+        "DAL": -3
+       }
+      }
+     }
     }
    }
   },
@@ -217,197 +265,771 @@
    "games": {
     "DET@BUF": {
      "kickoff": "2026-09-18T00:15:00Z",
-     "asof": "2026-09-14T23:35:42Z",
-     "ml": {
-      "BUF": -205,
-      "DET": 170
-     },
-     "spread": {
-      "BUF": -4.5,
-      "DET": 4.5
+     "books": {
+      "draftkings": {
+       "asof": "2026-09-15T00:20:29Z",
+       "ml": {
+        "BUF": -205,
+        "DET": 170
+       },
+       "spread": {
+        "BUF": -4.5,
+        "DET": 4.5
+       }
+      },
+      "fanduel": {
+       "asof": "2026-09-15T00:21:02Z",
+       "ml": {
+        "BUF": -215,
+        "DET": 180
+       },
+       "spread": {
+        "BUF": -4.5,
+        "DET": 4.5
+       }
+      },
+      "betmgm": {
+       "asof": "2026-09-15T00:20:44Z",
+       "ml": {
+        "BUF": -210,
+        "DET": 175
+       },
+       "spread": {
+        "BUF": -4.5,
+        "DET": 4.5
+       }
+      },
+      "pinnacle": {
+       "asof": "2026-09-15T00:21:00Z",
+       "ml": {
+        "BUF": -206,
+        "DET": 179
+       },
+       "spread": {
+        "BUF": -4.5,
+        "DET": 4.5
+       }
+      }
      }
     },
     "CAR@ATL": {
      "kickoff": "2026-09-20T17:00:00Z",
-     "asof": "2026-09-14T23:35:42Z",
-     "ml": {
-      "ATL": 105,
-      "CAR": -125
-     },
-     "spread": {
-      "ATL": 1.5,
-      "CAR": -1.5
+     "books": {
+      "draftkings": {
+       "asof": "2026-09-15T00:20:29Z",
+       "ml": {
+        "ATL": 105,
+        "CAR": -125
+       },
+       "spread": {
+        "ATL": 1.5,
+        "CAR": -1.5
+       }
+      },
+      "fanduel": {
+       "asof": "2026-09-15T00:21:02Z",
+       "ml": {
+        "ATL": 102,
+        "CAR": -120
+       },
+       "spread": {
+        "ATL": 1.5,
+        "CAR": -1.5
+       }
+      },
+      "betmgm": {
+       "asof": "2026-09-15T00:20:44Z",
+       "ml": {
+        "ATL": 100,
+        "CAR": -120
+       },
+       "spread": {
+        "ATL": 1.5,
+        "CAR": -1.5
+       }
+      },
+      "pinnacle": {
+       "asof": "2026-09-15T00:21:00Z",
+       "ml": {
+        "ATL": 105,
+        "CAR": -118
+       },
+       "spread": {
+        "ATL": 1,
+        "CAR": -1
+       }
+      }
      }
     },
     "NO@BAL": {
      "kickoff": "2026-09-20T17:00:00Z",
-     "asof": "2026-09-14T23:35:42Z",
-     "ml": {
-      "BAL": -360,
-      "NO": 285
-     },
-     "spread": {
-      "BAL": -8.5,
-      "NO": 8.5
+     "books": {
+      "draftkings": {
+       "asof": "2026-09-15T00:20:29Z",
+       "ml": {
+        "BAL": -360,
+        "NO": 285
+       },
+       "spread": {
+        "BAL": -8.5,
+        "NO": 8.5
+       }
+      },
+      "fanduel": {
+       "asof": "2026-09-15T00:21:02Z",
+       "ml": {
+        "BAL": -450,
+        "NO": 350
+       },
+       "spread": {
+        "BAL": -8.5,
+        "NO": 8.5
+       }
+      },
+      "betmgm": {
+       "asof": "2026-09-15T00:20:44Z",
+       "ml": {
+        "BAL": -400,
+        "NO": 320
+       },
+       "spread": {
+        "BAL": -8.5,
+        "NO": 8.5
+       }
+      },
+      "pinnacle": {
+       "asof": "2026-09-15T00:21:00Z",
+       "ml": {
+        "BAL": -412,
+        "NO": 331
+       },
+       "spread": {
+        "BAL": -9,
+        "NO": 9
+       }
+      }
      }
     },
     "MIN@CHI": {
      "kickoff": "2026-09-20T17:00:00Z",
-     "asof": "2026-09-14T23:35:42Z",
-     "ml": {
-      "CHI": -218,
-      "MIN": 180
-     },
-     "spread": {
-      "CHI": -5.5,
-      "MIN": 5.5
+     "books": {
+      "draftkings": {
+       "asof": "2026-09-15T00:20:29Z",
+       "ml": {
+        "CHI": -218,
+        "MIN": 180
+       },
+       "spread": {
+        "CHI": -5.5,
+        "MIN": 5.5
+       }
+      },
+      "fanduel": {
+       "asof": "2026-09-15T00:21:02Z",
+       "ml": {
+        "CHI": -250,
+        "MIN": 205
+       },
+       "spread": {
+        "CHI": -5.5,
+        "MIN": 5.5
+       }
+      },
+      "betmgm": {
+       "asof": "2026-09-15T00:20:44Z",
+       "ml": {
+        "CHI": -235,
+        "MIN": 195
+       },
+       "spread": {
+        "CHI": -5.5,
+        "MIN": 5.5
+       }
+      },
+      "pinnacle": {
+       "asof": "2026-09-15T00:21:00Z",
+       "ml": {
+        "CHI": -244,
+        "MIN": 208
+       },
+       "spread": {
+        "CHI": -5.5,
+        "MIN": 5.5
+       }
+      }
      }
     },
     "CIN@HOU": {
      "kickoff": "2026-09-20T17:00:00Z",
-     "asof": "2026-09-14T23:35:42Z",
-     "ml": {
-      "CIN": 130,
-      "HOU": -155
-     },
-     "spread": {
-      "CIN": 3,
-      "HOU": -3
+     "books": {
+      "draftkings": {
+       "asof": "2026-09-15T00:20:29Z",
+       "ml": {
+        "CIN": 130,
+        "HOU": -155
+       },
+       "spread": {
+        "CIN": 3,
+        "HOU": -3
+       }
+      },
+      "fanduel": {
+       "asof": "2026-09-15T00:21:02Z",
+       "ml": {
+        "CIN": 130,
+        "HOU": -154
+       },
+       "spread": {
+        "CIN": 3,
+        "HOU": -3
+       }
+      },
+      "betmgm": {
+       "asof": "2026-09-15T00:20:44Z",
+       "ml": {
+        "CIN": 130,
+        "HOU": -160
+       },
+       "spread": {
+        "CIN": 3,
+        "HOU": -3
+       }
+      },
+      "pinnacle": {
+       "asof": "2026-09-15T00:21:00Z",
+       "ml": {
+        "CIN": 145,
+        "HOU": -164
+       },
+       "spread": {
+        "CIN": 3,
+        "HOU": -3
+       }
+      }
      }
     },
     "CLE@TB": {
      "kickoff": "2026-09-20T17:00:00Z",
-     "asof": "2026-09-14T23:35:42Z",
-     "ml": {
-      "CLE": 295,
-      "TB": -375
-     },
-     "spread": {
-      "CLE": 8.5,
-      "TB": -8.5
+     "books": {
+      "draftkings": {
+       "asof": "2026-09-15T00:20:29Z",
+       "ml": {
+        "CLE": 295,
+        "TB": -375
+       },
+       "spread": {
+        "CLE": 8.5,
+        "TB": -8.5
+       }
+      },
+      "fanduel": {
+       "asof": "2026-09-15T00:21:02Z",
+       "ml": {
+        "CLE": 350,
+        "TB": -450
+       },
+       "spread": {
+        "CLE": 8.5,
+        "TB": -8.5
+       }
+      },
+      "betmgm": {
+       "asof": "2026-09-15T00:20:44Z",
+       "ml": {
+        "CLE": 340,
+        "TB": -450
+       },
+       "spread": {
+        "CLE": 8.5,
+        "TB": -8.5
+       }
+      },
+      "pinnacle": {
+       "asof": "2026-09-15T00:21:00Z",
+       "ml": {
+        "CLE": 330,
+        "TB": -411
+       },
+       "spread": {
+        "CLE": 9,
+        "TB": -9
+       }
+      }
      }
     },
     "GB@NYJ": {
      "kickoff": "2026-09-20T17:00:00Z",
-     "asof": "2026-09-14T23:35:42Z",
-     "ml": {
-      "GB": -218,
-      "NYJ": 180
-     },
-     "spread": {
-      "GB": -4.5,
-      "NYJ": 4.5
+     "books": {
+      "draftkings": {
+       "asof": "2026-09-15T00:20:29Z",
+       "ml": {
+        "GB": -218,
+        "NYJ": 180
+       },
+       "spread": {
+        "GB": -4.5,
+        "NYJ": 4.5
+       }
+      },
+      "fanduel": {
+       "asof": "2026-09-15T00:21:02Z",
+       "ml": {
+        "GB": -205,
+        "NYJ": 172
+       },
+       "spread": {
+        "GB": -3.5,
+        "NYJ": 3.5
+       }
+      },
+      "betmgm": {
+       "asof": "2026-09-15T00:20:44Z",
+       "ml": {
+        "GB": -210,
+        "NYJ": 170
+       },
+       "spread": {
+        "GB": -3.5,
+        "NYJ": 3.5
+       }
+      },
+      "pinnacle": {
+       "asof": "2026-09-15T00:21:00Z",
+       "ml": {
+        "GB": -191,
+        "NYJ": 166
+       },
+       "spread": {
+        "GB": -4,
+        "NYJ": 4
+       }
+      }
      }
     },
     "PIT@NE": {
      "kickoff": "2026-09-20T17:00:00Z",
-     "asof": "2026-09-14T23:35:42Z",
-     "ml": {
-      "NE": -238,
-      "PIT": 195
-     },
-     "spread": {
-      "NE": -5.5,
-      "PIT": 5.5
+     "books": {
+      "draftkings": {
+       "asof": "2026-09-15T00:20:29Z",
+       "ml": {
+        "NE": -238,
+        "PIT": 195
+       },
+       "spread": {
+        "NE": -5.5,
+        "PIT": 5.5
+       }
+      },
+      "fanduel": {
+       "asof": "2026-09-15T00:21:02Z",
+       "ml": {
+        "NE": -240,
+        "PIT": 198
+       },
+       "spread": {
+        "NE": -4.5,
+        "PIT": 4.5
+       }
+      },
+      "betmgm": {
+       "asof": "2026-09-15T00:20:44Z",
+       "ml": {
+        "NE": -235,
+        "PIT": 195
+       },
+       "spread": {
+        "NE": -5,
+        "PIT": 5
+       }
+      },
+      "pinnacle": {
+       "asof": "2026-09-15T00:21:00Z",
+       "ml": {
+        "NE": -236,
+        "PIT": 203
+       },
+       "spread": {
+        "NE": -5.5,
+        "PIT": 5.5
+       }
+      }
      }
     },
     "PHI@TEN": {
      "kickoff": "2026-09-20T17:00:00Z",
-     "asof": "2026-09-14T23:35:42Z",
-     "ml": {
-      "PHI": -310,
-      "TEN": 250
-     },
-     "spread": {
-      "PHI": -7,
-      "TEN": 7
+     "books": {
+      "draftkings": {
+       "asof": "2026-09-15T00:20:29Z",
+       "ml": {
+        "PHI": -310,
+        "TEN": 250
+       },
+       "spread": {
+        "PHI": -7,
+        "TEN": 7
+       }
+      },
+      "fanduel": {
+       "asof": "2026-09-15T00:21:02Z",
+       "ml": {
+        "PHI": -350,
+        "TEN": 280
+       },
+       "spread": {
+        "PHI": -7,
+        "TEN": 7
+       }
+      },
+      "betmgm": {
+       "asof": "2026-09-15T00:20:44Z",
+       "ml": {
+        "PHI": -325,
+        "TEN": 270
+       },
+       "spread": {
+        "PHI": -7,
+        "TEN": 7
+       }
+      },
+      "pinnacle": {
+       "asof": "2026-09-15T00:21:00Z",
+       "ml": {
+        "PHI": -334,
+        "TEN": 276
+       },
+       "spread": {
+        "PHI": -7.5,
+        "TEN": 7.5
+       }
+      }
      }
     },
     "JAX@DEN": {
      "kickoff": "2026-09-20T20:05:00Z",
-     "asof": "2026-09-14T23:35:42Z",
-     "ml": {
-      "DEN": -148,
-      "JAX": 124
-     },
-     "spread": {
-      "DEN": -2.5,
-      "JAX": 2.5
+     "books": {
+      "draftkings": {
+       "asof": "2026-09-15T00:19:36Z",
+       "ml": {
+        "DEN": -148,
+        "JAX": 124
+       },
+       "spread": {
+        "DEN": -2.5,
+        "JAX": 2.5
+       }
+      },
+      "fanduel": {
+       "asof": "2026-09-15T00:17:47Z",
+       "ml": {
+        "DEN": -144,
+        "JAX": 122
+       },
+       "spread": {
+        "DEN": -2.5,
+        "JAX": 2.5
+       }
+      },
+      "betmgm": {
+       "asof": "2026-09-15T00:20:44Z",
+       "ml": {
+        "DEN": -145,
+        "JAX": 120
+       },
+       "spread": {
+        "DEN": -2.5,
+        "JAX": 2.5
+       }
+      }
      }
     },
     "LV@LAC": {
      "kickoff": "2026-09-20T20:05:00Z",
-     "asof": "2026-09-14T23:35:42Z",
-     "ml": {
-      "LV": 240,
-      "LAC": -298
-     },
-     "spread": {
-      "LV": 7,
-      "LAC": -7
+     "books": {
+      "draftkings": {
+       "asof": "2026-09-15T00:20:29Z",
+       "ml": {
+        "LV": 240,
+        "LAC": -298
+       },
+       "spread": {
+        "LV": 7,
+        "LAC": -7
+       }
+      },
+      "fanduel": {
+       "asof": "2026-09-15T00:21:02Z",
+       "ml": {
+        "LV": 275,
+        "LAC": -340
+       },
+       "spread": {
+        "LV": 7,
+        "LAC": -7
+       }
+      },
+      "betmgm": {
+       "asof": "2026-09-15T00:20:44Z",
+       "ml": {
+        "LV": 260,
+        "LAC": -325
+       },
+       "spread": {
+        "LV": 7,
+        "LAC": -7
+       }
+      },
+      "pinnacle": {
+       "asof": "2026-09-15T00:21:00Z",
+       "ml": {
+        "LV": 256,
+        "LAC": -307
+       },
+       "spread": {
+        "LV": 7,
+        "LAC": -7
+       }
+      }
      }
     },
     "SEA@ARI": {
      "kickoff": "2026-09-20T20:25:00Z",
-     "asof": "2026-09-14T23:35:42Z",
-     "ml": {
-      "ARI": 185,
-      "SEA": -225
-     },
-     "spread": {
-      "ARI": 4.5,
-      "SEA": -4.5
+     "books": {
+      "draftkings": {
+       "asof": "2026-09-15T00:20:29Z",
+       "ml": {
+        "ARI": 185,
+        "SEA": -225
+       },
+       "spread": {
+        "ARI": 4.5,
+        "SEA": -4.5
+       }
+      },
+      "fanduel": {
+       "asof": "2026-09-15T00:21:02Z",
+       "ml": {
+        "ARI": 198,
+        "SEA": -240
+       },
+       "spread": {
+        "ARI": 4.5,
+        "SEA": -4.5
+       }
+      },
+      "betmgm": {
+       "asof": "2026-09-15T00:20:44Z",
+       "ml": {
+        "ARI": 185,
+        "SEA": -225
+       },
+       "spread": {
+        "ARI": 4.5,
+        "SEA": -4.5
+       }
+      },
+      "pinnacle": {
+       "asof": "2026-09-15T00:21:00Z",
+       "ml": {
+        "ARI": 180,
+        "SEA": -208
+       },
+       "spread": {
+        "ARI": 4,
+        "SEA": -4
+       }
+      }
      }
     },
     "WAS@DAL": {
      "kickoff": "2026-09-20T20:25:00Z",
-     "asof": "2026-09-14T23:35:42Z",
-     "ml": {
-      "DAL": -205,
-      "WAS": 170
-     },
-     "spread": {
-      "DAL": -3.5,
-      "WAS": 3.5
+     "books": {
+      "draftkings": {
+       "asof": "2026-09-15T00:20:29Z",
+       "ml": {
+        "DAL": -205,
+        "WAS": 170
+       },
+       "spread": {
+        "DAL": -3.5,
+        "WAS": 3.5
+       }
+      },
+      "fanduel": {
+       "asof": "2026-09-15T00:21:02Z",
+       "ml": {
+        "DAL": -215,
+        "WAS": 180
+       },
+       "spread": {
+        "DAL": -3.5,
+        "WAS": 3.5
+       }
+      },
+      "betmgm": {
+       "asof": "2026-09-15T00:20:44Z",
+       "ml": {
+        "DAL": -210,
+        "WAS": 170
+       },
+       "spread": {
+        "DAL": -4,
+        "WAS": 4
+       }
+      },
+      "pinnacle": {
+       "asof": "2026-09-15T00:21:00Z",
+       "ml": {
+        "DAL": -200,
+        "WAS": 174
+       },
+       "spread": {
+        "DAL": -4,
+        "WAS": 4
+       }
+      }
      }
     },
     "MIA@SF": {
      "kickoff": "2026-09-20T20:25:00Z",
-     "asof": "2026-09-14T23:35:42Z",
-     "ml": {
-      "MIA": 650,
-      "SF": -1000
-     },
-     "spread": {
-      "MIA": 13.5,
-      "SF": -13.5
+     "books": {
+      "draftkings": {
+       "asof": "2026-09-15T00:20:29Z",
+       "ml": {
+        "MIA": 650,
+        "SF": -1000
+       },
+       "spread": {
+        "MIA": 13.5,
+        "SF": -13.5
+       }
+      },
+      "fanduel": {
+       "asof": "2026-09-15T00:21:02Z",
+       "ml": {
+        "MIA": 640,
+        "SF": -950
+       },
+       "spread": {
+        "MIA": 13.5,
+        "SF": -13.5
+       }
+      },
+      "betmgm": {
+       "asof": "2026-09-15T00:20:44Z",
+       "ml": {
+        "MIA": 650,
+        "SF": -900
+       },
+       "spread": {
+        "MIA": 13.5,
+        "SF": -13.5
+       }
+      },
+      "pinnacle": {
+       "asof": "2026-09-15T00:21:00Z",
+       "ml": {
+        "MIA": 677,
+        "SF": -1000
+       },
+       "spread": {
+        "MIA": 13,
+        "SF": -13
+       }
+      }
      }
     },
     "IND@KC": {
      "kickoff": "2026-09-21T00:20:00Z",
-     "asof": "2026-09-14T23:35:42Z",
-     "ml": {
-      "IND": 235,
-      "KC": -290
-     },
-     "spread": {
-      "IND": 6.5,
-      "KC": -6.5
+     "books": {
+      "draftkings": {
+       "asof": "2026-09-15T00:19:36Z",
+       "ml": {
+        "IND": 235,
+        "KC": -290
+       },
+       "spread": {
+        "IND": 6.5,
+        "KC": -6.5
+       }
+      },
+      "fanduel": {
+       "asof": "2026-09-15T00:17:47Z",
+       "ml": {
+        "IND": 240,
+        "KC": -295
+       },
+       "spread": {
+        "IND": 6.5,
+        "KC": -6.5
+       }
+      },
+      "betmgm": {
+       "asof": "2026-09-15T00:20:44Z",
+       "ml": {
+        "IND": 240,
+        "KC": -295
+       },
+       "spread": {}
+      }
      }
     },
     "NYG@LAR": {
      "kickoff": "2026-09-22T00:15:00Z",
-     "asof": "2026-09-14T23:35:42Z",
-     "ml": {
-      "LAR": -355,
-      "NYG": 280
-     },
-     "spread": {
-      "LAR": -7,
-      "NYG": 7
+     "books": {
+      "draftkings": {
+       "asof": "2026-09-15T00:20:29Z",
+       "ml": {
+        "LAR": -355,
+        "NYG": 280
+       },
+       "spread": {
+        "LAR": -7,
+        "NYG": 7
+       }
+      },
+      "fanduel": {
+       "asof": "2026-09-15T00:21:02Z",
+       "ml": {
+        "LAR": -390,
+        "NYG": 310
+       },
+       "spread": {
+        "LAR": -7.5,
+        "NYG": 7.5
+       }
+      },
+      "betmgm": {
+       "asof": "2026-09-15T00:20:44Z",
+       "ml": {
+        "LAR": -350,
+        "NYG": 275
+       },
+       "spread": {
+        "LAR": -7,
+        "NYG": 7
+       }
+      },
+      "pinnacle": {
+       "asof": "2026-09-15T00:21:00Z",
+       "ml": {
+        "LAR": -330,
+        "NYG": 281
+       },
+       "spread": {
+        "LAR": -7,
+        "NYG": 7
+       }
+      }
      }
     }
    }
   }
- }
+ },
+ "books": [
+  "pinnacle",
+  "betmgm",
+  "draftkings",
+  "fanduel",
+  "williamhill_us"
+ ]
 }

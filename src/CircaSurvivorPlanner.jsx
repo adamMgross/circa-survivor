@@ -50,25 +50,90 @@ function devig(mlA, mlB) {
   const qA = impliedProb(mlA), qB = impliedProb(mlB);
   return { a: qA / (qA + qB), b: qB / (qA + qB) };
 }
-// Turn one leg of data/odds.json ({ games: { "AWY@HOM": { ml, spread, asof } } }) into per-team lines.
-// Only games with a valid two-sided moneyline get a Win %; a spread alone never does.
+// ---------- consensus True Win % across sportsbooks ----------
+// Each book is de-vigged on its own two prices; the consensus is the MEDIAN of the books' home-win
+// probabilities, and the away side is its complement (medians of the two sides need not sum to 1).
+const STALE_MS = 48 * 3600 * 1000;   // a book whose quote is this much older than the freshest book's is left out
+const BOOK_NAME = { pinnacle: "Pinnacle", betmgm: "BetMGM", draftkings: "DraftKings", fanduel: "FanDuel", williamhill_us: "Caesars", nflverse: "closing line (nflverse)" };
+const median = (xs) => { const s = [...xs].sort((a, b) => a - b), n = s.length; return n ? (n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2) : null; };
+const roundHalf = (v) => Math.round(v * 2) / 2;
+// status by number of contributing books
+const STATUS = { 0: "none", 1: "single", 2: "degraded" };
+const statusFor = (n, closing) => (closing ? "closing" : STATUS[n] || "consensus");
+const STATUS_TEXT = { consensus: "consensus of 3+ books", degraded: "2 books only (degraded)", single: "single book (provisional)", closing: "closing line from nflverse (game already played)", none: "no valid two-sided moneyline" };
+
+// One game's books → per-book de-vigged probabilities with exclusion reasons, plus the consensus.
+function consensusForGame(key, g) {
+  const [away, home] = key.split("@");
+  const kickoff = g.kickoff ? new Date(g.kickoff).getTime() : null;
+  const books = g.books || (g.ml ? { [/nflverse/.test(g.source || "") ? "nflverse" : "draftkings"]: { asof: g.asof, ml: g.ml, spread: g.spread || {} } } : {});
+  const rows = Object.entries(books).map(([bk, b]) => {
+    const row = { book: bk, name: BOOK_NAME[bk] || bk, ml: b.ml?.[home] ?? null, oppMl: b.ml?.[away] ?? null, asof: b.asof || null, spread: b.spread?.[home] ?? null, pHome: null, excluded: null };
+    const d = devig(row.ml, row.oppMl);
+    if (!d) row.excluded = "no valid two-sided moneyline";
+    else if (bk !== "nflverse" && kickoff && row.asof && new Date(row.asof).getTime() >= kickoff) row.excluded = "quoted after kickoff (in-game price)";
+    else row.pHome = d.a;
+    return row;
+  });
+  const fresh = rows.filter((r) => !r.excluded && r.asof).map((r) => new Date(r.asof).getTime());
+  const newest = fresh.length ? Math.max(...fresh) : null;
+  for (const r of rows) if (!r.excluded && r.asof && newest && newest - new Date(r.asof).getTime() > STALE_MS) { r.excluded = `stale (${Math.round((newest - new Date(r.asof).getTime()) / 3600000)} h older than the freshest book)`; r.pHome = null; }
+  const valid = rows.filter((r) => !r.excluded);
+  const closing = valid.length > 0 && valid.every((r) => r.book === "nflverse");
+  const pHome = valid.length ? median(valid.map((r) => r.pHome)) : null;
+  // reference book for the displayed raw prices: the contributing book closest to the consensus
+  const ref = valid.length ? valid.reduce((a, r) => (Math.abs(r.pHome - pHome) < Math.abs(a.pHome - pHome) ? r : a)) : null;
+  const sp = valid.map((r) => r.spread).filter((v) => v != null);
+  const asof = valid.length ? valid.map((r) => r.asof).filter(Boolean).sort().pop() || null : null;
+  return { key, away, home, kickoff: g.kickoff || null, rows, valid: valid.length, status: statusFor(valid.length, closing), pHome, ref, spreadHome: sp.length ? roundHalf(median(sp)) : null, asof };
+}
+// Turn one leg of data/odds.json ({ games: { "AWY@HOM": { kickoff, books: { <book>: { asof, ml, spread } } } } })
+// into per-team lines. Only games with at least one valid two-sided moneyline get a Win %; a spread alone never does.
 function linesFromOdds(legOdds) {
-  const lines = {}; let asof = null, games = 0;
+  const lines = {}, games = {}; let asof = null, n = 0; const counts = {};
   for (const [key, g] of Object.entries(legOdds?.games || {})) {
-    const [away, home] = key.split("@");
-    const d = devig(g.ml?.[away], g.ml?.[home]); if (!d) continue;
-    lines[away] = { win: d.a, ml: g.ml[away], oppMl: g.ml[home], spread: g.spread?.[away] ?? null, market: true };
-    lines[home] = { win: d.b, ml: g.ml[home], oppMl: g.ml[away], spread: g.spread?.[home] ?? null, market: true };
-    games++; if (!asof || (g.asof && g.asof > asof)) asof = g.asof;
+    const c = consensusForGame(key, g);
+    games[key] = c;
+    if (c.pHome == null) continue;
+    const base = { market: true, status: c.status, n: c.valid, game: key };
+    lines[c.home] = { ...base, win: c.pHome, ml: c.ref.ml, oppMl: c.ref.oppMl, refBook: c.ref.name, spread: c.spreadHome };
+    lines[c.away] = { ...base, win: 1 - c.pHome, ml: c.ref.oppMl, oppMl: c.ref.ml, refBook: c.ref.name, spread: c.spreadHome == null ? null : -c.spreadHome };
+    n++; counts[c.status] = (counts[c.status] || 0) + 1;
+    if (!asof || (c.asof && c.asof > asof)) asof = c.asof;
   }
-  return { lines, asof, games };
+  return { lines, detail: games, asof, games: n, counts };
+}
+// EV_i = w_i / (p_i + sum over other games of p_j w_j), scaled so the field's pick-weighted average = 1.00
+// (the scale Atlas / SurvivorGrid use). Games without a Win % are left out of the denominator, which flatters
+// everyone else, so the caller gets the coverage and blanks EV when it is too low to trust.
+const EV_MIN_COVERAGE = 0.75;
+function computeEV(legId, rows) {
+  const teams = Object.keys(OPP[legId]);
+  const gamesTotal = teams.length / 2;
+  const covered = teams.filter((t) => rows[t].win != null).length / 2;
+  const coverage = gamesTotal ? covered / gamesTotal : 0;
+  for (const t of teams) { rows[t].raw = null; rows[t].ev = null; }
+  if (coverage < EV_MIN_COVERAGE) return { coverage, covered, gamesTotal, blanked: true };
+  const S = teams.reduce((a, t) => a + (rows[t].pick || 0) * (rows[t].win || 0), 0);
+  let wsum = 0, psum = 0;
+  for (const t of teams) {
+    const r = rows[t]; if (r.win == null) continue;
+    const opp = OPP[legId][t].opp;
+    const own = (r.pick || 0) * r.win, oppc = (rows[opp].pick || 0) * (rows[opp].win || 0);
+    const Si = (r.pick || 0) + (S - own - oppc);
+    r.raw = Si > 0 ? r.win / Si : null;
+    if (r.raw != null && r.pick) { wsum += r.pick * r.raw; psum += r.pick; }
+  }
+  const mean = psum > 0 ? wsum / psum : 1;
+  for (const t of teams) { const r = rows[t]; r.ev = r.raw == null ? null : r.raw / mean; }
+  return { coverage, covered, gamesTotal, blanked: false };
 }
 // Everything the model needs, assembled from the four data files.
 function buildData({ picks, actuals, odds, ratings }) {
   const legs = {};
   for (const l of LEGS) {
     const r = linesFromOdds(odds?.legs?.[l.id]);
-    if (r.games) legs[l.id] = { ...r, gamesTotal: Object.keys(OPP[l.id]).length / 2, book: odds.book };
+    if (r.games) legs[l.id] = { ...r, gamesTotal: Object.keys(OPP[l.id]).length / 2, books: odds.books || [] };
   }
   return {
     entries: Array.isArray(picks?.entries) ? picks.entries : [],
@@ -179,7 +244,7 @@ function modelError(data, params) {
   return n ? { err: e / n, n } : null;
 }
 
-export { linesFromOdds, buildData, devig, fieldTimeline, modelPick, fitParams, availability };
+export { linesFromOdds, consensusForGame, computeEV, EV_MIN_COVERAGE, buildData, devig, fieldTimeline, modelPick, fitParams, availability };
 
 const CSS = `
 .csp { display:flex; flex-direction:column; height:100vh; background:#f3f2ee; font-family: -apple-system, "Helvetica Neue", Helvetica, Arial, sans-serif; color:#1a1a1a; font-variant-numeric: tabular-nums; -webkit-font-smoothing:antialiased; }
@@ -223,6 +288,8 @@ const CSS = `
 .csp td.L.num { color:#3a3833; font-size:12px; }
 .csp td.L.num.blank { color:#c9c6bf; }
 .csp td.L.num.top { font-weight:700; color:#1f5a22; }
+.csp td.L.num.weak { color:#8a5a00; font-style:italic; }
+.csp th.L.ev.partial { color:#ffd27a; }
 .csp .team .hd { display:inline-block; width:7px; height:7px; border-radius:50%; margin-left:5px; vertical-align:middle; background:#e3a83a; box-shadow:0 0 0 1.5px #fff, 0 0 0 2.5px rgba(0,0,0,.45); }
 .csp .team .hd.x { background:#c0392b; }
 .csp .team .used { font-weight:400; opacity:.75; font-size:10px; margin-left:6px; }
@@ -404,7 +471,7 @@ export default function CircaSurvivorPlanner() {
   const params = useMemo(() => fitParams(data), [data]);
   const merr = useMemo(() => modelError(data, params), [data, params]);
   // per-team stats for selected leg
-  const stats = useMemo(() => {
+  const statsAll = useMemo(() => {
     const act = data.actuals[legId];
     const actTot = act ? Object.values(act.picks).reduce((a, b) => a + b, 0) : 0;
     const modelP = modelPick(legId, data, params);
@@ -414,29 +481,18 @@ export default function CircaSurvivorPlanner() {
     for (const t of ALL_TEAMS) {
       const mk = marketLine(legId, t, data);          // True Win % (market only) — null if no valid two-sided ML
       const disp = lineFor(legId, t, data);           // spread for display; may be a projection
-      rows[t] = { win: mk ? mk.win : null, ml: mk ? mk.ml : null, oppMl: mk ? mk.oppMl : null,
+      rows[t] = { win: mk ? mk.win : null, ml: mk ? mk.ml : null, oppMl: mk ? mk.oppMl : null, status: mk ? mk.status : "none", n: mk ? mk.n : 0, refBook: mk ? mk.refBook : null,
         pick: (act || hasModel) ? (pick[t] ?? (disp ? 0 : null)) : null, spread: disp ? disp.spread : null, proj: disp ? disp.proj : false, pm: modelP[t], act: !!act };
     }
-    // EV_i = w_i / (p_i + sum over other games of p_j w_j)
-    const teams = Object.keys(OPP[legId]);
-    const S = teams.reduce((a, t) => a + (rows[t].pick || 0) * (rows[t].win || 0), 0);
-    let wsum = 0, psum = 0;
-    for (const t of teams) {
-      const r = rows[t]; if (r.win == null) continue;
-      const opp = OPP[legId][t].opp;
-      const own = (r.pick || 0) * r.win, oppc = (rows[opp].pick || 0) * (rows[opp].win || 0);
-      const Si = (r.pick || 0) + (S - own - oppc);
-      r.raw = Si > 0 ? r.win / Si : null;
-      if (r.raw != null && r.pick) { wsum += r.pick * r.raw; psum += r.pick; }
-    }
-    // normalize so the field's pick-weighted average EV = 1.00 (the scale Atlas / SurvivorGrid use)
-    const mean = psum > 0 ? wsum / psum : 1;
-    for (const t of teams) { const r = rows[t]; r.ev = r.raw == null ? null : r.raw / mean; }
+    const ev = computeEV(legId, rows);
     for (const t of ALL_TEAMS) rows[t].fv = data.ratings ? fvFor(legId, t, data) : null;
-    return rows;
+    return { rows, ev };
   }, [data, legId, params]);
+  const { rows: stats, ev: evInfo } = statsAll;
   const maxFv = Math.max(0.01, ...ALL_TEAMS.map((t) => stats[t].fv || 0));
   const topEv = Math.max(...ALL_TEAMS.map((t) => stats[t].ev || 0));
+  const evNote = evInfo.blanked ? `EV unavailable: only ${evInfo.covered}/${evInfo.gamesTotal} games have a Win % (need ${Math.round(EV_MIN_COVERAGE * 100)}%)`
+    : evInfo.coverage < 1 ? `EV based on ${evInfo.covered}/${evInfo.gamesTotal} games — teams without a Win % are left out, which flatters the rest` : null;
 
   const sortedTeams = useMemo(() => {
     const k = sort.key, d = sort.dir;
@@ -453,12 +509,13 @@ export default function CircaSurvivorPlanner() {
   const pct = (v) => (v == null ? "–" : Math.round(v * 100) + "%");
   const cur = LEGS.find((l) => l.id === legId);
   const legInfo = data.legs[legId];
-  const stamp = legInfo ? `${legInfo.book === "draftkings" ? "DraftKings" : legInfo.book} · ${fmtTime(legInfo.asof)} · ${legInfo.games}/${legInfo.gamesTotal} games` : "no lines yet for this leg";
+  const flags = legInfo ? [legInfo.counts.degraded && `${legInfo.counts.degraded} at 2 books`, legInfo.counts.single && `${legInfo.counts.single} single-book`].filter(Boolean).join(", ") : "";
+  const stamp = legInfo ? `${legInfo.counts.closing === legInfo.games ? "closing lines" : "book consensus"} · ${fmtTime(legInfo.asof)} · ${legInfo.games}/${legInfo.gamesTotal} games${flags ? ` (${flags})` : ""}` : "no lines yet for this leg";
 
   const Header = () => (
     <>
-      <th className={"L ev" + (sort.key === "ev" ? " sorted" : "")} onClick={() => clickSort("ev")} title={`EV for ${legLabel(cur)}`}>EV</th>
-      <th className={"L wp" + (sort.key === "wp" ? " sorted" : "")} onClick={() => clickSort("wp")} title={`True Win % — two-sided no-vig moneyline · ${stamp}`}>W%</th>
+      <th className={"L ev" + (sort.key === "ev" ? " sorted" : "") + (evNote ? " partial" : "")} onClick={() => clickSort("ev")} title={evNote || `EV for ${legLabel(cur)}`}>EV{evNote ? "*" : ""}</th>
+      <th className={"L wp" + (sort.key === "wp" ? " sorted" : "")} onClick={() => clickSort("wp")} title={`True Win % — median of each book's no-vig moneyline probability · ${stamp}`}>W%</th>
       <th className={"L pp" + (sort.key === "pp" ? " sorted" : "")} onClick={() => clickSort("pp")} title="Circa pick popularity (actual once posted, field model before)">P%</th>
       <th className={"L team" + (sort.key === "team" ? " sorted" : "")} onClick={() => clickSort("team")}>Team</th>
       {LEGS.map((l) => (
@@ -520,7 +577,7 @@ export default function CircaSurvivorPlanner() {
         </div>
       )}
       {view === "actuals" && <Actuals data={data} params={params} canEdit={canEdit} onSave={saveActuals} />}
-      {view === "planner" && audit && <AuditPanel legId={legId} data={data} params={params} merr={merr} stats={stats} />}
+      {view === "planner" && audit && <AuditPanel legId={legId} data={data} params={params} merr={merr} stats={stats} evNote={evNote} />}
       {view === "planner" && <>
 
       <div className="wrap">
@@ -557,7 +614,7 @@ export default function CircaSurvivorPlanner() {
               return (
                 <tr key={team} className={usedLeg ? "gone" : ""}>
                   <td className={"L ev num" + (st.ev == null ? " blank" : st.ev === topEv ? " top" : "")}>{st.ev == null ? (inLeg ? "–" : "") : st.ev.toFixed(2)}</td>
-                  <td className={"L wp num" + (st.win == null ? " blank" : "")} title={inLeg ? (st.win == null ? "No two-sided moneyline posted yet for this game" : `ML ${fmtSp(st.ml)} vs ${fmtSp(st.oppMl)} → ${pct(st.win)} no-vig`) : ""}>{inLeg ? pct(st.win) : ""}</td>
+                  <td className={"L wp num" + (st.win == null ? " blank" : "") + (st.status === "single" || st.status === "degraded" ? " weak" : "")} title={inLeg ? (st.win == null ? "No two-sided moneyline posted yet for this game" : `${pct(st.win)} — ${STATUS_TEXT[st.status]}${st.status !== "closing" ? ` (${st.n})` : ""} · e.g. ${st.refBook} ${fmtSp(st.ml)} / ${fmtSp(st.oppMl)}`) : ""}>{inLeg ? pct(st.win) : ""}</td>
                   <td className={"L pp num" + (st.pick == null ? " blank" : "")} title={inLeg ? (st.act ? "Circa actual" : `field model ${pct(st.pm)}`) : ""}>{inLeg ? (st.pick == null ? "–" : st.pick < 0.005 ? "<1%" : Math.round(st.pick * 100) + "%") : ""}</td>
                   <td className="L team" style={{ background: COLORS[team][0], color: COLORS[team][1] }}>
                     <span className="nm">{team}</span>
@@ -605,6 +662,7 @@ export default function CircaSurvivorPlanner() {
         <span><b style={{ background: "#2e7a33", width: 4 }} />favorite strength (market line; <i>projected from ratings</i> in italics — projections never feed W%)</span>
         <span><b style={{ background: "#e3a83a", borderRadius: "50%" }} />plays Thanksgiving&nbsp; <b style={{ background: "#c0392b", borderRadius: "50%" }} />plays Christmas</span>
         <span style={{ color: "#8a5a00" }}>¹²³ = another entry has this pick</span>
+        <span><i style={{ color: "#8a5a00" }}>W%</i> in amber = fewer than 3 books quoting</span>
       </div>
       </>}
     </div>
@@ -612,7 +670,7 @@ export default function CircaSurvivorPlanner() {
 }
 
 // ---------- P% audit panel ----------
-function AuditPanel({ legId, data, params, merr, stats }) {
+function AuditPanel({ legId, data, params, merr, stats, evNote }) {
   const act = data.actuals[legId];
   const leg = data.legs[legId] || {};
   const av = availability(legId, data);
@@ -628,7 +686,8 @@ function AuditPanel({ legId, data, params, merr, stats }) {
         {act ? <>This leg is locked — P% is Circa's posted distribution, so nothing is estimated.</> : <>
           <b>Field model</b>: <code>win^{params.a} × e^(−{params.b} × future value) × availability</code>, normalized across teams favored this leg. Teams under 50% get 0. Fit on {params.legs} leg(s) of Circa actuals{merr ? <> — average miss so far {pc(merr.err)} per team</> : null}.
         </>}
-        <br /><b>True Win %</b>: {leg.games ? <>two-sided no-vig moneylines from <code>{leg.book}</code> as of {fmtTime(leg.asof)} — {leg.games}/{leg.gamesTotal} games</> : "no moneylines captured for this leg yet (the book posts them about a week out)"}. Spreads and future weeks are display/projection only and never feed Win %.
+        <br /><b>True Win %</b>: {leg.games ? <>each book's two-sided moneyline is de-vigged on its own, the consensus is the <b>median</b> of the books' home-win probabilities (away = 1 − home) as of {fmtTime(leg.asof)} — {leg.games}/{leg.gamesTotal} games. Books asked: {(leg.books || []).map((b) => BOOK_NAME[b] || b).join(", ")}. 3+ books = normal, 2 = degraded, 1 = single-book (provisional); a quote more than 48 h older than the freshest book's, or taken after kickoff, is excluded.</> : "no moneylines captured for this leg yet (books post them about a week out)"}. Spreads and future weeks are display/projection only and never feed Win %.
+        {evNote && <><br /><b>EV coverage</b>: {evNote}.</>}
         <br /><b>Power ratings</b>: {data.ratingsSrc || "none"}{data.ratingsAt ? <>, updated {fmtTime(data.ratingsAt)}</> : null}.
       </div>
       <table>
@@ -648,6 +707,26 @@ function AuditPanel({ legId, data, params, merr, stats }) {
           ))}
         </tbody>
       </table>
+      {leg.detail && Object.keys(leg.detail).length > 0 && <>
+        <div className="f" style={{ marginTop: 12 }}><b>Market detail by game</b> — every quote we hold, how it was de-vigged, and why any was left out.</div>
+        <table>
+          <thead><tr><th>Game</th><th>Consensus (home)</th><th>Status</th><th>Book</th><th>Home / away ML</th><th>Book no-vig (home)</th><th>Quoted</th><th>Note</th></tr></thead>
+          <tbody>
+            {Object.values(leg.detail).sort((a, b) => (a.kickoff || "").localeCompare(b.kickoff || "")).flatMap((g) => g.rows.map((r, i) => (
+              <tr key={g.key + r.book}>
+                <td>{i === 0 ? `${g.away} @ ${g.home}` : ""}</td>
+                <td className={i === 0 ? "fin" : "mut"}>{i === 0 ? (g.pHome == null ? "–" : `${g.home} ${pc(g.pHome, 1)}`) : ""}</td>
+                <td className="mut">{i === 0 ? `${STATUS_TEXT[g.status]}${g.status !== "closing" && g.status !== "none" ? ` (${g.valid})` : ""}` : ""}</td>
+                <td className={r.excluded ? "mut" : ""}>{r.name}</td>
+                <td className={r.excluded ? "mut" : ""}>{r.ml != null ? `${mlTxt(r.ml)} / ${mlTxt(r.oppMl)}` : "–"}</td>
+                <td className={r.excluded ? "mut" : ""}>{r.pHome == null ? "–" : pc(r.pHome, 1)}</td>
+                <td className="mut">{r.asof ? fmtTime(r.asof) : "–"}</td>
+                <td className="mut">{r.excluded ? `excluded: ${r.excluded}` : ""}</td>
+              </tr>
+            )))}
+          </tbody>
+        </table>
+      </>}
     </div>
   );
 }

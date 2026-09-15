@@ -23,8 +23,10 @@ try {
   for (const leg of Object.values(odds.legs || {})) for (const [key, g] of Object.entries(leg.games || {})) {
     if (seen.has(key)) continue;
     const [away, home] = key.split("@");
-    if (g.spread?.[home] == null) continue;
-    games.push({ home, away, margin: -g.spread[home], neutral: false });
+    const sps = Object.values(g.books || {}).map((b) => b.spread?.[home]).filter((v) => v != null).sort((a, b) => a - b);
+    if (!sps.length) continue;
+    const med = sps.length % 2 ? sps[(sps.length - 1) / 2] : (sps[sps.length / 2 - 1] + sps[sps.length / 2]) / 2;
+    games.push({ home, away, margin: -med, neutral: false });
   }
 } catch {}
 const { ratings, games: used } = fitRatings(games, { lambda: 3, prior });
