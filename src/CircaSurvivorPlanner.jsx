@@ -613,8 +613,8 @@ export default function CircaSurvivorPlanner() {
               <select value={legId} onChange={(e) => setLegId(e.target.value)} title="Week to plan">
                 {LEGS.map((l) => <option key={l.id} value={l.id}>{legLabel(l)}</option>)}
               </select>
-              <button className={"ghost" + (audit ? " on" : "")} onClick={() => setAudit((a) => !a)} title="Show how W% and P% were built">
-                {data.actuals[legId] ? "P% = Circa actuals" : "P% = field model"} {audit ? "▴" : "▾"}
+              <button className={"ghost" + (audit ? " on" : "")} onClick={() => setAudit((a) => !a)} title="How W%, P%, EV and the ratings are calculated for this week">
+                Model details {audit ? "▴" : "▾"}
               </button>
               {canEdit && <button className="btn" onClick={updateLines} disabled={updating} title="Pull fresh moneylines from the sportsbooks now (otherwise twice a day)">{updating ? "Updating…" : "Update lines"}</button>}
             </>}

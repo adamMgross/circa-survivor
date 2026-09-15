@@ -6,7 +6,7 @@
  },
  "legs": {
   "W1": {
-   "asOf": "Sep 14 (MNF pending)",
+   "asOf": "Sep 15 (final)",
    "picks": {
     "JAX": 8127,
     "LAC": 7585,
@@ -56,7 +56,8 @@
     "BAL",
     "JAX",
     "BUF",
-    "NYG"
+    "NYG",
+    "KC"
    ],
    "lost": [
     "NE",
@@ -74,12 +75,10 @@
     "CLE",
     "HOU",
     "DAL",
-    "NOPICK"
+    "NOPICK",
+    "DEN"
    ],
-   "pending": [
-    "DEN",
-    "KC"
-   ]
+   "pending": []
   }
  }
 }
