@@ -507,6 +507,13 @@ export default function CircaSurvivorPlanner() {
 
   const signIn = () => { const t = tokenDraft.trim(); if (!t) return; try { localStorage.setItem(TOKEN_KEY, t); } catch {} setToken(t); setTokenDraft(""); setSignin(false); };
   const signOut = () => { try { localStorage.removeItem(TOKEN_KEY); } catch {} setToken(""); setUser(null); say("Signed out"); };
+  // safety net for GitHub's scheduler: when the owner opens the app and the lines are stale, refresh them (once per visit)
+  const autoRan = useRef(false);
+  useEffect(() => {
+    if (!user || !loaded || autoRan.current || updating) return;
+    const age = data.oddsAt ? Date.now() - new Date(data.oddsAt).getTime() : Infinity;
+    if (age > 10 * 3600 * 1000) { autoRan.current = true; updateLines(); }
+  }, [user, loaded]); // eslint-disable-line
   const updateLines = async () => {
     setUpdating(true);
     try {
