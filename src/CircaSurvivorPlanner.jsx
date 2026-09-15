@@ -276,10 +276,10 @@ const CSS = `
 .csp .btn:hover { background:#333; border-color:#333; }
 .csp .btn:disabled, .csp .ghost:disabled { opacity:.45; cursor:default; }
 .csp .ghost.on { background:#1a1a1a; color:#fff; border-color:#1a1a1a; }
-.csp .tab { border-radius:999px; }
-.csp .tab.on { background:#1a1a1a; color:#fff; border-color:#1a1a1a; }
-.csp .tab .n { color:#9a978f; margin-left:6px; font-size:12px; font-weight:400; }
-.csp .tab.on .n { color:#bdbab3; }
+.csp .tab { display:inline-flex; align-items:center; gap:8px; padding:0 10px 0 12px; box-shadow:0 1px 2px rgba(0,0,0,.06); }
+.csp .tab.on { background:#1a1a1a; color:#fff; border-color:#1a1a1a; box-shadow:none; }
+.csp .tab .n { font-size:11px; font-weight:600; line-height:18px; padding:0 6px; border-radius:6px; background:#f3f2ee; color:#6f6c66; }
+.csp .tab.on .n { background:#3d4247; color:#e9e8e3; }
 .csp .ctl select { appearance:none; -webkit-appearance:none; font-weight:600; padding-right:30px; background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5l3.5 3.5 3.5-3.5' fill='none' stroke='%231a1a1a' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 10px center; }
 .csp .stamp { font-size:11px; color:#6f6c66; }
 
@@ -293,6 +293,12 @@ const CSS = `
 .csp th.hol { background:#5c4410; color:#ffd27a; }
 .csp th.hol .lsub { color:#d9b46a; }
 .csp th.hol.sorted { background:#6e5418; }
+/* selected week: outline the whole column, like a bordered column in a spreadsheet */
+.csp th.curcol { box-shadow: inset 2px 2px 0 #1a1a1a, inset -2px 0 0 #1a1a1a; }
+.csp th.curcol.sorted { box-shadow: inset 2px 2px 0 #1a1a1a, inset -2px 0 0 #1a1a1a, inset 0 -3px 0 #c9edc7; }
+.csp td.curcol { box-shadow: inset 2px 0 0 #1a1a1a, inset -2px 0 0 #1a1a1a; }
+.csp td.curcol.last { box-shadow: inset 2px 0 0 #1a1a1a, inset -2px 0 0 #1a1a1a, inset 0 -2px 0 #1a1a1a; }
+.csp:not(.ro) td.c.curcol:not(.bye):not(.dead):hover { box-shadow: inset 0 0 0 2px #1a1a1a; }
 
 /* sticky left block: EV | W% | P% | Team */
 .csp .L { position:sticky; z-index:2; background:#fff; height:30px; text-align:center; }
@@ -302,9 +308,8 @@ const CSS = `
 .csp .L.team { left:142px; text-align:left; padding:0 8px 0 14px; min-width:118px; font-weight:600; border-bottom-color:rgba(0,0,0,.25); }
 .csp th.L { z-index:4; background:#2b2f33; color:#e9e8e3; border-bottom-color:#3d4247; height:38px; vertical-align:middle; }
 .csp th.L.team { text-align:left; padding-left:14px; }
-.csp .L.entry { left:0; width:260px; min-width:260px; text-align:left; padding-left:14px; }
+.csp .L.entry { left:0; width:260px; min-width:260px; text-align:center; padding:0; }
 .csp th.entry { cursor:default; }
-.csp th.blankfv { cursor:default; }
 .csp td.L.num { color:#3a3833; font-size:12px; }
 .csp td.L.num.blank { color:#c9c6bf; }
 .csp td.L.num.top { font-weight:700; color:#1f5a22; }
@@ -345,8 +350,8 @@ const CSS = `
 .csp .sum td.empty { color:#d9d6cf; font-weight:400; }
 .csp .sum td.dupe { box-shadow: inset 0 0 0 2px #ff2d2d; }
 .csp .sum td.hol { background:#fff6e1; }
-.csp .sum tr.gap td { height:10px; background:#f3f2ee; cursor:default; position:sticky; top:128px; z-index:4; border-color:#f3f2ee; }
-.csp .sum tr.hdr2 th { top:136px; }
+.csp .sum tr.gap td { height:10px; background:#f3f2ee; cursor:default; position:sticky; top:calc(38px + var(--n) * 30px); z-index:4; border-color:#f3f2ee; }
+.csp .sum tr.hdr2 th { top:calc(48px + var(--n) * 30px); }
 .csp .sum tr.hdr2 th.L { z-index:5; }
 
 .csp .views { display:inline-flex; gap:2px; margin-left:16px; padding:3px; background:#e4e2dc; border-radius:9px; }
@@ -443,7 +448,7 @@ export default function CircaSurvivorPlanner() {
   useEffect(() => {
     if (!token) { setUser(null); return; }
     let live = true;
-    whoAmI(token).then((login) => { if (live) { setUser(login); say(`Signed in as ${login}`); } })
+    whoAmI(token).then((login) => { if (live) { setUser(login); say(""); } })
       .catch((e) => { if (live) { setUser(null); say("GitHub token rejected: " + e.message, true); } });
     return () => { live = false; };
   }, [token]);
@@ -539,11 +544,11 @@ export default function CircaSurvivorPlanner() {
         <th className={"L team" + (sort.key === "team" ? " sorted" : "")} onClick={() => clickSort("team")}>Team</th>
       </>}
       {LEGS.map((l) => (
-        <th key={l.id} className={(l.holiday ? "hol" : "") + (sort.key === l.id ? " sorted" : "") + (l.id === legId ? " cur" : "")} title={`${legLabel(l)} — click to sort by spread`} onClick={() => clickSort(l.id)}>
+        <th key={l.id} className={(l.holiday ? "hol" : "") + (sort.key === l.id ? " sorted" : "") + (l.id === legId ? " curcol" : "")} title={`${legLabel(l)} — click to sort by spread`} onClick={() => clickSort(l.id)}>
           {l.label}{l.sub && <span className="lsub">{l.sub}</span>}
         </th>
       ))}
-      {top ? <th className="fv blankfv"></th> : <th className={"fv" + (sort.key === "fv" ? " sorted" : "")} onClick={() => clickSort("fv")} title="Future value: strong-favorite spots left after this leg">Future</th>}
+      {!top && <th className={"fv" + (sort.key === "fv" ? " sorted" : "")} onClick={() => clickSort("fv")} title="Future value: strong-favorite spots left after this leg">Future</th>}
     </>
   );
   // books contributing to this leg's lines, for the note under the controls
@@ -612,7 +617,7 @@ export default function CircaSurvivorPlanner() {
       {view === "planner" && <>
 
       <div className="wrap">
-        <table>
+        <table style={{ "--n": entries.length }}>
           <thead><tr><Header top /></tr></thead>
           <tbody className="sum">
             {entries.map((e, i) => (
@@ -622,13 +627,12 @@ export default function CircaSurvivorPlanner() {
                   const t = e.picks[l.id];
                   const dupe = t && entries.some((o, j) => j !== i && o.picks[l.id] === t);
                   return (
-                    <td key={l.id} className={"s" + (t ? "" : " empty") + (dupe ? " dupe" : "") + (l.holiday ? " hol" : "")}
+                    <td key={l.id} className={"s" + (t ? "" : " empty") + (dupe ? " dupe" : "") + (l.holiday ? " hol" : "") + (l.id === legId ? " curcol" + (i === entries.length - 1 ? " last" : "") : "")}
                         title={dupe ? "Another entry has the same pick this leg" : ""}
                         style={t ? { background: COLORS[t][0], color: COLORS[t][1] } : undefined}
                         onClick={() => setActive(i)}>{t || "·"}</td>
                   );
                 })}
-                <td onClick={() => setActive(i)}></td>
               </tr>
             ))}
             <tr className="gap"><td colSpan={LEGS.length + 5}></td></tr>
@@ -659,6 +663,7 @@ export default function CircaSurvivorPlanner() {
                     const others = entries.map((e, i) => (i !== active && e.picks[l.id] === team ? i + 1 : null)).filter(Boolean).join("");
                     let cls = "c";
                     if (l.holiday) cls += " hol";
+                    if (l.id === legId) cls += " curcol" + (team === sortedTeams[sortedTeams.length - 1] ? " last" : "");
                     if (!g) cls += " bye"; else if (pickHere) cls += " pick"; else if (dead) cls += " dead"; else if (legTaken) cls += " dim"; else if (!g.home) cls += " away";
                     const label = !g ? "" : (g.neutral ? "n " : g.home ? "vs " : "@ ") + g.opp;
                     const fav = ln && ln.spread != null && ln.spread < 0 && !dead ? Math.min(1, -ln.spread / 14) : 0;
