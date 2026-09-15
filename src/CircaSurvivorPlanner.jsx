@@ -271,8 +271,8 @@ const CSS = `
 .csp .ctl { display:flex; flex-direction:column; align-items:flex-end; gap:5px; flex-shrink:0; }
 .csp .ctl .row { display:flex; gap:8px; align-items:center; min-height:32px; }
 .csp .ctl .note { font-size:11px; color:var(--ink3); padding-right:2px; min-height:14px; line-height:14px; }
-.csp .status { font-size:12px; color:var(--ink2); padding:0 16px 8px; min-height:18px; }
-.csp .status.err { color:var(--red); }
+.csp .ctl .note.msg { color:var(--ink); }
+.csp .ctl .note.err { color:var(--red); }
 .csp .who { font-size:12px; color:var(--ink2); }
 .csp .link { background:none; border:none; padding:0 4px; font:inherit; font-size:12px; color:var(--ink2); cursor:pointer; text-decoration:underline; text-underline-offset:3px; }
 .csp .link:hover { color:var(--ink); }
@@ -398,7 +398,8 @@ const CSS = `
 .csp .strip .actions { display:flex; flex-direction:column; gap:6px; justify-content:center; margin-left:auto; }
 .csp .legcard { border:1px solid var(--rule); border-radius:10px; margin-bottom:16px; overflow:hidden; }
 .csp .legcard .hd2 { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; padding:10px 14px; background:var(--paper); border-bottom:1px solid var(--rule); }
-.csp .legcard .hd2 .legsel { height:30px; font:inherit; font-size:14px; font-weight:600; color:var(--ink); background:var(--surface); border:1px solid var(--rule2); border-radius:8px; padding:0 8px; }
+.csp .legcard .hd2 .legsel { height:32px; font:inherit; font-size:13px; font-weight:600; color:var(--ink); border:1px solid var(--rule2); border-radius:8px; padding:0 30px 0 12px; cursor:pointer; appearance:none; -webkit-appearance:none; background:var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5l3.5 3.5 3.5-3.5' fill='none' stroke='%2317181C' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 10px center; }
+.csp .legcard .hd2 .legsel:hover { border-color:var(--ink3); }
 .csp .legcard .hd2 .m { font-size:12px; color:var(--ink2); }
 .csp .legcard .hd2 .m b { color:var(--ink); font-weight:600; }
 .csp .dist { width:100%; border-collapse:collapse; font-size:12px; }
@@ -447,7 +448,12 @@ export default function CircaSurvivorPlanner() {
   const [signin, setSignin] = useState(false);
   const [tokenDraft, setTokenDraft] = useState("");
   const [updating, setUpdating] = useState(false);
-  const say = (msg, err = false) => { setStatus(msg); setStatusErr(err); };
+  const sayTimer = useRef(null);
+  const say = (msg, err = false) => {
+    setStatus(msg); setStatusErr(err);
+    clearTimeout(sayTimer.current);
+    if (msg && !err && !/…$/.test(msg)) sayTimer.current = setTimeout(() => setStatus(""), 4000);   // "Saving…"-style messages stay until replaced
+  };
 
   // read the live data files from the repo (falls back to the copies bundled at deploy time)
   const loadAll = async (tok) => {
@@ -460,6 +466,13 @@ export default function CircaSurvivorPlanner() {
     return failed;
   };
   useEffect(() => { (async () => { await loadAll(token); setLoaded(true); })(); }, []); // eslint-disable-line
+  // once data is in, jump to the first week that has no Circa results yet (never earlier than today's week)
+  const jumped = useRef(false);
+  useEffect(() => {
+    if (!loaded || jumped.current) return; jumped.current = true;
+    const open = LEGS.find((l) => !files.actuals.json?.legs?.[l.id]);
+    if (open && LEGS.findIndex((l) => l.id === open.id) > LEGS.findIndex((l) => l.id === legId)) setLegId(open.id);
+  }, [loaded]); // eslint-disable-line
   useEffect(() => {
     if (!token) { setUser(null); return; }
     let live = true;
@@ -577,18 +590,18 @@ export default function CircaSurvivorPlanner() {
   })();
 
   return (
-    <div className={"csp" + (canEdit ? "" : " ro")}>
+    <div className={"csp" + (canEdit ? "" : " ro")} onMouseDown={(e) => { if (e.target.closest("button")) e.preventDefault(); }}>
       <style>{CSS}</style>
       <div className="bar">
         <div className="left">
           <h1>Circa Survivor 2026 <span className="ver">v{VERSION}</span></h1>
           <span className="views">
-            <button className={view === "planner" ? "on" : ""} onMouseDown={(e) => e.preventDefault()} onClick={() => setView("planner")}>Planner</button>
-            <button className={view === "actuals" ? "on" : ""} onMouseDown={(e) => e.preventDefault()} onClick={() => setView("actuals")}>Actuals</button>
+            <button className={view === "planner" ? "on" : ""} onClick={() => setView("planner")}>Planner</button>
+            <button className={view === "actuals" ? "on" : ""} onClick={() => setView("actuals")}>Actuals</button>
           </span>
           {view === "planner" && <span className="seg">
             {entries.map((e, i) => (
-              <button key={i} className={i === active ? "on" : ""} onMouseDown={(e) => e.preventDefault()} onClick={() => setActive(i)} title="Plan this entry">
+              <button key={i} className={i === active ? "on" : ""} onClick={() => setActive(i)} title="Plan this entry">
                 {e.name}<span className="n">{Object.keys(e.picks).length}/20</span>
               </button>
             ))}
@@ -608,10 +621,9 @@ export default function CircaSurvivorPlanner() {
             {canEdit ? <><span className="who">{user}</span><button className="link" onClick={signOut}>Sign out</button></>
               : <button className="link" onClick={() => setSignin((s) => !s)}>Sign in to edit</button>}
           </div>
-          <div className="note" title={view === "planner" ? `Lines update automatically twice a day. ${stamp}` : undefined}>{view === "planner" ? lineNote : ""}</div>
+          <div className={"note" + (status ? (statusErr ? " err" : " msg") : "")} title={view === "planner" && !status ? `Lines update automatically twice a day. ${stamp}` : undefined}>{!loaded ? "Loading…" : status ? status : view === "planner" ? lineNote : ""}</div>
         </div>
       </div>
-      {(status || !loaded) && <div className={"status" + (statusErr ? " err" : "")}>{loaded ? status : "Loading…"}</div>}
 
       {signin && !canEdit && (
         <div className="panel">
