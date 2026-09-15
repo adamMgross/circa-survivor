@@ -310,6 +310,8 @@ const CSS = `
 .csp th.L.team { text-align:left; padding-left:14px; }
 .csp .L.entry { left:0; width:260px; min-width:260px; text-align:center; padding:0; }
 .csp th.entry { cursor:default; }
+/* the upper table has no Future column: a borderless white cell keeps the scrolling rows beneath from showing through */
+.csp th.blank, .csp .sum td.blank { background:#fff; border:none; cursor:default; box-shadow:none; }
 .csp td.L.num { color:#3a3833; font-size:12px; }
 .csp td.L.num.blank { color:#c9c6bf; }
 .csp td.L.num.top { font-weight:700; color:#1f5a22; }
@@ -548,7 +550,7 @@ export default function CircaSurvivorPlanner() {
           {l.label}{l.sub && <span className="lsub">{l.sub}</span>}
         </th>
       ))}
-      {!top && <th className={"fv" + (sort.key === "fv" ? " sorted" : "")} onClick={() => clickSort("fv")} title="Future value: strong-favorite spots left after this leg">Future</th>}
+      {top ? <th className="fv blank" /> : <th className={"fv" + (sort.key === "fv" ? " sorted" : "")} onClick={() => clickSort("fv")} title="Future value: strong-favorite spots left after this leg">Future</th>}
     </>
   );
   // books contributing to this leg's lines, for the note under the controls
@@ -633,6 +635,7 @@ export default function CircaSurvivorPlanner() {
                         onClick={() => setActive(i)}>{t || "·"}</td>
                   );
                 })}
+                <td className="blank" />
               </tr>
             ))}
             <tr className="gap"><td colSpan={LEGS.length + 5}></td></tr>
