@@ -269,8 +269,8 @@ const CSS = `
 .csp .bar { display:flex; justify-content:space-between; align-items:center; gap:16px; padding:12px 16px 10px; }
 .csp .bar .left { display:flex; align-items:center; gap:18px; min-width:0; flex-wrap:wrap; }
 .csp .ctl { display:flex; flex-direction:column; align-items:flex-end; gap:5px; flex-shrink:0; }
-.csp .ctl .row { display:flex; gap:8px; align-items:center; }
-.csp .ctl .note { font-size:11px; color:var(--ink3); padding-right:2px; }
+.csp .ctl .row { display:flex; gap:8px; align-items:center; min-height:32px; }
+.csp .ctl .note { font-size:11px; color:var(--ink3); padding-right:2px; min-height:14px; line-height:14px; }
 .csp .status { font-size:12px; color:var(--ink2); padding:0 16px 8px; min-height:18px; }
 .csp .status.err { color:var(--red); }
 .csp .who { font-size:12px; color:var(--ink2); }
@@ -583,12 +583,12 @@ export default function CircaSurvivorPlanner() {
         <div className="left">
           <h1>Circa Survivor 2026 <span className="ver">v{VERSION}</span></h1>
           <span className="views">
-            <button className={view === "planner" ? "on" : ""} onClick={() => setView("planner")}>Planner</button>
-            <button className={view === "actuals" ? "on" : ""} onClick={() => setView("actuals")}>Actuals</button>
+            <button className={view === "planner" ? "on" : ""} onMouseDown={(e) => e.preventDefault()} onClick={() => setView("planner")}>Planner</button>
+            <button className={view === "actuals" ? "on" : ""} onMouseDown={(e) => e.preventDefault()} onClick={() => setView("actuals")}>Actuals</button>
           </span>
           {view === "planner" && <span className="seg">
             {entries.map((e, i) => (
-              <button key={i} className={i === active ? "on" : ""} onClick={() => setActive(i)} title="Plan this entry">
+              <button key={i} className={i === active ? "on" : ""} onMouseDown={(e) => e.preventDefault()} onClick={() => setActive(i)} title="Plan this entry">
                 {e.name}<span className="n">{Object.keys(e.picks).length}/20</span>
               </button>
             ))}
@@ -608,7 +608,7 @@ export default function CircaSurvivorPlanner() {
             {canEdit ? <><span className="who">{user}</span><button className="link" onClick={signOut}>Sign out</button></>
               : <button className="link" onClick={() => setSignin((s) => !s)}>Sign in to edit</button>}
           </div>
-          {view === "planner" && <div className="note" title={`Lines update automatically twice a day. ${stamp}`}>{lineNote}</div>}
+          <div className="note" title={view === "planner" ? `Lines update automatically twice a day. ${stamp}` : undefined}>{view === "planner" ? lineNote : ""}</div>
         </div>
       </div>
       {(status || !loaded) && <div className={"status" + (statusErr ? " err" : "")}>{loaded ? status : "Loading…"}</div>}
