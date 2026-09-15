@@ -2,7 +2,7 @@ name: Update lines & ratings
 
 on:
   schedule:
-    - cron: "0 14,23 * * *"   # twice a day (morning + evening US time)
+    - cron: "17 14,23 * * *"   # twice a day, ~10:17 AM and 7:17 PM Eastern; off the hour because GitHub drops on-the-hour crons under load
   workflow_dispatch:
 
 permissions:
