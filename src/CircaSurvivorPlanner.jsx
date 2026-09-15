@@ -216,20 +216,28 @@ function modelPick(legId, data, params) {
   for (const t of Object.keys(sc)) out[t] = tot > 0 ? sc[t] / tot : 0;
   return out;
 }
-// fit a, b to every leg that has both actuals and lines (grid search, minimize L1 distance)
+// Fit a, b to every leg that has both actuals and lines (grid search).
+// The miss on each team is weighted by that team's actual share (plus a small floor so ignored teams still
+// count a little), because EV depends almost entirely on the few teams the field piles onto.
+// A mild penalty holds the knobs near PRIOR while there are only a week or two of actuals; once several
+// weeks accumulate the evidence outweighs it and the knobs go wherever Circa's numbers say.
+const PRIOR = { a: 8, b: 1.5 };
+const PRIOR_WEIGHT = 0.5;        // roughly "one week of evidence"
+const SHARE_FLOOR = 0.02;
 function fitParams(data) {
   const legs = Object.keys(data.actuals).filter((id) => OPP[id] && Object.keys(OPP[id]).some((t) => marketLine(id, t, data)));
-  const DEF = { a: 10, b: 1.5, legs: 0 };
-  if (!legs.length) return DEF;
+  if (!legs.length) return { ...PRIOR, legs: 0, err: null };
   let best = null;
   for (let a = 2; a <= 24; a += 1) for (let b = 0; b <= 4; b += 0.25) {
     let err = 0;
     for (const id of legs) {
       const act = data.actuals[id], tot = Object.values(act.picks).reduce((x, y) => x + y, 0);
       const m = modelPick(id, data, { a, b });
-      for (const t of Object.keys(OPP[id])) err += Math.abs((m[t] || 0) - (act.picks[t] || 0) / tot);
+      for (const t of Object.keys(OPP[id])) { const share = (act.picks[t] || 0) / tot; err += (share + SHARE_FLOOR) * Math.abs((m[t] || 0) - share); }
     }
-    if (!best || err < best.err) best = { a, b, err, legs: legs.length };
+    const penalty = PRIOR_WEIGHT * (((a - PRIOR.a) / PRIOR.a) ** 2 + ((b - PRIOR.b) / PRIOR.b) ** 2);
+    const score = err + penalty;
+    if (!best || score < best.score) best = { a, b, err, score, legs: legs.length };
   }
   return best;
 }
@@ -684,7 +692,7 @@ function AuditPanel({ legId, data, params, merr, stats, evNote }) {
     <div className="audit">
       <div className="f">
         {act ? <>This leg is locked — P% is Circa's posted distribution, so nothing is estimated.</> : <>
-          <b>Field model</b>: <code>win^{params.a} × e^(−{params.b} × future value) × availability</code>, normalized across teams favored this leg. Teams under 50% get 0. Fit on {params.legs} leg(s) of Circa actuals{merr ? <> — average miss so far {pc(merr.err)} per team</> : null}.
+          <b>Field model</b>: <code>win^{params.a} × e^(−{params.b} × future value) × availability</code>, normalized across teams favored this leg. Teams under 50% get 0. Fit on {params.legs} leg(s) of Circa actuals, weighting each team's miss by its actual share and holding the knobs near {PRIOR.a} / {PRIOR.b} until several weeks of data outweigh that{merr ? <> — average miss so far {pc(merr.err)} per team</> : null}.
         </>}
         <br /><b>True Win %</b>: {leg.games ? <>each book's two-sided moneyline is de-vigged on its own, the consensus is the <b>median</b> of the books' home-win probabilities (away = 1 − home) as of {fmtTime(leg.asof)} — {leg.games}/{leg.gamesTotal} games. Books asked: {(leg.books || []).map((b) => BOOK_NAME[b] || b).join(", ")}. 3+ books = normal, 2 = degraded, 1 = single-book (provisional); a quote more than 48 h older than the freshest book's, or taken after kickoff, is excluded.</> : "no moneylines captured for this leg yet (books post them about a week out)"}. Spreads and future weeks are display/projection only and never feed Win %.
         {evNote && <><br /><b>EV coverage</b>: {evNote}.</>}
