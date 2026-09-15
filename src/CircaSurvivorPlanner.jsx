@@ -364,7 +364,6 @@ const CSS = `
 .csp .sum td.s { width:var(--cw); min-width:var(--cw); }
 .csp .sum td.s .chip { display:inline-block; min-width:38px; padding:2px 5px; border-radius:5px; font-size:11px; font-weight:600; line-height:16px; }
 .csp .sum td.empty { color:var(--rule2); font-weight:400; }
-.csp .sum td.dupe .chip { box-shadow:0 0 0 2px var(--red); }
 .csp .sum tr.gap td { height:8px; background:var(--paper); cursor:default; position:sticky; top:calc(var(--th) + var(--n) * var(--rh)); z-index:4; border-bottom:1px solid var(--rule); }
 .csp .sum tr.hdr2 th { top:calc(var(--th) + var(--n) * var(--rh) + 8px); }
 .csp .sum tr.hdr2 th.L { z-index:5; }
@@ -658,10 +657,8 @@ export default function CircaSurvivorPlanner() {
                 <td className="L ev blank" /><td className={"L entry" + (i === active ? " on" : "")} colSpan={3} onClick={() => setActive(i)} title="Click to plan this entry">{e.name}</td>
                 {LEGS.map((l) => {
                   const t = e.picks[l.id];
-                  const dupe = t && entries.some((o, j) => j !== i && o.picks[l.id] === t);
                   return (
-                    <td key={l.id} className={"s" + (t ? "" : " empty") + (dupe ? " dupe" : "") + (l.id === legId ? " curcol" : "")}
-                        title={dupe ? "Another entry has the same pick this week" : ""}
+                    <td key={l.id} className={"s" + (t ? "" : " empty") + (l.id === legId ? " curcol" : "")}
                         onClick={() => setActive(i)}>{t ? <span className="chip" style={{ background: COLORS[t][0], color: COLORS[t][1] }}>{t}</span> : "·"}</td>
                   );
                 })}
