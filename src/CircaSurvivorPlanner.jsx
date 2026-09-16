@@ -369,12 +369,9 @@ const CSS = `
 .csp .L.dili { left:252px; width:64px; min-width:64px; }
 .csp .L.team { left:316px; width:var(--teamw,116px); min-width:var(--teamw,116px); text-align:left; padding:0 8px 0 12px; font-weight:600; }
 .csp .L.entry { left:64px; width:var(--entryw,368px); min-width:var(--entryw,368px); text-align:center; padding:0; }
-.csp td.L.fv .fvbar { height:3px; background:var(--panel); border-radius:2px; overflow:hidden; margin:0 12px 3px; }
-.csp td.L.fv .fvbar i { display:block; height:100%; background:var(--green); border-radius:2px; }
-.csp td.L.fv .v { height:auto; padding-top:5px; }
 .csp td.L.dili.num { color:var(--ink); font-weight:600; }
-.csp td.L.dili.pick1, .csp td.L.dili.pick2, .csp td.L.dili.pick3 { background:var(--green-bg); color:var(--green-ink); }
-.csp td.L.dili.pick1 { box-shadow:inset 0 0 0 1.5px var(--green); }
+.csp td.L.dili.pick1, .csp td.L.dili.pick2, .csp td.L.dili.pick3 { color:var(--green-ink); }
+.csp td.L.dili.pick1 { background:var(--green-bg); }
 .csp td.L.num .v { display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; height:100%; }
 .csp td.L.num .v .n { grid-column:2; }
 .csp td.L.num .d { grid-column:3; justify-self:start; width:0; overflow:visible; white-space:nowrap; padding-left:3px; font-size:9px; font-weight:500; letter-spacing:-0.01em; line-height:1; }
@@ -434,9 +431,16 @@ const CSS = `
 .csp .panel .f code, .csp .audit .f code { background:var(--panel); padding:1px 5px; border-radius:4px; font-family:inherit; }
 .csp .panel input[type=text], .csp .panel input[type=password], .csp .panel input[type=number] { height:32px; font:inherit; font-size:13px; padding:0 10px; border:1px solid var(--rule2); border-radius:8px; background:var(--surface); }
 .csp .panel .row { display:flex; gap:8px; margin-top:6px; align-items:center; flex-wrap:wrap; }
-.csp .audit { background:var(--surface); border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); padding:12px 16px; max-height:46vh; overflow:auto; }
-.csp .audit .f { font-size:12px; color:var(--ink2); margin-bottom:10px; line-height:1.55; max-width:110ch; }
-.csp .audit .f b { color:var(--ink); font-weight:600; }
+.csp .audit { background:var(--surface); border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); padding:14px 16px 16px; max-height:52vh; overflow:auto; }
+.csp .audit .secs { display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:10px 32px; margin-bottom:6px; }
+.csp .audit .sec p { font-size:12px; color:var(--ink2); line-height:1.5; margin:0 0 6px; max-width:60ch; }
+.csp .audit .sec p b { color:var(--ink); font-weight:600; }
+.csp .audit .sec code { background:var(--panel); padding:1px 5px; border-radius:4px; font-family:inherit; }
+.csp .audit h4 { font-size:12px; font-weight:600; color:var(--ink); margin:0 0 4px; }
+.csp .audit h4.th { margin:14px 0 6px; }
+.csp .audit .sec .row { display:flex; align-items:center; gap:10px; margin-top:4px; }
+.csp .audit .sec .lbl { font-size:12px; color:var(--ink2); }
+.csp .audit .seg button { height:24px; line-height:24px; padding:0 10px; font-size:12px; }
 .csp .audit table { border-collapse:collapse; font-size:12px; }
 .csp .audit th { position:static; height:auto; padding:6px 10px; background:transparent; color:var(--ink2); font-size:11px; font-weight:500; text-align:right; border:none; border-bottom:1px solid var(--rule2); cursor:default; }
 .csp .audit td { padding:0 10px; height:26px; text-align:right; border:none; border-bottom:1px solid var(--rule); color:var(--ink2); }
@@ -610,7 +614,6 @@ export default function CircaSurvivorPlanner() {
   }, [data, legId, params, burned, style]);
   const { rows: stats, ev: evInfo } = statsAll;
   const prevAt = data.prev?.oddsAt || null;
-  const maxFv = Math.max(0.01, ...ALL_TEAMS.map((t) => stats[t].fv || 0));
   const topEv = Math.max(...ALL_TEAMS.map((t) => stats[t].ev || 0));
   const evNote = evInfo.blanked ? `EV unavailable: only ${evInfo.covered}/${evInfo.gamesTotal} games have a Win % (need ${Math.round(EV_MIN_COVERAGE * 100)}%)`
     : evInfo.coverage < 1 ? `EV based on ${evInfo.covered}/${evInfo.gamesTotal} games — teams without a Win % are left out, which flatters the rest` : null;
@@ -791,8 +794,7 @@ export default function CircaSurvivorPlanner() {
                   <td className={"L wp num" + (st.win == null ? " blank" : "") + (st.status === "single" || st.status === "degraded" ? " weak" : "")} title={inLeg ? (st.win == null ? "No two-sided moneyline posted yet for this game" : `${pct(st.win)} — ${STATUS_TEXT[st.status]}${st.status !== "closing" ? ` (${st.n})` : ""} · e.g. ${st.refBook} ${fmtSp(st.ml)} / ${fmtSp(st.oppMl)}${st.dWin != null ? dTip("was", pct(st.win - st.dWin)) : ""}`) : ""}><Num d={st.dWin} kind="pct">{inLeg ? pct(st.win) : ""}</Num></td>
                   <td className={"L pp num" + (st.pick == null ? " blank" : "")} title={inLeg ? (st.act ? "Circa actual" : `field model ${pct(st.pm)}${st.dPick != null ? dTip("was", pct(st.pick - st.dPick)) : ""}`) : ""}><Num d={st.dPick} kind="pct">{inLeg ? (st.pick == null ? "–" : st.pick < 0.005 ? "<1%" : Math.round(st.pick * 100) + "%") : ""}</Num></td>
                   <td className={"L fv num" + (st.fv == null ? " blank" : "")} title={st.fv == null ? "No power ratings yet" : `${st.fv.toFixed(2)} — later weeks above ${Math.round(FV_FLOOR * 100)}% win chance, near-locks weighted most`}>
-                    {st.fv != null && <span className="v"><span className="n">{st.fv.toFixed(2)}</span></span>}
-                    {st.fv != null && <div className="fvbar"><i style={{ width: (100 * st.fv / maxFv) + "%" }} /></div>}
+                    <span className="v"><span className="n">{st.fv == null ? "–" : st.fv.toFixed(2)}</span></span>
                   </td>
                   <td className={"L dili num" + (st.dili == null ? " blank" : "") + (st.diliRank ? " pick" + st.diliRank : "")} title={st.dili == null ? (inLeg ? (usedLeg ? "Already used" : "Needs an EV") : "") : diliTip(st)}>
                     <Num d={st.dDili} kind="ev">{st.dili == null ? (inLeg ? "–" : "") : st.dili.toFixed(2)}</Num>
@@ -838,33 +840,45 @@ export default function CircaSurvivorPlanner() {
   );
 }
 
-// ---------- P% audit panel ----------
+// ---------- Model details panel ----------
 function AuditPanel({ legId, data, params, merr, stats, evNote, style, pickStyle, diliK }) {
   const act = data.actuals[legId];
   const leg = data.legs[legId] || {};
   const av = availability(legId, data);
   const mlTxt = (v) => (v == null ? "" : v > 0 ? "+" + v : String(v));
-  const teams = Object.keys(OPP[legId]).filter((t) => stats[t].win != null).sort((a, b) => (stats[b].pick || 0) - (stats[a].pick || 0));
-  // raw model score so the reader can follow the arithmetic
-  const raw = {}; let tot = 0;
-  for (const t of teams) { const w = stats[t].win; if (w < 0.5) { raw[t] = 0; continue; } raw[t] = Math.pow(w, params.a) * Math.exp(-params.b * (stats[t].fv || 0)) * av[t]; tot += raw[t]; }
+  const teams = Object.keys(OPP[legId]).filter((t) => stats[t].win != null).sort((a, b) => (stats[b].dili ?? -1) - (stats[a].dili ?? -1) || (stats[b].pick || 0) - (stats[a].pick || 0));
   const pc = (v, d = 0) => (v == null ? "–" : (100 * v).toFixed(d) + "%");
   return (
     <div className="audit">
-      <div className="f">
-        {act ? <>This leg is locked — P% is Circa's posted distribution, so nothing is estimated.</> : <>
-          <b>Field model</b>: <code>win^{params.a} × e^(−{params.b} × future value) × availability</code>, normalized across teams favored this leg. Teams under 50% get 0. Fit on {params.legs} leg(s) of Circa actuals, weighting each team's miss by its actual share and holding the knobs near {PRIOR.a} / {PRIOR.b} until several weeks of data outweigh that{merr ? <> — average miss so far {pc(merr.err)} per team</> : null}.
-        </>}
-        <br /><b>True Win %</b>: {leg.games ? <>each book's two-sided moneyline is de-vigged on its own, the consensus is the <b>median</b> of the books' home-win probabilities (away = 1 − home) as of {fmtTime(leg.asof)} — {leg.games}/{leg.gamesTotal} games. Books asked: {(leg.books || []).map((b) => BOOK_NAME[b] || b).join(", ")}. 3+ books = normal, 2 = degraded, 1 = single-book (provisional); a quote more than 48 h older than the freshest book's, or taken after kickoff, is excluded.</> : "no moneylines captured for this leg yet (books post them about a week out)"}. Spreads and future weeks are display/projection only and never feed Win %.
-        {evNote && <><br /><b>EV coverage</b>: {evNote}.</>}
-        <br /><b>DILI</b> ("do I love it?") = EV ÷ future forfeit<sup>k</sup>. The forfeit is how much this team beats a realistic pick (the average of this entry's top-3 other available teams) in each later week, weighted by the chance of still being alive then ({Math.round(SURVIVE * 100)}%/week), as a survival multiplier. k = style × calendar; this week k = {diliK.toFixed(2)}. Green = this entry's top three.
-        <span style={{ display: "inline-flex", gap: 4, marginLeft: 10, verticalAlign: "middle" }}>
-          {[["now", "Now"], ["balanced", "Balanced"], ["future", "Future"]].map(([v, l]) => <button key={v} className={"ghost" + (style === v ? " on" : "")} style={{ height: 24, lineHeight: "22px", padding: "0 9px", fontSize: 12 }} onClick={() => pickStyle(v)} title={v === "now" ? "Lean on this week's EV" : v === "future" ? "Save the studs, take risk early" : "Even weighting"}>{l}</button>)}
-        </span>
-        <br /><b>Power ratings</b>: {data.ratingsSrc || "none"}{data.ratingsAt ? <>, updated {fmtTime(data.ratingsAt)}</> : null}.
+      <div className="secs">
+        <div className="sec">
+          <h4>True Win %</h4>
+          {leg.games ? <p>Each book's moneyline is de-vigged on its own; the consensus is the median of the books' home-win chances, away = 1 − home. {leg.games}/{leg.gamesTotal} games as of {fmtTime(leg.asof)}. Books asked: {(leg.books || []).map((b) => BOOK_NAME[b] || b).join(", ")}. 3+ books normal, 2 degraded, 1 single-book. Quotes taken after kickoff or 48 h staler than the freshest are left out.</p>
+            : <p>No moneylines for this week yet. Books post them about a week out.</p>}
+          {evNote && <p><b>EV coverage.</b> {evNote}.</p>}
+        </div>
+        <div className="sec">
+          <h4>P% — pick popularity</h4>
+          {act ? <p>Locked week: P% is Circa's posted distribution.</p>
+            : <p>Field model <code>win^{params.a} × e^(−{params.b} × future value) × availability</code>, normalized over favored teams. Fit on {params.legs} week{params.legs === 1 ? "" : "s"} of Circa actuals, weighting each team's miss by its share and holding the knobs near {PRIOR.a} / {PRIOR.b} until more weeks accumulate{merr ? <>; average miss so far {pc(merr.err)} per team</> : null}.</p>}
+        </div>
+        <div className="sec">
+          <h4>DILI — do I love it?</h4>
+          <p>EV divided by the future forfeit<sup>k</sup>. The forfeit is how much this team beats a realistic pick, the average of this entry's top-3 other available teams, in each later week, weighted by the chance of still being alive then ({Math.round(SURVIVE * 100)}% per week). k = style × calendar, this week {diliK.toFixed(2)}. Green marks this entry's top three.</p>
+          <div className="row"><span className="lbl">Style</span>
+            <span className="seg">
+              {[["now", "Now"], ["balanced", "Balanced"], ["future", "Future"]].map(([v, l]) => <button key={v} className={style === v ? "on" : ""} onClick={() => pickStyle(v)} title={v === "now" ? "Lean on this week's EV" : v === "future" ? "Save the studs, take risk early" : "Even weighting"}>{l}</button>)}
+            </span>
+          </div>
+        </div>
+        <div className="sec">
+          <h4>Future value and ratings</h4>
+          <p>Future value sums later weeks above {Math.round(FV_FLOOR * 100)}% win chance, curved so near-locks count most. Ratings: {data.ratingsSrc || "none"}{data.ratingsAt ? <>, updated {fmtTime(data.ratingsAt)}</> : null}. Projections never feed W%.</p>
+        </div>
       </div>
+      <h4 className="th">This week, by team</h4>
       <table>
-        <thead><tr><th>Team</th><th>ML</th><th>Win</th><th>Future value</th><th>Field holding</th><th>Model raw</th><th>Model %</th><th>Final P%</th><th>EV</th><th>Forfeit</th><th>DILI</th></tr></thead>
+        <thead><tr><th>Team</th><th>ML</th><th>Win</th><th>Future</th><th>Field holding</th><th>Model P%</th><th>Final P%</th><th>EV</th><th>Forfeit</th><th>DILI</th></tr></thead>
         <tbody>
           {teams.map((t) => (
             <tr key={t}>
@@ -873,8 +887,7 @@ function AuditPanel({ legId, data, params, merr, stats, evNote, style, pickStyle
               <td>{pc(stats[t].win)}</td>
               <td>{stats[t].fv == null ? "–" : stats[t].fv.toFixed(2)}</td>
               <td title="share of the live field that has not used this team yet">{pc(av[t])}</td>
-              <td className="mut">{raw[t] ? raw[t].toExponential(2) : "0"}</td>
-              <td>{pc(tot ? raw[t] / tot : 0, 1)}</td>
+              <td className="mut">{pc(stats[t].pm, 1)}</td>
               <td>{pc(stats[t].pick, 1)}</td>
               <td>{stats[t].ev == null ? "–" : stats[t].ev.toFixed(2)}</td>
               <td className="mut">{stats[t].forfeit == null ? "–" : stats[t].forfeit.toFixed(3)}</td>
@@ -884,7 +897,7 @@ function AuditPanel({ legId, data, params, merr, stats, evNote, style, pickStyle
         </tbody>
       </table>
       {leg.detail && Object.keys(leg.detail).length > 0 && <>
-        <div className="f" style={{ marginTop: 12 }}><b>Market detail by game</b> — every quote we hold, how it was de-vigged, and why any was left out.</div>
+        <h4 className="th">Market detail by game</h4>
         <table>
           <thead><tr><th>Game</th><th>Consensus (home)</th><th>Status</th><th>Book</th><th>Home / away ML</th><th>Book no-vig (home)</th><th>Quoted</th><th>Note</th></tr></thead>
           <tbody>
