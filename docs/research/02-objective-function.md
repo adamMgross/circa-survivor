@@ -82,9 +82,9 @@ probability.
 
 | Pick | naive `a/p` | exact `a * E[1/\|S\|]` |
 |---|---|---|
-| Chargers, 30.3% of field | 2.47 | 3.86e-5 |
-| Contrarian, 1.0% of field | 70.05 | 4.18e-5 |
-| ratio, contrarian over chalk | **28.3x** | **1.08x** |
+| Chargers, 30.3% of field | 2.47 | 3.89e-5 |
+| Contrarian, 1.0% of field | 70.05 | 4.16e-5 |
+| ratio, contrarian over chalk | **28.3x** | **1.07x** |
 
 The naive formula overstates the contrarian edge by a factor of twenty-six, against the
 single most concentrated field in contest history. On an ordinary week it is worse.

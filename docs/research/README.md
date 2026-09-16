@@ -27,7 +27,7 @@ total wipeout cannot leave you behind. Both branches change the endgame material
 probability over pick share, `a/p`, is Clair and Letscher's exact answer to a one-game pool
 whose two cohorts partition the field. Circa spreads its field across thirteen games and a
 dozen winners. Scored against the real Week 1 2026 field, `a/p` rates a 1 percent contrarian
-pick 28 times better than the 30 percent chalk. The correct calculation rates it 1.08 times
+pick 28 times better than the 30 percent chalk. The correct calculation rates it 1.07 times
 better. **The folklore formula overstates the contrarian edge by a factor of twenty-six**,
 and it does so unevenly across candidates, so it is not a rescalable error.
 
