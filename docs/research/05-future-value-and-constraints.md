@@ -76,14 +76,15 @@ contest wk  19..20    NFL weeks 17-18
 The NFL week numbering is inferred from the 2026 calendar and the dates in rules 8, 9 and
 11. Verify it against the published schedule before anything depends on it.
 
-Two facts about the shape. Eleven picks are made before the Thanksgiving leg, so twenty
+Two facts about the shape. Eleven picks are made before the Thanksgiving leg, so twenty-one
 teams remain and the constraint is nowhere near binding by count. And four contest weeks sit
 between the two legs, which is the window in which a reserved Christmas team can be
 accidentally spent.
 
-**The gauntlet binds by quality, not by count.** Six of the ten Thanksgiving teams and five
-of the eight Christmas teams are the kind of team a survivor entry wants to spend on a
-favorable September matchup. The constraint has a shadow price from week 1, long before it
+**The gauntlet binds by quality, not by count.** The twelve teams in the union are
+Philadelphia, Green Bay, Chicago, Buffalo, Denver, the Rams, Detroit, Dallas, Kansas City,
+Pittsburgh, Houston and Seattle, which is disproportionately the set a survivor entry wants
+to spend on a favorable September matchup. The constraint has a shadow price from week 1, long before it
 has any chance of being violated, and that shadow price is the honest future value of those
 twelve teams. Twenty picks out of thirty-two teams means the no-reuse rule is slack in
 aggregate. The gauntlets are where it actually bites.

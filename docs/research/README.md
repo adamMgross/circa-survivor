@@ -63,8 +63,8 @@ wider than an independence model implies, and `1/|S|` is convex.
 Rules 8 and 9 name ten Thanksgiving teams and eight Christmas teams, six of them shared,
 twelve in the union. Feasibility is a two-slot matching and Hall's condition is a four-line
 check. Eleven picks come before the Thanksgiving leg, so the constraint is nowhere near
-binding by arithmetic, but eleven of those eighteen teams are exactly the ones a survivor
-entry wants to spend in September. The shadow price exists from week 1.
+binding by arithmetic, but the twelve teams in the union are disproportionately the ones a
+survivor entry wants to spend in September. The shadow price exists from week 1.
 
 **8. Three entries are worth nothing extra early and a great deal late.** Rule 10 makes
 entries independent and rule 3 pays each separately, so the payout is a sum, not a maximum,

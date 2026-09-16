@@ -59,10 +59,10 @@ constraint: an entry needs a system of distinct representatives for the two legs
 Thanksgiving deadline it must hold at least one unused Thanksgiving team, at least one
 unused Christmas team, and at least two unused teams in the union of the twelve.
 
-The constraint almost never binds by arithmetic. Twelve picks are made before the
-Thanksgiving leg, so twenty teams remain. It binds by quality. Six of the ten Thanksgiving
-teams and five of the eight Christmas teams are the kind of team a survivor entry wants to
-spend on a favorable early matchup. The gauntlet has a shadow price long before it has a
+The constraint almost never binds by arithmetic. Eleven picks are made before the
+Thanksgiving leg, so twenty-one teams remain. It binds by quality. The twelve teams in the
+union are disproportionately the ones a survivor entry wants to spend on a favorable early
+matchup. The gauntlet has a shadow price long before it has a
 feasibility violation, and that shadow price is the honest definition of future value for
 those twelve teams. See `05-future-value-and-constraints.md`.
 
