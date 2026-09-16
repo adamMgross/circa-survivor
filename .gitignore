@@ -1,0 +1,4 @@
+data/raw/
+*.pdf
+.venv/
+__pycache__/

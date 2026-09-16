@@ -1,0 +1,412 @@
+Summary:
+
+### **Survivor Contest Overview**
+
+* NFL Survivor: pick one team per week, they just need to win; can’t reuse a team  
+* Hosted by Circa Sportsbook in Vegas, $1,000/entry, 25,000+ entries, $25M pot  
+* Requires physical presence in Nevada to enter picks (gambling, not fantasy)  
+* Payout split among all survivors at season end; fewer survivors \= bigger individual payout  
+* Three entries this season, each person owns 5%, Jeremy holds \~55%  
+* 20 pick weeks total: standard weeks plus split Thanksgiving and Christmas windows  
+  * Christmas/Thanksgiving weeks split into two sub-periods, each requiring a separate pick  
+  * These act as gauntlets: must have an eligible team available for each sub-period
+
+### **Pick Strategy and the Dashboard**
+
+* Three pillars for pick selection:  
+  * Win probability for the current week  
+  * Future value (how useful a team will be in later weeks)  
+  * Pick popularity (how many others in the pool are choosing the same team)  
+* Popularity matters because surviving alongside the whole pool doesn’t improve EV; surviving a mass elimination does  
+  * Illustrated by the final-week example: if 4,999 of 5,000 entries pick the Chiefs (85% favorite), picking the Dolphins is the higher-EV play despite lower win odds  
+  * Strategy must be recalibrated weekly based on pool results, not solvable a priori  
+* Win probability source: consensus live betting lines (median of middle two across top sportsbooks via the Odds API)  
+  * Live lines beat all models including ESPN, FiveThirtyEight, and NFL Elo  
+* Future value: combination of power rankings and forward-looking odds (formula needs review)  
+* Pick popularity: modeled using future value, win percentage (exponentiated to reflect herding behavior), and remaining team availability in the pool  
+* Pool availability data released weekly by the casino as a tweet with a photo; currently entered manually
+
+### **What Adam Wants to Build**
+
+* Continue improving and using the dashboard across all three active entries this season  
+* Automate data entry (tweet/photo ingestion is current friction point)  
+* Improve and validate the algorithm; some backtesting done on win % formula and popularity model  
+  * Popularity model currently overfits to recent weeks  
+* Explore a GitHub-issues-style agentic workflow: external requests triaged by agents with optional human approval  
+  * Noted as a side project goal, not strictly necessary for the Survivor app  
+* Improve test coverage: Claude generated \~30 unit tests; Adam hasn’t reviewed them yet  
+* Jamie joining as a collaborator; Adam agreed to give him a slice of any winnings
+
+&nbsp;
+
+Full transcript:
+
+&nbsp;
+
+Speaker A: Yeah.
+
+Speaker B: Okay. Yeah, it worked.
+
+Speaker A: Where is Tahoe with Chad. Are you from.
+
+Speaker B: What do you mean? At his parents house or his mom
+
+Speaker A: in one of the house?
+
+Speaker B: Yeah, I think so.
+
+Speaker A: Yeah.
+
+Speaker B: Anyway, talk to me, what's your idea?
+
+Speaker A: Okay, well, I built another little sports dashboard thing and I want to see if and it. And it's going to have users. So basically for the football season, there's such a thing as a Survivor contest. I don't know if you're familiar with it, but the idea is instead of like a fantasy football team where you pick players, or like betting where you pick spreads or whatever, this is a contest where you pick one team each week and all they have to do is win their game. And if you pick a team in week one and they win, then you're alive into week two. And if you pick a team week two and they win, then you're alive into week three. The only rule being that you can't use the same team more than once. And it's becoming more popular and does it every year and we have a big group doing it with him where we have three entries each week. The contest is hosted in Vegas. What's that?
+
+Speaker B: Who did you say you're doing this with?
+
+Speaker A: Jeremy Harris. My brother Nick will like a bunch of my high school friends.
+
+Speaker B: And it's hosted in Vegas?
+
+Speaker A: Yeah, one of the big. The Circa Sportsbook in Vegas.
+
+Speaker B: But like what do you mean it's hosted? You know, you're not just going online and making a pick?
+
+Speaker A: No, it's like kind of. I don't know why they're doing well. I don't know why. It's not like that. It's probably some like legacy law bullshit. But you have to physically be in Nevada to enter your pit.
+
+Speaker B: Okay. So it's, it's not considered fantasy, it's considered gambling.
+
+Speaker A: Correct. Okay, I guess. And, and it's also really high stakes, so they are especially careful, I guess. I don't know. It's a thousand dollars per entry. There is over 25,000 entries. So the pot is $25 million, which is just ridiculous.
+
+Speaker B: And then it's like depending on it's not just one winner, it's whoever makes it to the end.
+
+Speaker A: Correct, Correct. It alternates between the contest making it to the end and being split by everyone who makes it versus one person winning before the contest ends. It kind of switches off depending on the variance of the team's performance in this throughout the season. So like really chalky years, there'll be just like 20 winners. Like so Jeremy Mintz won.
+
+Speaker B: The pot gets distributed evenly across the set of people who make it the farthest.
+
+Speaker A: Correct?
+
+Speaker B: Yeah.
+
+Speaker A: And last year, I think there was just a single entry that. Two years ago there was, I think eight entries that won. And I think Jeremy owned 10% of one of the entries that won. And this year, all of us own 5% of three entries. And then Jeremy owns the remainder, like 55% or something. The bulk.
+
+Speaker B: But wait, all of the same 5% in total. Are all of us on 5% each?
+
+Speaker A: Each.
+
+Speaker B: Okay. And then having multiple entries is just because you make a different choice or something and you basically just. You have multiple runners in the race and one might die, but.
+
+Speaker A: Exactly.
+
+Speaker B: Okay,
+
+Speaker A: so there's like a lot of weird. Not weird, but there's like a lot of kind of like game theory strategy, like kind of fake, some sometimes sophisticated and sometimes just like kind of arbitrary strategy that goes into making the picks. But like the three pillars are like the chance that a given team will win in the week that you're choosing them. Second is the chance that a given team will win across all future weeks. So, like their future value. And then third is how popular that pick will be in any given in that given week. So, for example, week one of the NFL season just happened. The Chargers had the highest win probability for the week. They also had the highest projected pick popularity in the pool. And they had a very high future value in future games where they're favored to win. So the blend of those three factors meant, you know, good to pick them because they had a high chance to win, but bad to pick them because they had a lot of value in the future. And a lot of other people also were going to pick them. Meaning if you survive, so does like half the pool, which just lowers your expected value. If you are able to win with, you know, it's 35% of the pool being eliminated, your expected value of making that pick is maybe better. I don't know the math on that, but that's like a. That's like a established principle. So not. I don't know that from first.
+
+Speaker B: I'm not saying I disagree with it, but I'm not sure I follow why it matters whether someone else picks it.
+
+Speaker A: So I think the reason is that your goal in order to win, you not only. Sorry, in order to maximize the money that you can win, your goal is not only for yourself to survive, but for as many others to die. And so part of your need to win is dependent on some very big upsets happening if they don't Happen, you'll lose anyway. So you kind of need to bet that they will happen and avoid those the biggest, most popular games, because the only way you win is if those lose.
+
+Speaker B: But you said in order to maximize the money you win. Are we really. Are we really concerned with maximizing the money that we're going to win or do we just want to survive?
+
+Speaker A: No, you're. You are completely concerned with maximizing the money that you're going to win.
+
+Speaker B: But you said there's like 25,000 entries.
+
+Speaker A: Yeah.
+
+Speaker B: And like, so you're saying, you said some seasons they don't even make it to the end. Like, everyone dies basically.
+
+Speaker A: Correct.
+
+Speaker B: So, like, sounds to me like the pot dividends are pretty high no matter what. And how does your pick have any impact on what someone else's to going pick anyway?
+
+Speaker A: My pick doesn't have impact on other people's picks, but other people's picks are other. My pick should take into account what other people's. What. How other people are going to pick because of the. If that principle is correct. Because of that principle.
+
+Speaker B: All right, I'm gonna have to look into that because that doesn't make sense to me. Okay. It sounds to me like it's just you. You want to basically, like, if you can only pick each team once, you ideally want to save your pick for a given team for the week where it's the most sure.
+
+Speaker A: Yeah, that's not the conventional wisdom because the most sure team loses like 20 to 30% of the time still.
+
+Speaker B: Okay, but so why like in isolation in one specific week? Let's just say, let's say, say you're in the last week and you have a couple teams you can choose from. You would just pick one that's the most sure, right?
+
+Speaker A: Definitely. If you're in the last week, you much more favor like, realization of your equity. But throughout the early parts of the contest, you favor building like, maximizing equity over the chance to realize it, if that makes sense. Which is why I specifically corrected myself when I first introduced this by changing my words to maximizing value or whatever I say.
+
+Speaker B: Well, I'll have Claude explain it to me because what I was getting at was like, okay, in the last week, if you're the rational move is to choose the one that's the most sure, then in the second to last week, you basically want to. In the second to last week, let's say you have, you know, X teams remaining to pick from that you haven't picked yet. Then whichever one of them has the most sure, like Pick for the final week. Obviously, things change because week by week there's injuries and whatnot, which is, I'm sure, where it gets complicated. But let's say you have two teams left that you can choose from and you have two weeks left. You want to save the one that has the highest chance in the last week for the last week, and then you do the other one the first week. Or you just do, like, the product of their odds that has the greatest value over the course of the two weeks. So why doesn't that just cascade down all the way back to week one?
+
+Speaker A: Because the like. So it's all like, you have to first agree that the premise is to maximize expected value and not to maximize your chance of living. They're not the same. If you try and maximize the value, then if a very popular team loses, you just created much more upside for yourself by avoiding them. Because your expected value of the pool will went from 1 in 25,000 to 1 in 15,000.
+
+Speaker B: Right, but the alternative is that you die. Right, but so to me, it's like you either have a chance of making money or you don't have a chance of making money. And that's it.
+
+Speaker A: Yeah, that's. But that's not how it works. Statistically, if you, your chances of dying are input into the EV model, but so are if you win. What are your chances of taking money away?
+
+Speaker B: If you win, your chance of making money is 100%. And if you lose.
+
+Speaker A: No, that's not true at all. If you win and there's 25,000 people who won with you, your chance of winning is the same as it was last week. If you win and you manage to stay in the field when half the team got eliminated, then your chance of winning just doubled.
+
+Speaker B: Right? But like, let's say you said, like, the case of like, you choose the. And by the way, I just want to be clear here. Like, I'm not pushing hard because I don't.
+
+Speaker A: I do this with myself. I do this with myself all the time.
+
+Speaker B: I'm trying to, like, flesh this all out in detail so that it's all there in the transcript. And that I understand, but not because I don't believe that you are saying the right thing. I'm just. You were like, if you win and so does everyone else, let's just say like week one, for example, right? Week one, choose the most popular pick, like the most obvious pick, and so does everyone else, then you've all made it to week two and now you, like, the pool has not shrunk. At all.
+
+Speaker A: And so you basically gained no ground. You didn't win and you didn't improve, but you.
+
+Speaker B: You maintained the opportunity to win. So. So, yeah, but, like, let's say you were like, okay, like, I'm not gonna choose, you know, team A because everyone else is choosing team A and you choose team B instead in a different game, like, you know, whatever.
+
+Speaker A: Right. You would only do that if the odds that that team would win are relatively comparable. You're not taking A.
+
+Speaker B: But, okay, so let's say you take team B instead of team A. Or, sorry, Team A is playing team B. Team C is playing Team D. Okay.
+
+Speaker A: Okay.
+
+Speaker B: Team A is grossly favored against team B. So everyone's picking team A.
+
+Speaker A: Right.
+
+Speaker B: Team B, or, sorry, Team C is strongly favored against team D. And so you're like, I'm gonna take team C because it's still good odds, and everyone else is taking team A over B. If. If A loses and C wins, then I understand you now have a much higher equity because all these people are out. I totally get that. But if A wins and C wins, you've gained nothing. It's still the same thing as if you chose A.
+
+Speaker A: Probably, yes, but that's why there's also the third pillar, aside from win percentage and popularity.
+
+Speaker B: Wait, but hold on. So the next thing I was going
+
+Speaker A: to say was, and obviously after the event has occurred, in hindsight, you can tell that you gained nothing. But it was made with the right expected value projections in mind of the chances that A loses. Right. You can't just assume that once A has won and C has won. Yeah. Then it would be a bad pick. But when you made the pick, there were certain probabilities that dictated the risk and reward. And at the time, those were potentially correct for maximizing your value.
+
+Speaker B: But I just don't understand. Like, there is one reward, which is if you are alive at the end, then you get a slice of the pie.
+
+Speaker A: No, no, that's not it.
+
+Speaker B: I thought that. So what am I missing?
+
+Speaker A: You get a dollar figure at the end, and if there's 1,000 people left in the pool because of the year went well and everyone that was supposed to win one and you picked the right teams and everything, then you win, like, and I'd win, like, $1,000. But if there's 10 teams left, then I'd win $10,000. And those are not equal outcomes.
+
+Speaker B: But you don't have any impact on those outcomes. You don't have any influence on whether outcome A or outcome B happened.
+
+Speaker A: But you know the chances that each one does happen and the upside if it occurs. So you can multiply the percent chance that it happens by your payout in that situation.
+
+Speaker B: No, that doesn't make any sense, dude.
+
+Speaker A: Yes, it does. That's exactly what expected value is.
+
+Speaker B: I understand what expected value is, but dude, this isn't seemed to Lev. This is naseem to Lev. In a nutshell. You. You're either like I said, if you make it to the end, you get a slice of the pie and that's it. And you said, no, that's not it because you make it to the end and if 1000 people make it also, then you get X slice of the pie. And if 10 people, you get a bigger slice. That is just a detail under what I said, which is if you make it to the end, you get a slice of pie and that's it. That is true.
+
+Speaker A: That's fine. But it's a massively governing detail. But it changes. It changes what your goals should be.
+
+Speaker B: You. There is. If you have an ability to impact what other people pick, then I'm completely on board with this. But I don't believe that you have an ability to impact what other people pick.
+
+Speaker A: I don't have an ability to impact what other people pick if you don't
+
+Speaker B: have an ability to impact what other people pick. And the sample size large enough? You said there's 25,000 entries. Obviously I understand there could be duplicates for people with multiple entries, but let's just say, okay, 12,500 entries. Let's say everyone has two. There's 12,000.
+
+Speaker A: Most people have 10\.
+
+Speaker B: Most people have 10\.
+
+Speaker A: The mode is 10\.
+
+Speaker B: Okay, so. So then 2500 entries, it's still large. And
+
+Speaker A: 2500 people and unique entries.
+
+Speaker B: Well, actually. Yeah, yeah. So, sorry, What I'm talking about is actually duplicate like choices, not duplicate people. So there actually is more like 25,000. Yeah, yeah, 25,000. Unique choice, like strings of picks. Right?
+
+Speaker A: Yeah.
+
+Speaker B: You know, this path picked A and then picked B and then picked C. This one picked D and then C and then F. Whatever. The. Some of them are going to make it to the end and some of them aren't. Do you agree with me on that?
+
+Speaker A: I agree with you on that.
+
+Speaker B: Okay, great. So we're starting. Good. There. Now let's say you had one, just one entry. Okay.
+
+Speaker A: Yes.
+
+Speaker B: You're one of those 25,000 like paths in the set. And let's just say that actually you, I don't know, pull out in week two. I don't know, let's just imagine that's possible to just pull out. Just take your name out of the bucket.
+
+Speaker A: Okay.
+
+Speaker B: Is that going to change at all? The result of which paths were the ones that were going to end up being the ones that were correct?
+
+Speaker A: Is my withdrawal gonna change the path? Is that what you said?
+
+Speaker B: Yeah. So, like, imagine that there's, like, you know, there is an actual path that ends up being. Or there is. There are paths that end up being the ones that survive. It's not just one. There's multiple paths that survive.
+
+Speaker A: Right, right. Right.
+
+Speaker B: So imagine you could ask in advance, is this path a winning path?
+
+Speaker A: Okay.
+
+Speaker B: Okay. And right. Right at the. Right at the beginning, like, you lay out all the paths that everyone take is going to take for all 16 or whatever. Because, I mean, you make the pick each week, right?
+
+Speaker A: Yeah, but there's a couple special weeks. There's 20 picks in total.
+
+Speaker B: There's a couple special weeks.
+
+Speaker A: So instead of just having one pick per 18 weeks of the season, there's a Christmas pick and a Thanksgiving pick for those two days, because there's a bunch of games on those days. So there's actually 20 distinct weeks, even though there's only 18 weeks on those ones.
+
+Speaker B: If either pick hits, you stay alive.
+
+Speaker A: No, just meaning that the week is divided into two. And so you make one pick for the first half of the week and a second pick for the second half of the week. I see the rules are the same. There's just extra period.
+
+Speaker B: And so do you have to, like, save and make sure that you have a pick available for those. If it's only a subset of teams, you need to make sure you can pick one of those teams.
+
+Speaker A: Wait, say that again.
+
+Speaker B: If you can only pick a team once, do you need to make sure that for the, like, Christmas with the first half of the week, that you have a pick available to make for an active team on that part of the. Okay, so those are like gauntlets.
+
+Speaker A: Yes.
+
+Speaker B: Okay, so that's interesting.
+
+Speaker A: Okay, let me ask you one question. I know where you're coming from, and I. But what if this was 25,000 with 5,000 and the Chiefs are playing 9%, 90% favored to win, and they're. The last week. If you knew for certain 4,000, 999 entries were.
+
+Speaker B: Wait, hold on. You're breaking up. Jamie, hold on. You're breaking up a bunch. Yeah, just hold on. I'm going through, like, a bad sell at one second. Can you hear me right now?
+
+Speaker A: Yeah.
+
+Speaker B: Can you just say testing like, five Times in a row.
+
+Speaker A: Testing, testing, testing, testing, testing.
+
+Speaker B: Okay, go again. You're saying the Chiefs are playing.
+
+Speaker A: It's the final week of the season. There's 5,000 entries left. The Chiefs are playing the Dolphins, and the Chiefs are a 85% chance to win favorite. It's the only game in this theoretical situation. And if, and you have if this is your last pick. So at the end of this week, the contest will be over and the money will be distributed. If you knew that 4,999 of the remaining entries were going to pick the Chiefs because they had an 85% chance to win, would you pick the Dolphins or the Chiefs with your one entry?
+
+Speaker B: Right, I see that. Yeah. So you're. It's like if, if that pick turns out to be right, then you survive, but the pot is distributed more. Whereas if the other pick is the one that turns out to be right, then you have a higher pot. So you basically need to. And then you're saying the same thing. The same. If it, if it's obvious it makes sense for the last round, then it's effectively just a one level deeper on the second to last round and then another level deeper on the third to last round, etc.
+
+Speaker A: Exactly.
+
+Speaker B: Okay, I see that. I think, Yeah, I think it makes a lot more sense when you think of it from just the last round than try to think of it from the first.
+
+Speaker A: Yeah, I think so too. Because I mean, obviously using the most extreme example shows the statistical like, relevance of the principle. It's like, Obviously if you're 1 in 5,000 to win $25 million and you don't have, and you're only risking a 15% chance, like it just seems like it makes sense to do that.
+
+Speaker B: But also why you would need to recalibrate your strategy every week depending on what happened to the pool.
+
+Speaker A: 100%. 100%.
+
+Speaker B: It's not something that you can just solve from the schedule. I mean, obviously you would never do that anyway because, like people get injured. But like even in a, even in a perfect, in a perfect situation where no one ever gets injured and the weather is perfect, every single game, etc. There's no random variables, you still would not be able to come up with a a priori like strategy because it would depend on what everyone else picks each week. And do you get the results by the way, like after the. They publish what happened with everyone's picks?
+
+Speaker A: Yes, exactly.
+
+Speaker B: Okay,
+
+Speaker A: so what I have built so far is just a dashboard that tracks our picks and tries to do some of the math on simulating what we should pick each week. And it's super basic in terms of what it's actually like visually displaying. Um, but it tries to model the dynamics that we just talked about. Um, so the first one is win percentage. Um, they've done a lot of. Not me. Like, they like better than, I don't know, like sports analysts and whoever have done a lot of projecting out which models for win percentage are the best. There's like a bunch of very like complex and probably overly complex models for win percent which take into account weather and injury and home field and previous performance and all sorts of random stuff. ESPN has one, I think the best one is called NFL elo. But anyway, all of those are simply beat by the betting markets, which is actually insane. And they've done a lot of analysis on this. So the closing consensus spread averaged across the five leading sportsbooks in America, converted from odds to implied probability, has beat every model, including ESPN's, FBI, NFL Elo, and like the other most like esteemed ones. So, which is interesting and also not that surprising because, like, it is a market and the market is really, really good at allocating resources efficiently. And if you have a really good model, you're going to use it to bet and then that's going to change the market and then it's going to. To settle on a fair price.
+
+Speaker B: So anyway, when do you have to make your pick by. And is the. Are all those lines available at that moment?
+
+Speaker A: So you can, you, you can have live lines at that moment? They're not the final closing line because it happens good enough.
+
+Speaker B: And they're still better than the models at that moment, Right?
+
+Speaker A: They're still better than the models at the moment. And the delta between how good they are then and how good they are at closing is based on factors that happen between that moment and the game time, which you can't even account for anyway because your pick has to be locked.
+
+Speaker B: Yeah.
+
+Speaker A: So the one probability that is used in the app that Claude built for me is that formula just the consensus live lines. It's actually not the average of the top four. It's a median of the middle two because there's like refresh delays and stuff.
+
+Speaker B: Isn't the median to the same as the median of all of them?
+
+Speaker A: Sorry, it's the. Yeah, I'm saying it's the average of the middle two. So it's the median, not the average of the four.
+
+Speaker B: And where does that data come from?
+
+Speaker A: There's a. There's a lot of like, infrastructure around odds and betting. And there's something called the. I think it's called the Odds API or the Open Odds API.
+
+Speaker B: And it's just like, okay, so easy, API
+
+Speaker A: free, easy. And it pulls this for me. So that's pillar one and pillar two is future value. And right now I don't really actually remember how the app is calculating that. I think it's a combination of a power ranking, which is like some, some pre defined formula that like a bunch of NFL people use. It's like that plus the future odds that already exist, but a lot of that doesn't exist yet. So I don't know, I can't remember where they're getting that from, where the app's getting that from. And then the third one is Pick popularity, which arguably, as you're saying, maybe shouldn't be used, but it's currently being defined regardless. It's being modeled by.
+
+Speaker B: I was just failing to understand it until you gave me the final example. Now I get it.
+
+Speaker A: Okay, so that is being modeled by some formula that takes into account how people think about this whole thing is kind of circular, but it's, it's modeling like future value for each team and how much people account for that or discount that. And it's also modeling the win. Win percentage to the power of 10 because it's. People lean into. Hi. Okay. Because people lean into the favored teams heavily. So.
+
+Speaker B: Oh, and then what about number of people left?
+
+Speaker A: Yes, and. Sorry. Yes. And then number of people left. And we can see exactly how much availability each team has in the pool. So for example, week one, like 6,000 people took the Jaguars or something. So now the model takes into account that, you know, some 25% of the remaining teams, or even higher, maybe 30 or whatever, don't have the ability to use the Jaguars again.
+
+Speaker B: Okay, and how do you get that data?
+
+Speaker A: The casino releases it once a week at the end of the week.
+
+Speaker B: But I mean, what's the format of that information?
+
+Speaker A: I had, I just manually uploaded the first one. They tweet out a photo of each team and how much it was used. So when I first did this, I just pasted the photo into Claude. And I don't know right now what the app wants me to do is type it out in the dashboard each week. And so that probably needs to be change.
+
+Speaker B: Got it.
+
+Speaker A: But. Oh, and so then the last, I think the last.
+
+Speaker B: Wait, I'm sorry, can I ask you a question?
+
+Speaker A: Yeah.
+
+Speaker B: I'm just coming down the 405 into the valley right now, and I'm Early. Can I just come over to your place?
+
+Speaker A: Yeah.
+
+Speaker B: Okay. I'll be there in like five minutes.
+
+Speaker A: Okay. So the. The probability of each team winning times its pick popularity with some normalization is the expected value of taking that team.
+
+Speaker B: Okay.
+
+Speaker A: So that column is also in the dashboard. So primarily what the future forward looking dashboard includes is like win percentage and pick percentage for each team which equals its EV and then. And then a look each week up ahead at their schedule and their future value. And then there's a section on like the actual picks that were made. So that's like the kind of like entries my three entries view. And then there's a school wide like population view that shows like total entries and remaining and how they've lost and my expected value by week.
+
+Speaker B: Got it.
+
+Speaker A: I'll now be able to show you all this, but.
+
+Speaker B: Well. Or I should just park outside your place and stay in the car so we keep it on the Granola.
+
+Speaker A: I don't know that there's anything else to discuss.
+
+Speaker B: Well, no, the things to discuss are what are you looking to do with me? Like are you. So given what you already have that there are. Is it data entry and automation that's annoying? Friction and a problem. Is it even possible to make those better given that the data sources like a tweet with a photo or is it you want to improve the algorithm because it's not actually good enough and you want it to be able to do X, Y and Z? One idea I have is like do you actually have the past data for previous seasons where you could back test this kind of stuff?
+
+Speaker A: Yes, I. These are all very good. So the first answer is all of those is this is the short answer. I did do some back testing. I back tested in order to pick the win percentage formula and I back tested the popularity model which is currently has a few constants in it to fit but it's like overfitting from recent weeks, but to fit recent weeks. But still I like that. But my real request is more like higher level than that which is like I want to think about building the system that can a like receive GitHub issues or requests or whatever you want to call it from. From interested parties and then be triage them with other agents after maybe some approval from me or you or whoever. Like that's just a side Note but
+
+Speaker B: I.1 I was talking about with Ben's.
+
+Speaker A: Yeah.
+
+Speaker B: Huh. Okay.
+
+Speaker A: And I. I don't think that's necessary for the sake of this project, but I just want to try it for the sake of Itself.
+
+Speaker B: Okay.
+
+Speaker A: And also there. I know there's like, I didn't do any of this, but I know Claude has some, like, testing in there, but I don't know how good it is. And I want to. I want to use this to learn and go through that process.
+
+Speaker B: Maybe the testing of what?
+
+Speaker A: Like. Like there are unit tests to test changes that I'm making or requesting and Claude's doing, and then he runs the test, make sure that everything passes and that it's still doing what I want it to and things aren't breaking. There's like 30 something tests. I haven't even looked at them. I just know because I saw it doing that, but I know. I know that, like, you might have some more structure around how that works.
+
+Speaker B: Got it. Okay. And then the last question would be like, the season already started, but you want to basically continue to build and improve it throughout the season and use it this season on the current three pick pools or whatever that you're a part of, Right.
+
+Speaker A: Say that again.
+
+Speaker B: Like you said, you're part of three groups. There are three entries.
+
+Speaker A: Yeah.
+
+Speaker B: Like, you want to use this on those active three right now, this season, right?
+
+Speaker A: Oh, yeah.
+
+Speaker B: And then the last question is, if I help you, then are you gonna give me a slice?
+
+Speaker A: Sure. Yeah.
+
+Speaker B: I ain't gonna just help you make money for free.
+
+Speaker A: I promise you that. Neither of us are gonna make money.
+
+Speaker B: I mean, that's not.
+
+Speaker A: It's not your. What?
+
+Speaker B: It's not my intention if I sign on here.
+
+Speaker A: No. I'm just saying because it's so unlikely. I know, like, the only real. The only way you realize any money is by having, like, you know, even at. Even at 50\. 50 chances, which I think. Or. Sorry. Even at, like.
+
+Speaker B: Okay, wait, hold on. I'm gonna. I'm outside your gate, so I'm gonna hang up. I'm coming in.
+
+Speaker A: Okay.
+
+Speaker B: All right, bye.
