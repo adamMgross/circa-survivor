@@ -50,7 +50,10 @@ for (const g of games) {
   }
   if (!Object.keys(books).length) { skipped.push(`${away}@${home} (no two-sided ML at any book)`); continue; }
   const leg = (cur.legs[legId] ||= { games: {} });
-  leg.games[`${away}@${home}`] = { kickoff: g.commence_time, books };
+  const key = `${away}@${home}`, old = leg.games[key];
+  // keep the quotes from the previous refresh so the app can show how each number moved
+  const prev = old?.books ? { asof: Object.values(old.books).map((b) => b.asof).filter(Boolean).sort().pop() || null, books: old.books } : old?.prev || null;
+  leg.games[key] = { kickoff: g.commence_time, books, ...(prev ? { prev } : {}) };
   n++;
 }
 
@@ -71,6 +74,7 @@ try {
     filled++;
   }
 } catch (e) { console.warn("nflverse backfill skipped:", e.message); }
+cur.prevUpdatedAt = cur.updatedAt || null;
 cur.updatedAt = new Date(now).toISOString();
 writeFileSync(FILE, JSON.stringify(cur, null, 1) + "\n");
 console.log(`stored ${n} upcoming games (${started} already started, left as-is), backfilled ${filled} from nflverse closing lines`);

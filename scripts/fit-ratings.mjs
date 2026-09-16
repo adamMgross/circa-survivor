@@ -30,6 +30,8 @@ try {
   }
 } catch {}
 const { ratings, games: used } = fitRatings(games, { lambda: 3, prior });
-writeFileSync(OUT, JSON.stringify({ updatedAt: new Date().toISOString(), source: `market spreads: ${used} games this season (nflverse closing lines + current book), shrunk toward last season`, games: used, ratings }, null, 1) + "\n");
+let prevR = null;
+try { const o = JSON.parse(readFileSync(OUT, "utf8")); if (o.ratings) prevR = { updatedAt: o.updatedAt, ratings: o.ratings }; } catch {}
+writeFileSync(OUT, JSON.stringify({ updatedAt: new Date().toISOString(), prev: prevR, source: `market spreads: ${used} games this season (nflverse closing lines + current book), shrunk toward last season`, games: used, ratings }, null, 1) + "\n");
 const top = Object.entries(ratings).sort((a, b) => b[1] - a[1]);
 console.log(`ratings from ${used} games (${fromNflverse} nflverse, prior from ${last.length} 2025 games)`, "top:", top.slice(0, 5).map(([t, r]) => `${t} ${r}`).join(", "), "bottom:", top.slice(-3).map(([t, r]) => `${t} ${r}`).join(", "));

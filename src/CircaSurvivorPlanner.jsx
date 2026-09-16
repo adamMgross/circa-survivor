@@ -128,18 +128,29 @@ function computeEV(legId, rows) {
   for (const t of teams) { const r = rows[t]; r.ev = r.raw == null ? null : r.raw / mean; }
   return { coverage, covered, gamesTotal, blanked: false };
 }
-// Everything the model needs, assembled from the four data files.
-function buildData({ picks, actuals, odds, ratings }) {
+// Everything the model needs, assembled from the four data files. `prev` is the same view built from the quotes
+// and ratings of the refresh before the latest one (games without a stored previous quote reuse the current one).
+function buildData({ picks, actuals, odds, ratings }, withPrev = true) {
   const legs = {};
   for (const l of LEGS) {
     const r = linesFromOdds(odds?.legs?.[l.id]);
     if (r.games) legs[l.id] = { ...r, gamesTotal: Object.keys(OPP[l.id]).length / 2, books: odds.books || [] };
   }
-  return {
+  const data = {
     entries: Array.isArray(picks?.entries) ? picks.entries : [],
     legs, ratings: ratings?.ratings || null, ratingsAt: ratings?.updatedAt || null, ratingsSrc: ratings?.source || "", oddsAt: odds?.updatedAt || null,
-    actuals: actuals?.legs || {}, contest: actuals?.contest || { start: 0, pool: 0, share: 0 },
+    actuals: actuals?.legs || {}, contest: actuals?.contest || { start: 0, pool: 0, share: 0 }, prev: null,
   };
+  if (withPrev && odds?.legs) {
+    let any = false; const pl = {};
+    for (const [id, leg] of Object.entries(odds.legs)) {
+      const games = {};
+      for (const [k, g] of Object.entries(leg.games || {})) { if (g.prev?.books) { any = true; games[k] = { ...g, books: g.prev.books }; } else games[k] = g; }
+      pl[id] = { ...leg, games };
+    }
+    if (any) data.prev = buildData({ picks, actuals, odds: { ...odds, legs: pl, updatedAt: odds.prevUpdatedAt || null }, ratings: ratings?.prev?.ratings ? { ...ratings, ...ratings.prev, prev: null } : ratings }, false);
+  }
+  return data;
 }
 // lineFor: any line for display / future-value projection. Live market line if captured, else a projection
 // from power ratings (proj: true). NEVER use this for the selected leg's True Win % — use marketLine().
@@ -258,7 +269,7 @@ const CSS = `
 /* ---- tokens: paper, ink, one green ---- */
 .csp { --paper:#FBFAF7; --panel:#F4F2EC; --surface:#FFFFFF; --ink:#17181C; --ink2:#5B5E66; --ink3:#9A9DA6; --rule:#E7E5DF; --rule2:#D6D3CB;
   --green:#2F8F3E; --green-ink:#1C5E2A; --green-bg:#DDF3DC; --sand:#F3EFE3; --sand-ink:#7A5A12; --amber:#C98A1A; --red:#D64545;
-  --th:40px; --rh:34px; --cw:54px;
+  --th:40px; --rh:34px; --cw:52px;
   display:flex; flex-direction:column; height:100vh; background:var(--paper); color:var(--ink);
   font-family:"IBM Plex Sans", -apple-system, "Helvetica Neue", Helvetica, Arial, sans-serif; font-size:13px; font-variant-numeric:tabular-nums; -webkit-font-smoothing:antialiased; }
 .csp * { box-sizing:border-box; }
@@ -313,11 +324,14 @@ const CSS = `
 
 /* frozen left block: EV | W% | P% | Team */
 .csp .L { position:sticky; z-index:2; background:var(--surface); height:var(--rh); text-align:center; }
-.csp .L.ev { left:0; width:48px; min-width:48px; }
-.csp .L.wp { left:48px; width:48px; min-width:48px; }
-.csp .L.pp { left:96px; width:48px; min-width:48px; }
-.csp .L.team { left:144px; width:120px; min-width:120px; text-align:left; padding:0 8px 0 12px; font-weight:600; }
-.csp .L.entry { left:48px; width:216px; min-width:216px; text-align:center; padding:0; }
+.csp .L.ev { left:0; width:64px; min-width:64px; }
+.csp .L.wp { left:64px; width:64px; min-width:64px; }
+.csp .L.pp { left:128px; width:60px; min-width:60px; }
+.csp .L.team { left:188px; width:116px; min-width:116px; text-align:left; padding:0 8px 0 12px; font-weight:600; }
+.csp .L.entry { left:64px; width:240px; min-width:240px; text-align:center; padding:0; }
+.csp td.L.num .d { font-size:9px; font-weight:500; margin-left:3px; vertical-align:1px; letter-spacing:-0.01em; }
+.csp td.L.num .d.up { color:var(--green-ink); }
+.csp td.L.num .d.down { color:var(--red); }
 .csp th.L { z-index:4; background:var(--paper); }
 .csp th.L.team { text-align:left; padding-left:12px; }
 .csp th.L.entry { cursor:default; }
@@ -527,8 +541,35 @@ export default function CircaSurvivorPlanner() {
 
   const params = useMemo(() => fitParams(data), [data]);
   const merr = useMemo(() => modelError(data, params), [data, params]);
-  // per-team stats for selected leg
+  // per-team stats for selected leg (also computed on the previous refresh's data, for the deltas)
   const statsAll = useMemo(() => {
+    const cur = computeStats(legId, data, params);
+    const prev = data.prev ? computeStats(legId, data.prev, params) : null;
+    if (prev) for (const t of ALL_TEAMS) {
+      const a = cur.rows[t], b = prev.rows[t];
+      a.dEv = a.ev != null && b.ev != null ? a.ev - b.ev : null;
+      a.dWin = a.win != null && b.win != null ? a.win - b.win : null;
+      a.dPick = !a.act && a.pick != null && b.pick != null ? a.pick - b.pick : null;
+    }
+    return cur;
+  }, [data, legId, params]);
+  const { rows: stats, ev: evInfo } = statsAll;
+  const prevAt = data.prev?.oddsAt || null;
+  const maxFv = Math.max(0.01, ...ALL_TEAMS.map((t) => stats[t].fv || 0));
+  const topEv = Math.max(...ALL_TEAMS.map((t) => stats[t].ev || 0));
+  const evNote = evInfo.blanked ? `EV unavailable: only ${evInfo.covered}/${evInfo.gamesTotal} games have a Win % (need ${Math.round(EV_MIN_COVERAGE * 100)}%)`
+    : evInfo.coverage < 1 ? `EV based on ${evInfo.covered}/${evInfo.gamesTotal} games — teams without a Win % are left out, which flatters the rest` : null;
+  // small signed change shown next to a number; hidden when it rounds to nothing
+  const Delta = ({ v, kind }) => {
+    if (v == null) return null;
+    const pts = kind === "ev" ? v : v * 100;
+    if (Math.abs(pts) < (kind === "ev" ? 0.005 : 0.5)) return null;
+    const txt = kind === "ev" ? (pts > 0 ? "+" : "−") + Math.abs(pts).toFixed(2).replace(/^0/, "") : (pts > 0 ? "+" : "−") + Math.abs(Math.round(pts));
+    return <span className={"d " + (pts > 0 ? "up" : "down")}>{txt}</span>;
+  };
+  const dTip = (label, was) => (prevAt ? ` · ${label} ${was} at the previous refresh (${fmtTime(prevAt)})` : "");
+  void 0;
+  function computeStats(legId, data, params) {
     const act = data.actuals[legId];
     const actTot = act ? Object.values(act.picks).reduce((a, b) => a + b, 0) : 0;
     const modelP = modelPick(legId, data, params);
@@ -544,12 +585,7 @@ export default function CircaSurvivorPlanner() {
     const ev = computeEV(legId, rows);
     for (const t of ALL_TEAMS) rows[t].fv = data.ratings ? fvFor(legId, t, data) : null;
     return { rows, ev };
-  }, [data, legId, params]);
-  const { rows: stats, ev: evInfo } = statsAll;
-  const maxFv = Math.max(0.01, ...ALL_TEAMS.map((t) => stats[t].fv || 0));
-  const topEv = Math.max(...ALL_TEAMS.map((t) => stats[t].ev || 0));
-  const evNote = evInfo.blanked ? `EV unavailable: only ${evInfo.covered}/${evInfo.gamesTotal} games have a Win % (need ${Math.round(EV_MIN_COVERAGE * 100)}%)`
-    : evInfo.coverage < 1 ? `EV based on ${evInfo.covered}/${evInfo.gamesTotal} games — teams without a Win % are left out, which flatters the rest` : null;
+  }
 
   const sortedTeams = useMemo(() => {
     const k = sort.key, d = sort.dir;
@@ -572,7 +608,7 @@ export default function CircaSurvivorPlanner() {
   const Header = ({ top }) => (
     <>
       {top ? <><th className="L ev blank" /><th className="L entry" colSpan={3}>Entry</th></> : <>
-        <th className={"L ev" + (sort.key === "ev" ? " sorted" : "") + (evNote ? " partial" : "")} onClick={() => clickSort("ev")} title={evNote || `EV for ${legLabel(cur)}`}>EV{evNote ? "*" : ""}</th>
+        <th className={"L ev" + (sort.key === "ev" ? " sorted" : "") + (evNote ? " partial" : "")} onClick={() => clickSort("ev")} title={(evNote || `EV for ${legLabel(cur)}`) + (prevAt ? ` · small numbers = change since the previous refresh (${fmtTime(prevAt)})` : "")}>EV{evNote ? "*" : ""}</th>
         <th className={"L wp" + (sort.key === "wp" ? " sorted" : "")} onClick={() => clickSort("wp")} title={`True Win % — median of each book's no-vig moneyline probability · ${stamp}`}>W%</th>
         <th className={"L pp" + (sort.key === "pp" ? " sorted" : "")} onClick={() => clickSort("pp")} title="Circa pick popularity (actual once posted, field model before)">P%</th>
         <th className={"L team" + (sort.key === "team" ? " sorted" : "")} onClick={() => clickSort("team")}>Team</th>
@@ -675,9 +711,9 @@ export default function CircaSurvivorPlanner() {
               const inLeg = !!OPP[legId][team];
               return (
                 <tr key={team} className={usedLeg ? "gone" : ""}>
-                  <td className={"L ev num" + (st.ev == null ? " blank" : st.ev === topEv ? " top" : "")}>{st.ev == null ? (inLeg ? "–" : "") : st.ev.toFixed(2)}</td>
-                  <td className={"L wp num" + (st.win == null ? " blank" : "") + (st.status === "single" || st.status === "degraded" ? " weak" : "")} title={inLeg ? (st.win == null ? "No two-sided moneyline posted yet for this game" : `${pct(st.win)} — ${STATUS_TEXT[st.status]}${st.status !== "closing" ? ` (${st.n})` : ""} · e.g. ${st.refBook} ${fmtSp(st.ml)} / ${fmtSp(st.oppMl)}`) : ""}>{inLeg ? pct(st.win) : ""}</td>
-                  <td className={"L pp num" + (st.pick == null ? " blank" : "")} title={inLeg ? (st.act ? "Circa actual" : `field model ${pct(st.pm)}`) : ""}>{inLeg ? (st.pick == null ? "–" : st.pick < 0.005 ? "<1%" : Math.round(st.pick * 100) + "%") : ""}</td>
+                  <td className={"L ev num" + (st.ev == null ? " blank" : st.ev === topEv ? " top" : "")} title={st.dEv != null ? `EV ${st.ev.toFixed(2)}${dTip("was", (st.ev - st.dEv).toFixed(2))}` : ""}>{st.ev == null ? (inLeg ? "–" : "") : st.ev.toFixed(2)}<Delta v={st.dEv} kind="ev" /></td>
+                  <td className={"L wp num" + (st.win == null ? " blank" : "") + (st.status === "single" || st.status === "degraded" ? " weak" : "")} title={inLeg ? (st.win == null ? "No two-sided moneyline posted yet for this game" : `${pct(st.win)} — ${STATUS_TEXT[st.status]}${st.status !== "closing" ? ` (${st.n})` : ""} · e.g. ${st.refBook} ${fmtSp(st.ml)} / ${fmtSp(st.oppMl)}${st.dWin != null ? dTip("was", pct(st.win - st.dWin)) : ""}`) : ""}>{inLeg ? pct(st.win) : ""}<Delta v={st.dWin} kind="pct" /></td>
+                  <td className={"L pp num" + (st.pick == null ? " blank" : "")} title={inLeg ? (st.act ? "Circa actual" : `field model ${pct(st.pm)}${st.dPick != null ? dTip("was", pct(st.pick - st.dPick)) : ""}`) : ""}>{inLeg ? (st.pick == null ? "–" : st.pick < 0.005 ? "<1%" : Math.round(st.pick * 100) + "%") : ""}<Delta v={st.dPick} kind="pct" /></td>
                   <td className="L team" style={{ "--tc": COLORS[team][0] }}>
                     <span className="nm">{team}</span>
                     {TG_TEAMS.has(team) && <span className="hd" title="Plays in Thanksgiving leg" />}
