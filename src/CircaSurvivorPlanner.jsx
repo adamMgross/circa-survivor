@@ -368,10 +368,9 @@ const CSS = `
 .csp .L.fv { left:206px; width:66px; min-width:66px; }
 .csp .L.dili { left:272px; width:76px; min-width:76px; }
 .csp .L.team { left:348px; width:var(--teamw,100px); min-width:var(--teamw,100px); text-align:left; padding:0 8px 0 12px; font-weight:600; }
-.csp .L.entry { left:70px; width:var(--entryw,378px); min-width:var(--entryw,378px); text-align:center; padding:0; }
+.csp .L.entry { left:0; width:var(--entryw,448px); min-width:var(--entryw,448px); text-align:right; padding:0 16px 0 0; }
 .csp td.L.dili.num { color:var(--ink); font-weight:600; }
 .csp td.L.dili.pick1, .csp td.L.dili.pick2, .csp td.L.dili.pick3 { color:var(--green-ink); }
-.csp td.L.dili.pick1 { background:var(--green-bg); }
 .csp td.L.num .v { display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; height:100%; }
 .csp td.L.num .v .n { grid-column:2; }
 .csp td.L.num .d { grid-column:3; justify-self:start; width:0; overflow:visible; white-space:nowrap; padding-left:3px; font-size:9px; font-weight:500; letter-spacing:-0.01em; line-height:1; }
@@ -380,8 +379,6 @@ const CSS = `
 .csp th.L { z-index:4; background:var(--paper); }
 .csp th.L.team { text-align:left; padding-left:12px; }
 .csp th.L.entry { cursor:default; }
-.csp th.blank, .csp .sum td.blank { background:var(--panel); border-bottom-color:var(--panel); cursor:default; }
-.csp .sum td.L.blank { z-index:5; }
 .csp td.L.num { color:var(--ink2); }
 .csp td.L.num.blank { color:var(--ink3); }
 .csp td.L.ev.num { color:var(--ink); font-weight:600; }
@@ -412,9 +409,9 @@ const CSS = `
 
 
 /* entries panel on top of the board */
-.csp .sum td { position:sticky; top:var(--top); z-index:2; background:var(--panel); height:var(--rh); text-align:center; font-weight:500; cursor:pointer; border-bottom-color:var(--rule); }
+.csp .sum td { position:sticky; top:var(--top); z-index:2; background:var(--panel); height:var(--rh); text-align:center; font-weight:500; border-bottom-color:var(--rule); }
 .csp .sum td.L { z-index:5; background:var(--panel); }
-.csp .sum td.entry { color:var(--ink2); }
+.csp .sum td.entry { color:var(--ink2); font-weight:500; }
 .csp .sum td.entry.on { color:var(--ink); font-weight:600; }
 .csp .sum td.s { width:var(--cw); min-width:var(--cw); }
 .csp .sum td.s .chip { display:inline-block; min-width:38px; padding:2px 5px; border-radius:5px; font-size:11px; font-weight:600; line-height:16px; }
@@ -422,7 +419,7 @@ const CSS = `
 .csp .sum tr.gap td { height:8px; background:var(--paper); cursor:default; position:sticky; top:calc(var(--th) + var(--n) * var(--rh)); z-index:4; border-bottom:1px solid var(--rule); }
 .csp .sum tr.hdr2 th { top:calc(var(--th) + var(--n) * var(--rh) + 8px); }
 .csp .sum tr.hdr2 th.L { z-index:5; }
-.csp thead th.entry, .csp thead th.blank, .csp .sum tr:first-child td { border-top:none; }
+.csp thead th.entry, .csp .sum tr:first-child td { border-top:none; }
 
 /* ---- panels: sign-in, audit, editors ---- */
 .csp .panel { background:var(--surface); border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); padding:12px 16px; }
@@ -686,7 +683,7 @@ export default function CircaSurvivorPlanner() {
 
   const Header = ({ top }) => (
     <>
-      {top ? <><th className="L ev blank" /><th className="L entry" colSpan={5}>Entry</th></> : <>
+      {top ? <th className="L entry" colSpan={6}>Entry</th> : <>
         <th className={"L ev" + (sort.key === "ev" ? " sorted" : "") + (evNote ? " partial" : "")} onClick={() => clickSort("ev")} title={(evNote || `EV for ${legLabel(cur)}`) + (prevAt ? ` · small numbers = change since the previous refresh (${fmtTime(prevAt)})` : "")}>EV{evNote ? "*" : ""}</th>
         <th className={"L wp" + (sort.key === "wp" ? " sorted" : "")} onClick={() => clickSort("wp")} title={`True Win % — median of each book's no-vig moneyline probability · ${stamp}`}>W%</th>
         <th className={"L pp" + (sort.key === "pp" ? " sorted" : "")} onClick={() => clickSort("pp")} title="Circa pick popularity (actual once posted, field model before)">P%</th>
@@ -765,17 +762,16 @@ export default function CircaSurvivorPlanner() {
       {view === "planner" && <>
 
       <div className="wrap" ref={wrapRef} onScroll={(e) => e.currentTarget.classList.toggle("scrolled", e.currentTarget.scrollTop > 2)}>
-        <table style={{ "--n": entries.length, "--cw": fit.cw + "px", "--teamw": fit.teamw + "px", "--entryw": (278 + fit.teamw) + "px" }}>
+        <table style={{ "--n": entries.length, "--cw": fit.cw + "px", "--teamw": fit.teamw + "px", "--entryw": (348 + fit.teamw) + "px" }}>
           <thead><tr><Header top /></tr></thead>
           <tbody className="sum">
             {entries.map((e, i) => (
               <tr key={"s" + i} style={{ "--top": `calc(var(--th) + ${i} * var(--rh))` }}>
-                <td className="L ev blank" /><td className={"L entry" + (i === active ? " on" : "")} colSpan={5} onClick={() => setActive(i)} title="Click to plan this entry">{e.name}</td>
+                <td className={"L entry" + (i === active ? " on" : "")} colSpan={6}>{e.name}</td>
                 {LEGS.map((l) => {
                   const t = e.picks[l.id];
                   return (
-                    <td key={l.id} className={"s" + (t ? "" : " empty") + (l.id === legId ? " curcol" : "")}
-                        onClick={() => setActive(i)}>{t ? <span className="chip" style={{ background: COLORS[t][0], color: COLORS[t][1] }}>{t}</span> : "·"}</td>
+                    <td key={l.id} className={"s" + (t ? "" : " empty") + (l.id === legId ? " curcol" : "")}>{t ? <span className="chip" style={{ background: COLORS[t][0], color: COLORS[t][1] }}>{t}</span> : "·"}</td>
                   );
                 })}
               </tr>
