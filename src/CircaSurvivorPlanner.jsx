@@ -353,8 +353,7 @@ const CSS = `
 .csp th.sorted { color:var(--ink); font-weight:600; box-shadow:inset 0 -2px 0 var(--ink); }
 .csp th.hol { color:var(--sand-ink); }
 .csp th.hol .lsub { color:var(--sand-ink); opacity:.8; }
-.csp .wrap.scrolled thead th { box-shadow:0 4px 10px rgba(23,24,28,.06); }
-.csp .wrap.scrolled thead th.sorted { box-shadow:inset 0 -2px 0 var(--ink), 0 4px 10px rgba(23,24,28,.06); }
+.csp .wrap.scrolled tr.top th { box-shadow:0 4px 10px rgba(23,24,28,.06); }
 /* selected week: a tinted column */
 .csp th.curcol { background:var(--sand); color:var(--ink); font-weight:600; }
 .csp td.curcol { background:var(--sand); }
@@ -369,9 +368,11 @@ const CSS = `
 .csp .L.dili { left:272px; width:76px; min-width:76px; }
 .csp .L.team { left:348px; width:var(--teamw,100px); min-width:var(--teamw,100px); text-align:left; padding:0 8px 0 12px; font-weight:600; }
 .csp .L.pctl { left:0; width:348px; min-width:348px; text-align:left; padding:0 0 0 16px; }
-.csp th.L.pctl { cursor:default; color:var(--ink); }
-.csp .sum td.pctl { height:calc(var(--n) * var(--rh)); vertical-align:middle; }
+.csp .sum td.pctl { top:0; height:calc(var(--th) + var(--n) * var(--rh)); vertical-align:middle; border-bottom:1px solid var(--rule); z-index:6; }
+.csp .pctl .stack { display:flex; flex-direction:column; gap:10px; }
 .csp .pctl .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.csp .sum tr.top th { background:var(--panel); }
+.csp .sum tr.top th.curcol { background:#ECE8DA; }
 .csp .pctl select { height:28px; line-height:26px; padding:0 28px 0 10px; font:inherit; font-size:13px; font-weight:600; border-radius:7px; border:1px solid var(--rule2); color:var(--ink); cursor:pointer; appearance:none; -webkit-appearance:none; background:var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5l3.5 3.5 3.5-3.5' fill='none' stroke='%2317181C' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 9px center; }
 .csp .pctl select:hover { border-color:var(--ink3); }
 .csp .pctl .btn, .csp .pctl .ghost { height:28px; line-height:26px; padding:0 11px; border-radius:7px; }
@@ -429,7 +430,7 @@ const CSS = `
 .csp .sum tr.gap td { height:8px; background:var(--paper); cursor:default; position:sticky; top:calc(var(--th) + var(--n) * var(--rh)); z-index:4; border-bottom:1px solid var(--rule); }
 .csp .sum tr.hdr2 th { top:calc(var(--th) + var(--n) * var(--rh) + 8px); }
 .csp .sum tr.hdr2 th.L { z-index:5; }
-.csp thead th.entry, .csp thead th.pctl, .csp .sum tr:first-child td { border-top:none; }
+.csp .sum tr.top th, .csp .sum tr.top td { border-top:none; }
 
 /* ---- panels: sign-in, audit, editors ---- */
 .csp .panel { background:var(--surface); border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); padding:12px 16px; }
@@ -693,17 +694,7 @@ export default function CircaSurvivorPlanner() {
 
   const Header = ({ top }) => (
     <>
-      {top ? <>
-        <th className="L pctl" colSpan={5}>
-          <div className="row">
-            <select value={legId} onChange={(e) => setLegId(e.target.value)} title="Week to plan">
-              {LEGS.map((l) => <option key={l.id} value={l.id}>{legLabel(l)}</option>)}
-            </select>
-            <button className={"ghost" + (audit ? " on" : "")} onClick={() => setAudit((a) => !a)} title="How W%, P%, EV, DILI and the ratings are calculated for this week">Model details {audit ? "▴" : "▾"}</button>
-          </div>
-        </th>
-        <th className="L entry">Entry</th>
-      </> : <>
+      {top ? <th className="L entry">Entry</th> : <>
         <th className={"L ev" + (sort.key === "ev" ? " sorted" : "") + (evNote ? " partial" : "")} onClick={() => clickSort("ev")} title={(evNote || `EV for ${legLabel(cur)}`) + (prevAt ? ` · small numbers = change since the previous refresh (${fmtTime(prevAt)})` : "")}>EV{evNote ? "*" : ""}</th>
         <th className={"L wp" + (sort.key === "wp" ? " sorted" : "")} onClick={() => clickSort("wp")} title={`True Win % — median of each book's no-vig moneyline probability · ${stamp}`}>W%</th>
         <th className={"L pp" + (sort.key === "pp" ? " sorted" : "")} onClick={() => clickSort("pp")} title="Circa pick popularity (actual once posted, field model before)">P%</th>
@@ -774,16 +765,26 @@ export default function CircaSurvivorPlanner() {
 
       <div className="wrap" ref={wrapRef} onScroll={(e) => e.currentTarget.classList.toggle("scrolled", e.currentTarget.scrollTop > 2)}>
         <table style={{ "--n": entries.length, "--cw": fit.cw + "px", "--teamw": fit.teamw + "px" }}>
-          <thead><tr><Header top /></tr></thead>
           <tbody className="sum">
-            {entries.map((e, i) => (
-              <tr key={"s" + i} style={{ "--top": `calc(var(--th) + ${i} * var(--rh))` }}>
-                {i === 0 && <td className="L pctl" colSpan={5} rowSpan={entries.length}>
+            <tr className="top" style={{ "--top": "0px" }}>
+              <td className="L pctl" colSpan={5} rowSpan={entries.length + 1}>
+                <div className="stack">
+                  <div className="row">
+                    <select value={legId} onChange={(e) => setLegId(e.target.value)} title="Week to plan">
+                      {LEGS.map((l) => <option key={l.id} value={l.id}>{legLabel(l)}</option>)}
+                    </select>
+                    <button className={"ghost" + (audit ? " on" : "")} onClick={() => setAudit((a) => !a)} title="How W%, P%, EV, DILI and the ratings are calculated for this week">Model details {audit ? "▴" : "▾"}</button>
+                  </div>
                   <div className="row">
                     {canEdit && <button className="btn" onClick={updateLines} disabled={updating} title="Pull fresh moneylines from the sportsbooks now (otherwise twice a day)">{updating ? "Updating…" : "Update lines"}</button>}
                     <span className={"note" + (status ? (statusErr ? " err" : " msg") : "")} title={!status ? `Lines update automatically twice a day. ${stamp}` : undefined}>{!loaded ? "Loading…" : status || lineNote}</span>
                   </div>
-                </td>}
+                </div>
+              </td>
+              <Header top />
+            </tr>
+            {entries.map((e, i) => (
+              <tr key={"s" + i} style={{ "--top": `calc(var(--th) + ${i} * var(--rh))` }}>
                 <td className={"L entry" + (i === active ? " on" : "")}>{e.name}</td>
                 {LEGS.map((l) => {
                   const t = e.picks[l.id];
