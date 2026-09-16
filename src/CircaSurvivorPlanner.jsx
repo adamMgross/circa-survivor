@@ -362,13 +362,13 @@ const CSS = `
 
 /* frozen left block: EV | W% | P% | Team */
 .csp .L { position:sticky; z-index:2; background:var(--surface); height:var(--rh); text-align:center; }
-.csp .L.ev { left:0; width:64px; min-width:64px; }
-.csp .L.wp { left:64px; width:64px; min-width:64px; }
-.csp .L.pp { left:128px; width:60px; min-width:60px; }
-.csp .L.fv { left:188px; width:64px; min-width:64px; }
-.csp .L.dili { left:252px; width:64px; min-width:64px; }
-.csp .L.team { left:316px; width:var(--teamw,116px); min-width:var(--teamw,116px); text-align:left; padding:0 8px 0 12px; font-weight:600; }
-.csp .L.entry { left:64px; width:var(--entryw,368px); min-width:var(--entryw,368px); text-align:center; padding:0; }
+.csp .L.ev { left:0; width:70px; min-width:70px; }
+.csp .L.wp { left:70px; width:70px; min-width:70px; }
+.csp .L.pp { left:140px; width:66px; min-width:66px; }
+.csp .L.fv { left:206px; width:66px; min-width:66px; }
+.csp .L.dili { left:272px; width:76px; min-width:76px; }
+.csp .L.team { left:348px; width:var(--teamw,100px); min-width:var(--teamw,100px); text-align:left; padding:0 8px 0 12px; font-weight:600; }
+.csp .L.entry { left:70px; width:var(--entryw,378px); min-width:var(--entryw,378px); text-align:center; padding:0; }
 .csp td.L.dili.num { color:var(--ink); font-weight:600; }
 .csp td.L.dili.pick1, .csp td.L.dili.pick2, .csp td.L.dili.pick3 { color:var(--green-ink); }
 .csp td.L.dili.pick1 { background:var(--green-bg); }
@@ -663,10 +663,10 @@ export default function CircaSurvivorPlanner() {
 
   // stretch the week columns (and the Future column absorbs the remainder) so the board fills its container
   const wrapRef = useRef(null);
-  const [fit, setFit] = useState({ cw: 50, teamw: 116 });
+  const [fit, setFit] = useState({ cw: 48, teamw: 100 });
   useEffect(() => {
     const el = wrapRef.current; if (!el) return;
-    const LEFT = 316, MIN_CW = 50, MIN_TEAM = 116;
+    const LEFT = 348, MIN_CW = 48, MIN_TEAM = 100;
     const measure = () => {
       const w = el.clientWidth - LEFT - MIN_TEAM;
       const cw = Math.max(MIN_CW, Math.floor(w / LEGS.length));
@@ -765,7 +765,7 @@ export default function CircaSurvivorPlanner() {
       {view === "planner" && <>
 
       <div className="wrap" ref={wrapRef} onScroll={(e) => e.currentTarget.classList.toggle("scrolled", e.currentTarget.scrollTop > 2)}>
-        <table style={{ "--n": entries.length, "--cw": fit.cw + "px", "--teamw": fit.teamw + "px", "--entryw": (252 + fit.teamw) + "px" }}>
+        <table style={{ "--n": entries.length, "--cw": fit.cw + "px", "--teamw": fit.teamw + "px", "--entryw": (278 + fit.teamw) + "px" }}>
           <thead><tr><Header top /></tr></thead>
           <tbody className="sum">
             {entries.map((e, i) => (
