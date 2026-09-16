@@ -309,6 +309,7 @@ const CSS = `
 /* ---- tokens: paper, ink, one green ---- */
 .csp { --paper:#FBFAF7; --panel:#F4F2EC; --surface:#FFFFFF; --ink:#17181C; --ink2:#5B5E66; --ink3:#9A9DA6; --rule:#E7E5DF; --rule2:#D6D3CB;
   --green:#2F8F3E; --green-ink:#1C5E2A; --green-bg:#DDF3DC; --sand:#F3EFE3; --sand-ink:#7A5A12; --amber:#C98A1A; --red:#D64545;
+  --sel:#2F63C9; --sel-bg:#EAF0FA; --sel-bg2:#DCE6F6; --sel-bg3:#CFDCF2;
   --th:40px; --rh:34px; --cw:52px;
   display:flex; flex-direction:column; height:100vh; background:var(--paper); color:var(--ink);
   font-family:"IBM Plex Sans", -apple-system, "Helvetica Neue", Helvetica, Arial, sans-serif; font-size:13px; font-variant-numeric:tabular-nums; -webkit-font-smoothing:antialiased; }
@@ -356,12 +357,10 @@ const CSS = `
 .csp th.hol { color:var(--sand-ink); }
 .csp th.hol .lsub { color:var(--sand-ink); opacity:.8; }
 .csp .wrap.scrolled tr.top th { box-shadow:0 4px 10px rgba(23,24,28,.06); }
-/* selected week: inverted header, ink rules down both edges, faint tint inside */
-.csp th.curcol { background:var(--ink) !important; color:#fff; font-weight:600; border-left:2px solid var(--ink); border-right:2px solid var(--ink); }
-.csp th.curcol.sorted { box-shadow:inset 0 -2px 0 #fff; }
-.csp td.curcol { background:var(--sand); border-left:2px solid var(--ink); border-right:2px solid var(--ink); }
-.csp td.curcol.last { border-bottom:2px solid var(--ink); }
-.csp .sum td.curcol { background:#EEEADC; }
+/* selected week: a blue wash down the column, header in the same wash with a blue bar */
+.csp th.curcol { background:var(--sel-bg) !important; color:var(--sel); font-weight:600; box-shadow:inset 0 -2px 0 var(--sel); }
+.csp td.curcol { background:var(--sel-bg); }
+.csp .sum td.curcol { background:var(--sel-bg2); }
 
 /* frozen left block: EV | W% | P% | Team */
 .csp .L { position:sticky; z-index:2; background:var(--surface); height:var(--rh); text-align:center; }
@@ -429,10 +428,10 @@ const CSS = `
 .csp .sum td { position:sticky; top:var(--top); z-index:2; background:var(--panel); height:var(--rh); text-align:center; font-weight:500; border-bottom-color:var(--rule); }
 .csp .sum td.L { z-index:5; background:var(--panel); }
 .csp .sum td.entry { color:var(--ink2); font-weight:500; }
-.csp .sum tr.sel td { background:var(--surface); border-top:2px solid var(--ink); border-bottom:2px solid var(--ink); }
-.csp .sum tr.sel td.entry { color:var(--ink); font-weight:600; border-left:2px solid var(--ink); }
-.csp .sum tr.sel td.s:last-child { border-right:2px solid var(--ink); }
-.csp .sum tr.sel td.curcol { background:var(--sand); }
+/* selected entry: the same wash across the row, with a blue bar at its left edge */
+.csp .sum tr.sel td { background:var(--sel-bg); }
+.csp .sum tr.sel td.entry { color:var(--ink); font-weight:600; box-shadow:inset 3px 0 0 var(--sel); }
+.csp .sum tr.sel td.curcol { background:var(--sel-bg3); }
 .csp .sum td.s { width:var(--cw); min-width:var(--cw); }
 .csp .sum td.s .chip { display:inline-block; min-width:38px; padding:2px 5px; border-radius:5px; font-size:11px; font-weight:600; line-height:16px; }
 .csp .sum td.empty { color:var(--rule2); font-weight:400; }
@@ -838,7 +837,7 @@ export default function CircaSurvivorPlanner() {
                     const others = entries.map((e, i) => (i !== active && e.picks[l.id] === team ? i + 1 : null)).filter(Boolean).join("");
                     let cls = "c";
                     if (l.holiday) cls += " hol";
-                    if (l.id === legId) cls += " curcol" + (team === sortedTeams[sortedTeams.length - 1] ? " last" : "");
+                    if (l.id === legId) cls += " curcol";
                     if (!g) cls += " bye"; else if (pickHere) cls += " pick"; else if (dead) cls += " dead"; else if (legTaken) cls += " dim"; else if (!g.home) cls += " away";
                     const label = !g ? "" : (g.neutral ? "n " : g.home ? "vs " : "@ ") + g.opp;
                     const fav = ln && ln.spread != null && ln.spread < 0 && !dead ? Math.min(1, -ln.spread / 14) : 0;
