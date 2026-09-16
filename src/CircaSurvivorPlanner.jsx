@@ -633,8 +633,8 @@ export default function CircaSurvivorPlanner() {
         <th className={"L team" + (sort.key === "team" ? " sorted" : "")} onClick={() => clickSort("team")}>Team</th>
       </>}
       {LEGS.map((l) => (
-        <th key={l.id} className={(l.holiday ? "hol" : "") + (sort.key === l.id ? " sorted" : "") + (l.id === legId ? " curcol" : "")} title={`${legLabel(l)} — click to sort by spread`} onClick={() => clickSort(l.id)}>
-          {l.label}{l.sub && <span className="lsub">{l.sub}</span>}
+        <th key={l.id} className={(l.holiday ? "hol" : "") + (sort.key === l.id ? " sorted" : "") + (l.id === legId ? " curcol" : "")} title={`${legLabel(l)}${l.sub ? ` (${l.sub})` : ""} — click to sort by spread`} onClick={() => clickSort(l.id)}>
+          {l.label}
         </th>
       ))}
       {top ? <th className="fv blank" /> : <th className={"fv" + (sort.key === "fv" ? " sorted" : "")} onClick={() => clickSort("fv")} title="Future value: strong-favorite spots left after this leg">Future</th>}
