@@ -191,13 +191,15 @@ function fieldTimeline(data) {
 // ---------- Circa field model ----------
 // P(team) ∝ win^a · exp(-b · futureValue) · availability, over teams with a game that leg.
 // a = how hard the field chases the biggest favorite, b = how much it saves high-future-value teams.
-// Future value: how many strong-favorite spots the team offers in later weeks. Convex (power 1.5) so a
-// 78% near-lock counts far more than a 64% lean; the near-locks are the scarce resource.
-const FV_FLOOR = 0.6, FV_POWER = 1.5;
+// Future value: expected number of strong-favorite spots the team has left. Each later week counts by how much
+// it looks like a strong spot: ~75% projected win counts nearly fully, 65% counts half, 55% a little, 45% nothing.
+// Reads as "about N good weeks left" and separates a team with two usable weeks from one with none.
+const FV_MID = 0.65, FV_WIDTH = 0.05;
+const spotWeight = (win) => 1 / (1 + Math.exp(-(win - FV_MID) / FV_WIDTH));
 function fvFor(legId, team, data) {
   const idx = LEGS.findIndex((l) => l.id === legId);
   let fv = 0;
-  for (const l of LEGS.slice(idx + 1)) { const ln = lineFor(l.id, team, data); if (ln) fv += Math.pow(Math.max(0, ln.win - FV_FLOOR), FV_POWER); }
+  for (const l of LEGS.slice(idx + 1)) { const ln = lineFor(l.id, team, data); if (ln && ln.win != null) fv += spotWeight(ln.win); }
   return data?.ratings ? fv : 0;
 }
 
@@ -270,14 +272,14 @@ function modelPick(legId, data, params) {
 // count a little), because EV depends almost entirely on the few teams the field piles onto.
 // A mild penalty holds the knobs near PRIOR while there are only a week or two of actuals; once several
 // weeks accumulate the evidence outweighs it and the knobs go wherever Circa's numbers say.
-const PRIOR = { a: 8, b: 1.5 };
+const PRIOR = { a: 8, b: 0.1 };
 const PRIOR_WEIGHT = 0.5;        // roughly "one week of evidence"
 const SHARE_FLOOR = 0.02;
 function fitParams(data) {
   const legs = Object.keys(data.actuals).filter((id) => OPP[id] && Object.keys(OPP[id]).some((t) => marketLine(id, t, data)));
   if (!legs.length) return { ...PRIOR, legs: 0, err: null };
   let best = null;
-  for (let a = 2; a <= 24; a += 1) for (let b = 0; b <= 4; b += 0.25) {
+  for (let a = 2; a <= 24; a += 1) for (let b = 0; b <= 0.5; b += 0.025) {
     let err = 0;
     for (const id of legs) {
       const act = data.actuals[id], tot = Object.values(act.picks).reduce((x, y) => x + y, 0);
@@ -700,7 +702,7 @@ export default function CircaSurvivorPlanner() {
         <th className={"L ev" + (sort.key === "ev" ? " sorted" : "") + (evNote ? " partial" : "")} onClick={() => clickSort("ev")} title={(evNote || `EV for ${legLabel(cur)}`) + (prevAt ? ` · small numbers = change since the previous refresh (${fmtTime(prevAt)})` : "")}>EV{evNote ? "*" : ""}</th>
         <th className={"L wp" + (sort.key === "wp" ? " sorted" : "")} onClick={() => clickSort("wp")} title={`True Win % — median of each book's no-vig moneyline probability · ${stamp}`}>W%</th>
         <th className={"L pp" + (sort.key === "pp" ? " sorted" : "")} onClick={() => clickSort("pp")} title="Circa pick popularity (actual once posted, field model before)">P%</th>
-        <th className={"L fv" + (sort.key === "fv" ? " sorted" : "")} onClick={() => clickSort("fv")} title="Future value: strong-favorite spots left after this week (near-locks count most)">Future</th>
+        <th className={"L fv" + (sort.key === "fv" ? " sorted" : "")} onClick={() => clickSort("fv")} title="Future value: about how many strong-favorite weeks the team has left after this one">Future</th>
         <th className={"L dili" + (sort.key === "dili" ? " sorted" : "")} onClick={() => clickSort("dili")} title={`DILI — "do I love it?": this week's EV net of what the team is worth to keep, for this entry. Style: ${style}${prevAt ? ` · small numbers = change since ${fmtTime(prevAt)}` : ""}`}>DILI</th>
         <th className={"L team" + (sort.key === "team" ? " sorted" : "")} onClick={() => clickSort("team")}>Team</th>
       </>}
@@ -810,8 +812,8 @@ export default function CircaSurvivorPlanner() {
                   <td className={"L ev num" + (st.ev == null ? " blank" : st.ev === topEv ? " top" : "")} title={st.dEv != null ? `EV ${st.ev.toFixed(2)}${dTip("was", (st.ev - st.dEv).toFixed(2))}` : ""}><Num d={st.dEv} kind="ev">{st.ev == null ? (inLeg ? "–" : "") : st.ev.toFixed(2)}</Num></td>
                   <td className={"L wp num" + (st.win == null ? " blank" : "") + (st.status === "single" || st.status === "degraded" ? " weak" : "")} title={inLeg ? (st.win == null ? "No two-sided moneyline posted yet for this game" : `${pct(st.win)} — ${STATUS_TEXT[st.status]}${st.status !== "closing" ? ` (${st.n})` : ""} · e.g. ${st.refBook} ${fmtSp(st.ml)} / ${fmtSp(st.oppMl)}${st.dWin != null ? dTip("was", pct(st.win - st.dWin)) : ""}`) : ""}><Num d={st.dWin} kind="pct">{inLeg ? pct(st.win) : ""}</Num></td>
                   <td className={"L pp num" + (st.pick == null ? " blank" : "")} title={inLeg ? (st.act ? "Circa actual" : `field model ${pct(st.pm)}${st.dPick != null ? dTip("was", pct(st.pick - st.dPick)) : ""}`) : ""}><Num d={st.dPick} kind="pct">{inLeg ? (st.pick == null ? "–" : st.pick < 0.005 ? "<1%" : Math.round(st.pick * 100) + "%") : ""}</Num></td>
-                  <td className={"L fv num" + (st.fv == null ? " blank" : "")} title={st.fv == null ? "No power ratings yet" : `${st.fv.toFixed(2)} — later weeks above ${Math.round(FV_FLOOR * 100)}% win chance, near-locks weighted most`}>
-                    <span className="v"><span className="n">{st.fv == null ? "–" : st.fv.toFixed(2)}</span></span>
+                  <td className={"L fv num" + (st.fv == null ? " blank" : "")} title={st.fv == null ? "No power ratings yet" : `About ${st.fv.toFixed(1)} strong-favorite weeks left after this one (a 75% spot counts ~1, 65% counts ½, 55% a little)`}>
+                    <span className="v"><span className="n">{st.fv == null ? "–" : st.fv.toFixed(1)}</span></span>
                   </td>
                   <td className={"L dili num" + (st.dili == null ? " blank" : "") + (st.diliRank ? " pick" + st.diliRank : "")} title={st.dili == null ? (inLeg ? (usedLeg ? "Already used" : "Needs an EV") : "") : diliTip(st)}>
                     <Num d={st.dDili} kind="ev">{st.dili == null ? (inLeg ? "–" : "") : st.dili.toFixed(2)}</Num>
@@ -890,7 +892,7 @@ function AuditPanel({ legId, data, params, merr, stats, evNote, style, pickStyle
         </div>
         <div className="sec">
           <h4>Future value and ratings</h4>
-          <p>Future value sums later weeks above {Math.round(FV_FLOOR * 100)}% win chance, curved so near-locks count most. Ratings: {data.ratingsSrc || "none"}{data.ratingsAt ? <>, updated {fmtTime(data.ratingsAt)}</> : null}. Projections never feed W%.</p>
+          <p>Future value is the expected number of strong-favorite weeks left: each later week counts by how much it looks like a strong spot (about 1 at 75%, ½ at 65%, a little at 55%). Ratings: {data.ratingsSrc || "none"}{data.ratingsAt ? <>, updated {fmtTime(data.ratingsAt)}</> : null}. Projections never feed W%.</p>
         </div>
       </div>
       <h4 className="th">This week, by team</h4>
@@ -902,7 +904,7 @@ function AuditPanel({ legId, data, params, merr, stats, evNote, style, pickStyle
               <td>{t}</td>
               <td className="mut">{stats[t].ml != null ? `${mlTxt(stats[t].ml)} / ${mlTxt(stats[t].oppMl)}` : "–"}</td>
               <td>{pc(stats[t].win)}</td>
-              <td>{stats[t].fv == null ? "–" : stats[t].fv.toFixed(2)}</td>
+              <td>{stats[t].fv == null ? "–" : stats[t].fv.toFixed(1)}</td>
               <td title="share of the live field that has not used this team yet">{pc(av[t])}</td>
               <td className="mut">{pc(stats[t].pm, 1)}</td>
               <td>{pc(stats[t].pick, 1)}</td>

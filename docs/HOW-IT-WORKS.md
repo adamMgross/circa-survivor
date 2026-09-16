@@ -40,8 +40,10 @@ each with its own pick. Each team once per entry. Tie = loss. Schedule is hard-c
 `EV = W / (P + Σ over other games of P·W)`, then scaled so the pick-weighted average = 1.00 (Atlas / SurvivorGrid convention).
 
 ## Future value
-Sum over legs *after* the selected one of max(0, projected win − 0.60)^1.5. Convex, so a 78% near-lock counts far
-more than a 64% lean: the near-locks are the scarce resource.
+Expected number of strong-favorite weeks left after the selected one. Each later week counts by how much it looks
+like a strong spot, a logistic curve centred at 65% with a 5-point width: about 1 at 75%, ½ at 65%, a little at
+55%, nothing at 45%. Reads as "about N good weeks left" and separates a team with two usable weeks from one with
+none.
 
 ## Power ratings prior
 The ridge fit is anchored to the Super Bowl futures market (implied title probabilities, averaged across books,

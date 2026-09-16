@@ -32,9 +32,9 @@ if (legWithLines) {
 const params = fitParams(data);
 ok("fitParams returns a,b", Number.isFinite(params.a) && Number.isFinite(params.b), `a=${params.a} b=${params.b} legs=${params.legs}`);
 // with only a week or two of actuals the knobs stay near the prior (8 / 1.5) instead of running to a corner
-ok("early-season knobs held near prior", params.legs <= 2 ? params.a >= 5 && params.a <= 12 && params.b >= 0.5 && params.b <= 3 : true, `a=${params.a} b=${params.b}`);
+ok("early-season knobs held near prior", params.legs <= 2 ? params.a >= 5 && params.a <= 12 && params.b >= 0.025 && params.b <= 0.25 : true, `a=${params.a} b=${params.b}`);
 // no actuals at all → the prior itself
-ok("no actuals → prior", (() => { const p = fitParams({ ...data, actuals: {} }); return p.a === 8 && p.b === 1.5 && p.legs === 0; })());
+ok("no actuals → prior", (() => { const p = fitParams({ ...data, actuals: {} }); return p.a === 8 && p.b === 0.1 && p.legs === 0; })());
 // share weighting: the fit must match the top actual team closely (Week 1: JAX 32.5%)
 if (actuals.legs.W1) { const m = modelPick("W1", data, params); ok("top team within 6 pts of actual", Math.abs(m.JAX - 8127 / 25017) < 0.06, `JAX model ${(100 * m.JAX).toFixed(1)}% vs 32.5%`); }
 if (fails) { console.log(`${fails} FAILED`); process.exit(1); }

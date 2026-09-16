@@ -28,8 +28,9 @@ ok("style multipliers ordered", STYLE.now < STYLE.balanced && STYLE.balanced < S
 const late = { ...data, legs: { W17: { ...data.legs.W2, lines: Object.fromEntries(Object.entries(data.legs.W2.lines).filter(([t]) => OPP.W17[t])) } } };
 ok("late-season k is small", (() => { const r = {}; for (const t of ALL_TEAMS) r[t] = { win: late.legs.W17.lines[t]?.win ?? null, pick: 1 / 16, fv: 0 }; computeEV("W17", r); const k = computeDili("W17", r, late, new Set(), "future"); return k < 0.5; })());
 
-// convex future value: a 78% spot outweighs two 64% spots
-ok("future value is convex", Math.pow(0.18, 1.5) > 2 * Math.pow(0.04, 1.5));
+// future value = expected strong spots: a stud has several, a flat team a few at most, and it separates a 67% week from a 62% one
+ok("stud has more spots left than a flat team", fvFor("W2", "KC", data) > fvFor("W2", "CIN", data) + 3, `KC ${fvFor("W2", "KC", data).toFixed(1)} CIN ${fvFor("W2", "CIN", data).toFixed(1)}`);
+ok("future value on a readable scale", fvFor("W2", "KC", data) < 18 && fvFor("W2", "KC", data) > 1);
 
 // futures prior: monotone in title odds, centered, on a points scale
 const probs = Object.fromEntries(ALL_TEAMS.map((t, i) => [t, 0.002 + 0.006 * i]));
