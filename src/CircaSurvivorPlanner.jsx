@@ -319,7 +319,7 @@ const CSS = `
 .csp .bar .left { display:flex; align-items:center; gap:18px; min-width:0; flex-wrap:wrap; }
 .csp .ctl { display:flex; flex-direction:column; align-items:flex-end; gap:5px; flex-shrink:0; }
 .csp .ctl .row { display:flex; gap:8px; align-items:center; min-height:32px; }
-.csp .ctl .note { font-size:11px; color:var(--ink3); padding-right:2px; min-height:14px; line-height:14px; }
+.csp .ctl .note { font-size:12px; color:var(--ink3); padding-right:6px; }
 .csp .ctl .note.msg { color:var(--ink); }
 .csp .ctl .note.err { color:var(--red); }
 .csp .who { font-size:12px; color:var(--ink2); }
@@ -368,7 +368,17 @@ const CSS = `
 .csp .L.fv { left:206px; width:66px; min-width:66px; }
 .csp .L.dili { left:272px; width:76px; min-width:76px; }
 .csp .L.team { left:348px; width:var(--teamw,100px); min-width:var(--teamw,100px); text-align:left; padding:0 8px 0 12px; font-weight:600; }
-.csp .L.entry { left:0; width:var(--entryw,448px); min-width:var(--entryw,448px); text-align:right; padding:0 16px 0 0; }
+.csp .L.pctl { left:0; width:348px; min-width:348px; text-align:left; padding:0 0 0 16px; }
+.csp th.L.pctl { cursor:default; color:var(--ink); }
+.csp .sum td.pctl { height:calc(var(--n) * var(--rh)); vertical-align:middle; }
+.csp .pctl .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.csp .pctl select { height:28px; line-height:26px; padding:0 28px 0 10px; font:inherit; font-size:13px; font-weight:600; border-radius:7px; border:1px solid var(--rule2); color:var(--ink); cursor:pointer; appearance:none; -webkit-appearance:none; background:var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5l3.5 3.5 3.5-3.5' fill='none' stroke='%2317181C' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 9px center; }
+.csp .pctl select:hover { border-color:var(--ink3); }
+.csp .pctl .btn, .csp .pctl .ghost { height:28px; line-height:26px; padding:0 11px; border-radius:7px; }
+.csp .pctl .note { font-size:11px; color:var(--ink3); white-space:normal; line-height:1.3; max-width:170px; }
+.csp .pctl .note.msg { color:var(--ink); }
+.csp .pctl .note.err { color:var(--red); }
+.csp .L.entry { left:348px; width:var(--teamw,116px); min-width:var(--teamw,116px); text-align:right; padding:0 10px 0 0; }
 .csp td.L.dili.num { color:var(--ink); font-weight:600; }
 .csp td.L.dili.pick1, .csp td.L.dili.pick2, .csp td.L.dili.pick3 { color:var(--green-ink); }
 .csp td.L.num .v { display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; height:100%; }
@@ -419,7 +429,7 @@ const CSS = `
 .csp .sum tr.gap td { height:8px; background:var(--paper); cursor:default; position:sticky; top:calc(var(--th) + var(--n) * var(--rh)); z-index:4; border-bottom:1px solid var(--rule); }
 .csp .sum tr.hdr2 th { top:calc(var(--th) + var(--n) * var(--rh) + 8px); }
 .csp .sum tr.hdr2 th.L { z-index:5; }
-.csp thead th.entry, .csp .sum tr:first-child td { border-top:none; }
+.csp thead th.entry, .csp thead th.pctl, .csp .sum tr:first-child td { border-top:none; }
 
 /* ---- panels: sign-in, audit, editors ---- */
 .csp .panel { background:var(--surface); border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); padding:12px 16px; }
@@ -660,10 +670,10 @@ export default function CircaSurvivorPlanner() {
 
   // stretch the week columns (and the Future column absorbs the remainder) so the board fills its container
   const wrapRef = useRef(null);
-  const [fit, setFit] = useState({ cw: 48, teamw: 100 });
+  const [fit, setFit] = useState({ cw: 48, teamw: 116 });
   useEffect(() => {
     const el = wrapRef.current; if (!el) return;
-    const LEFT = 348, MIN_CW = 48, MIN_TEAM = 100;
+    const LEFT = 348, MIN_CW = 48, MIN_TEAM = 116;
     const measure = () => {
       const w = el.clientWidth - LEFT - MIN_TEAM;
       const cw = Math.max(MIN_CW, Math.floor(w / LEGS.length));
@@ -683,7 +693,17 @@ export default function CircaSurvivorPlanner() {
 
   const Header = ({ top }) => (
     <>
-      {top ? <th className="L entry" colSpan={6}>Entry</th> : <>
+      {top ? <>
+        <th className="L pctl" colSpan={5}>
+          <div className="row">
+            <select value={legId} onChange={(e) => setLegId(e.target.value)} title="Week to plan">
+              {LEGS.map((l) => <option key={l.id} value={l.id}>{legLabel(l)}</option>)}
+            </select>
+            <button className={"ghost" + (audit ? " on" : "")} onClick={() => setAudit((a) => !a)} title="How W%, P%, EV, DILI and the ratings are calculated for this week">Model details {audit ? "▴" : "▾"}</button>
+          </div>
+        </th>
+        <th className="L entry">Entry</th>
+      </> : <>
         <th className={"L ev" + (sort.key === "ev" ? " sorted" : "") + (evNote ? " partial" : "")} onClick={() => clickSort("ev")} title={(evNote || `EV for ${legLabel(cur)}`) + (prevAt ? ` · small numbers = change since the previous refresh (${fmtTime(prevAt)})` : "")}>EV{evNote ? "*" : ""}</th>
         <th className={"L wp" + (sort.key === "wp" ? " sorted" : "")} onClick={() => clickSort("wp")} title={`True Win % — median of each book's no-vig moneyline probability · ${stamp}`}>W%</th>
         <th className={"L pp" + (sort.key === "pp" ? " sorted" : "")} onClick={() => clickSort("pp")} title="Circa pick popularity (actual once posted, field model before)">P%</th>
@@ -728,19 +748,10 @@ export default function CircaSurvivorPlanner() {
         </div>
         <div className="ctl">
           <div className="row">
-            {view === "planner" && <>
-              <select value={legId} onChange={(e) => setLegId(e.target.value)} title="Week to plan">
-                {LEGS.map((l) => <option key={l.id} value={l.id}>{legLabel(l)}</option>)}
-              </select>
-              <button className={"ghost" + (audit ? " on" : "")} onClick={() => setAudit((a) => !a)} title="How W%, P%, EV and the ratings are calculated for this week">
-                Model details {audit ? "▴" : "▾"}
-              </button>
-              {canEdit && <button className="btn" onClick={updateLines} disabled={updating} title="Pull fresh moneylines from the sportsbooks now (otherwise twice a day)">{updating ? "Updating…" : "Update lines"}</button>}
-            </>}
+            {view === "actuals" && (status || !loaded) && <span className={"note" + (statusErr ? " err" : " msg")}>{!loaded ? "Loading…" : status}</span>}
             {canEdit ? <><span className="who">{user}</span><button className="link" onClick={signOut}>Sign out</button></>
               : <button className="link" onClick={() => setSignin((s) => !s)}>Sign in to edit</button>}
           </div>
-          <div className={"note" + (status ? (statusErr ? " err" : " msg") : "")} title={view === "planner" && !status ? `Lines update automatically twice a day. ${stamp}` : undefined}>{!loaded ? "Loading…" : status ? status : view === "planner" ? lineNote : ""}</div>
         </div>
       </div>
 
@@ -762,12 +773,18 @@ export default function CircaSurvivorPlanner() {
       {view === "planner" && <>
 
       <div className="wrap" ref={wrapRef} onScroll={(e) => e.currentTarget.classList.toggle("scrolled", e.currentTarget.scrollTop > 2)}>
-        <table style={{ "--n": entries.length, "--cw": fit.cw + "px", "--teamw": fit.teamw + "px", "--entryw": (348 + fit.teamw) + "px" }}>
+        <table style={{ "--n": entries.length, "--cw": fit.cw + "px", "--teamw": fit.teamw + "px" }}>
           <thead><tr><Header top /></tr></thead>
           <tbody className="sum">
             {entries.map((e, i) => (
               <tr key={"s" + i} style={{ "--top": `calc(var(--th) + ${i} * var(--rh))` }}>
-                <td className={"L entry" + (i === active ? " on" : "")} colSpan={6}>{e.name}</td>
+                {i === 0 && <td className="L pctl" colSpan={5} rowSpan={entries.length}>
+                  <div className="row">
+                    {canEdit && <button className="btn" onClick={updateLines} disabled={updating} title="Pull fresh moneylines from the sportsbooks now (otherwise twice a day)">{updating ? "Updating…" : "Update lines"}</button>}
+                    <span className={"note" + (status ? (statusErr ? " err" : " msg") : "")} title={!status ? `Lines update automatically twice a day. ${stamp}` : undefined}>{!loaded ? "Loading…" : status || lineNote}</span>
+                  </div>
+                </td>}
+                <td className={"L entry" + (i === active ? " on" : "")}>{e.name}</td>
                 {LEGS.map((l) => {
                   const t = e.picks[l.id];
                   return (
@@ -776,7 +793,7 @@ export default function CircaSurvivorPlanner() {
                 })}
               </tr>
             ))}
-            <tr className="gap"><td colSpan={LEGS.length + 6}></td></tr>
+            <tr className="gap"><td colSpan={LEGS.length + 8}></td></tr>
             <tr className="hdr2"><Header /></tr>
           </tbody>
           <tbody>
