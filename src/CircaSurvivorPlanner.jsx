@@ -367,18 +367,20 @@ const CSS = `
 .csp .L.fv { left:206px; width:66px; min-width:66px; }
 .csp .L.dili { left:272px; width:76px; min-width:76px; }
 .csp .L.team { left:348px; width:var(--teamw,100px); min-width:var(--teamw,100px); text-align:left; padding:0 8px 0 12px; font-weight:600; }
-.csp .L.pctl { left:0; width:348px; min-width:348px; text-align:left; padding:0 0 0 16px; }
-.csp .sum td.pctl { top:0; height:calc(var(--th) + var(--n) * var(--rh)); vertical-align:middle; border-bottom:1px solid var(--rule); z-index:6; }
-.csp .pctl .stack { display:flex; flex-direction:column; gap:10px; }
-.csp .pctl .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.csp .L.pctl { left:0; width:348px; min-width:348px; padding:0; }
+.csp .sum td.pctl { top:0; height:calc(var(--th) + var(--n) * var(--rh)); border-bottom:1px solid var(--rule); }
+/* the board's controls: a plain block pinned over the table's top-left corner, laid out on its own terms */
+.csp .corner { position:sticky; top:0; left:0; height:0; z-index:7; }
+.csp .controls { position:absolute; left:0; top:0; width:348px; height:calc(var(--th) + var(--n) * var(--rh)); box-sizing:border-box; padding:0 12px 0 16px; background:var(--panel); border-bottom:1px solid var(--rule); display:flex; flex-direction:column; justify-content:center; gap:10px; }
+.csp .controls .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
 .csp .sum tr.top th { background:var(--panel); }
 .csp .sum tr.top th.curcol { background:#ECE8DA; }
-.csp .pctl select { height:28px; line-height:26px; padding:0 28px 0 10px; font:inherit; font-size:13px; font-weight:600; border-radius:7px; border:1px solid var(--rule2); color:var(--ink); cursor:pointer; appearance:none; -webkit-appearance:none; background:var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5l3.5 3.5 3.5-3.5' fill='none' stroke='%2317181C' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 9px center; }
-.csp .pctl select:hover { border-color:var(--ink3); }
-.csp .pctl .btn, .csp .pctl .ghost { height:28px; line-height:26px; padding:0 11px; border-radius:7px; }
-.csp .pctl .note { font-size:11px; color:var(--ink3); white-space:normal; line-height:1.3; max-width:170px; }
-.csp .pctl .note.msg { color:var(--ink); }
-.csp .pctl .note.err { color:var(--red); }
+.csp .controls select { height:28px; line-height:26px; padding:0 28px 0 10px; font:inherit; font-size:13px; font-weight:600; border-radius:7px; border:1px solid var(--rule2); color:var(--ink); cursor:pointer; appearance:none; -webkit-appearance:none; background:var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5l3.5 3.5 3.5-3.5' fill='none' stroke='%2317181C' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 9px center; }
+.csp .controls select:hover { border-color:var(--ink3); }
+.csp .controls .btn, .csp .controls .ghost { height:28px; line-height:26px; padding:0 11px; border-radius:7px; }
+.csp .controls .note { font-size:11px; color:var(--ink3); white-space:normal; line-height:1.3; max-width:180px; }
+.csp .controls .note.msg { color:var(--ink); }
+.csp .controls .note.err { color:var(--red); }
 .csp .L.entry { left:348px; width:var(--teamw,116px); min-width:var(--teamw,116px); text-align:right; padding:0 10px 0 0; }
 .csp td.L.dili.num { color:var(--ink); font-weight:600; }
 .csp td.L.dili.pick1, .csp td.L.dili.pick2, .csp td.L.dili.pick3 { color:var(--green-ink); }
@@ -763,24 +765,25 @@ export default function CircaSurvivorPlanner() {
       {view === "planner" && audit && <AuditPanel legId={legId} data={data} params={params} merr={merr} stats={stats} evNote={evNote} style={style} pickStyle={pickStyle} diliK={statsAll.k} />}
       {view === "planner" && <>
 
-      <div className="wrap" ref={wrapRef} onScroll={(e) => e.currentTarget.classList.toggle("scrolled", e.currentTarget.scrollTop > 2)}>
-        <table style={{ "--n": entries.length, "--cw": fit.cw + "px", "--teamw": fit.teamw + "px" }}>
+      <div className="wrap" ref={wrapRef} onScroll={(e) => e.currentTarget.classList.toggle("scrolled", e.currentTarget.scrollTop > 2)} style={{ "--n": entries.length, "--cw": fit.cw + "px", "--teamw": fit.teamw + "px" }}>
+        <div className="corner">
+          <div className="controls">
+            <div className="row">
+              <select value={legId} onChange={(e) => setLegId(e.target.value)} title="Week to plan">
+                {LEGS.map((l) => <option key={l.id} value={l.id}>{legLabel(l)}</option>)}
+              </select>
+              <button className={"ghost" + (audit ? " on" : "")} onClick={() => setAudit((a) => !a)} title="How W%, P%, EV, DILI and the ratings are calculated for this week">Model details {audit ? "▴" : "▾"}</button>
+            </div>
+            <div className="row">
+              {canEdit && <button className="btn" onClick={updateLines} disabled={updating} title="Pull fresh moneylines from the sportsbooks now (otherwise twice a day)">{updating ? "Updating…" : "Update lines"}</button>}
+              <span className={"note" + (status ? (statusErr ? " err" : " msg") : "")} title={!status ? `Lines update automatically twice a day. ${stamp}` : undefined}>{!loaded ? "Loading…" : status || lineNote}</span>
+            </div>
+          </div>
+        </div>
+        <table>
           <tbody className="sum">
             <tr className="top" style={{ "--top": "0px" }}>
-              <td className="L pctl" colSpan={5} rowSpan={entries.length + 1}>
-                <div className="stack">
-                  <div className="row">
-                    <select value={legId} onChange={(e) => setLegId(e.target.value)} title="Week to plan">
-                      {LEGS.map((l) => <option key={l.id} value={l.id}>{legLabel(l)}</option>)}
-                    </select>
-                    <button className={"ghost" + (audit ? " on" : "")} onClick={() => setAudit((a) => !a)} title="How W%, P%, EV, DILI and the ratings are calculated for this week">Model details {audit ? "▴" : "▾"}</button>
-                  </div>
-                  <div className="row">
-                    {canEdit && <button className="btn" onClick={updateLines} disabled={updating} title="Pull fresh moneylines from the sportsbooks now (otherwise twice a day)">{updating ? "Updating…" : "Update lines"}</button>}
-                    <span className={"note" + (status ? (statusErr ? " err" : " msg") : "")} title={!status ? `Lines update automatically twice a day. ${stamp}` : undefined}>{!loaded ? "Loading…" : status || lineNote}</span>
-                  </div>
-                </div>
-              </td>
+              <td className="L pctl" colSpan={5} rowSpan={entries.length + 1} />
               <Header top />
             </tr>
             {entries.map((e, i) => (
