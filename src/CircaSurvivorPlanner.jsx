@@ -356,10 +356,12 @@ const CSS = `
 .csp th.hol { color:var(--sand-ink); }
 .csp th.hol .lsub { color:var(--sand-ink); opacity:.8; }
 .csp .wrap.scrolled tr.top th { box-shadow:0 4px 10px rgba(23,24,28,.06); }
-/* selected week: a tinted column */
-.csp th.curcol { background:var(--sand); color:var(--ink); font-weight:600; }
-.csp td.curcol { background:var(--sand); }
-.csp .sum td.curcol { background:#ECE8DA; }
+/* selected week: inverted header, ink rules down both edges, faint tint inside */
+.csp th.curcol { background:var(--ink) !important; color:#fff; font-weight:600; border-left:2px solid var(--ink); border-right:2px solid var(--ink); }
+.csp th.curcol.sorted { box-shadow:inset 0 -2px 0 #fff; }
+.csp td.curcol { background:var(--sand); border-left:2px solid var(--ink); border-right:2px solid var(--ink); }
+.csp td.curcol.last { border-bottom:2px solid var(--ink); }
+.csp .sum td.curcol { background:#EEEADC; }
 
 /* frozen left block: EV | W% | P% | Team */
 .csp .L { position:sticky; z-index:2; background:var(--surface); height:var(--rh); text-align:center; }
@@ -376,7 +378,7 @@ const CSS = `
 .csp .controls { position:absolute; left:0; top:0; width:348px; height:calc(var(--th) + var(--n) * var(--rh)); box-sizing:border-box; padding:0 12px 0 16px; background:var(--panel); border-bottom:1px solid var(--rule); display:flex; flex-direction:column; justify-content:center; gap:10px; }
 .csp .controls .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
 .csp .sum tr.top th { background:var(--panel); }
-.csp .sum tr.top th.curcol { background:#ECE8DA; }
+
 .csp .controls select { height:28px; line-height:26px; padding:0 28px 0 10px; font:inherit; font-size:13px; font-weight:600; border-radius:7px; border:1px solid var(--rule2); color:var(--ink); cursor:pointer; appearance:none; -webkit-appearance:none; background:var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5l3.5 3.5 3.5-3.5' fill='none' stroke='%2317181C' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 9px center; }
 .csp .controls select:hover { border-color:var(--ink3); }
 .csp .controls .btn, .csp .controls .ghost { height:28px; line-height:26px; padding:0 11px; border-radius:7px; }
@@ -427,7 +429,10 @@ const CSS = `
 .csp .sum td { position:sticky; top:var(--top); z-index:2; background:var(--panel); height:var(--rh); text-align:center; font-weight:500; border-bottom-color:var(--rule); }
 .csp .sum td.L { z-index:5; background:var(--panel); }
 .csp .sum td.entry { color:var(--ink2); font-weight:500; }
-.csp .sum td.entry.on { color:var(--ink); font-weight:600; }
+.csp .sum tr.sel td { background:var(--surface); border-top:2px solid var(--ink); border-bottom:2px solid var(--ink); }
+.csp .sum tr.sel td.entry { color:var(--ink); font-weight:600; border-left:2px solid var(--ink); }
+.csp .sum tr.sel td.s:last-child { border-right:2px solid var(--ink); }
+.csp .sum tr.sel td.curcol { background:var(--sand); }
 .csp .sum td.s { width:var(--cw); min-width:var(--cw); }
 .csp .sum td.s .chip { display:inline-block; min-width:38px; padding:2px 5px; border-radius:5px; font-size:11px; font-weight:600; line-height:16px; }
 .csp .sum td.empty { color:var(--rule2); font-weight:400; }
@@ -789,8 +794,8 @@ export default function CircaSurvivorPlanner() {
               <Header top />
             </tr>
             {entries.map((e, i) => (
-              <tr key={"s" + i} style={{ "--top": `calc(var(--th) + ${i} * var(--rh))` }}>
-                <td className={"L entry" + (i === active ? " on" : "")}>{e.name}</td>
+              <tr key={"s" + i} className={i === active ? "sel" : ""} style={{ "--top": `calc(var(--th) + ${i} * var(--rh))` }}>
+                <td className="L entry">{e.name}</td>
                 {LEGS.map((l) => {
                   const t = e.picks[l.id];
                   return (
