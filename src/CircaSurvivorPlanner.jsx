@@ -329,7 +329,9 @@ const CSS = `
 .csp .L.pp { left:128px; width:60px; min-width:60px; }
 .csp .L.team { left:188px; width:116px; min-width:116px; text-align:left; padding:0 8px 0 12px; font-weight:600; }
 .csp .L.entry { left:64px; width:240px; min-width:240px; text-align:center; padding:0; }
-.csp td.L.num .d { font-size:9px; font-weight:500; margin-left:3px; vertical-align:1px; letter-spacing:-0.01em; }
+.csp td.L.num .v { display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; height:100%; }
+.csp td.L.num .v .n { grid-column:2; }
+.csp td.L.num .d { grid-column:3; justify-self:start; width:0; overflow:visible; white-space:nowrap; padding-left:3px; font-size:9px; font-weight:500; letter-spacing:-0.01em; line-height:1; }
 .csp td.L.num .d.up { color:var(--green-ink); }
 .csp td.L.num .d.down { color:var(--red); }
 .csp th.L { z-index:4; background:var(--paper); }
@@ -341,7 +343,7 @@ const CSS = `
 .csp td.L.num.blank { color:var(--ink3); }
 .csp td.L.ev.num { color:var(--ink); font-weight:600; }
 .csp td.L.num.top { color:var(--green-ink); }
-.csp td.L.num.weak::after { content:""; display:inline-block; width:5px; height:5px; border-radius:50%; background:var(--amber); margin-left:4px; vertical-align:2px; }
+.csp td.L.num.weak .n::after { content:""; display:inline-block; width:5px; height:5px; border-radius:50%; background:var(--amber); margin-left:4px; vertical-align:2px; }
 .csp .team { box-shadow:inset 3px 0 0 var(--tc); }
 .csp .team .hd { display:inline-block; width:6px; height:6px; border-radius:50%; margin-left:5px; vertical-align:1px; background:var(--sand-ink); opacity:.7; }
 .csp .team .hd.x { background:var(--red); }
@@ -365,10 +367,10 @@ const CSS = `
 .csp td.c .oth { position:absolute; top:2px; right:4px; font-size:9px; color:var(--ink3); letter-spacing:1px; }
 .csp td.c.pick .oth { color:var(--green-ink); }
 
-.csp td.fv { width:64px; min-width:64px; height:var(--rh); padding:0 8px; }
+.csp td.fv { width:var(--fvw,64px); min-width:var(--fvw,64px); height:var(--rh); padding:0 10px; }
 .csp td.fv .fvbar { height:6px; background:var(--panel); border-radius:3px; overflow:hidden; }
 .csp td.fv .fvbar i { display:block; height:100%; background:var(--green); border-radius:3px; }
-.csp th.fv { width:64px; min-width:64px; }
+.csp th.fv { width:var(--fvw,64px); min-width:var(--fvw,64px); }
 
 /* entries panel on top of the board */
 .csp .sum td { position:sticky; top:var(--top); z-index:2; background:var(--panel); height:var(--rh); text-align:center; font-weight:500; cursor:pointer; border-bottom-color:var(--rule); }
@@ -567,6 +569,8 @@ export default function CircaSurvivorPlanner() {
     const txt = kind === "ev" ? (pts > 0 ? "+" : "−") + Math.abs(pts).toFixed(2).replace(/^0/, "") : (pts > 0 ? "+" : "−") + Math.abs(Math.round(pts));
     return <span className={"d " + (pts > 0 ? "up" : "down")}>{txt}</span>;
   };
+  // number stays centered in the column; the delta sits in the space to its right
+  const Num = ({ children, d, kind }) => <span className="v"><span className="n">{children}</span><Delta v={d} kind={kind} /></span>;
   const dTip = (label, was) => (prevAt ? ` · ${label} ${was} at the previous refresh (${fmtTime(prevAt)})` : "");
   void 0;
   function computeStats(legId, data, params) {
@@ -597,6 +601,21 @@ export default function CircaSurvivorPlanner() {
     return [...ALL_TEAMS].sort((a, b) => { const va = val(a), vb = val(b); if (va === vb) return a < b ? -1 : 1; return (va < vb ? 1 : -1) * d; });
   }, [sort, stats, data]);
 
+  // stretch the week columns (and the Future column absorbs the remainder) so the board fills its container
+  const wrapRef = useRef(null);
+  const [fit, setFit] = useState({ cw: 52, fvw: 64 });
+  useEffect(() => {
+    const el = wrapRef.current; if (!el) return;
+    const LEFT = 304, MIN_CW = 52, MIN_FV = 64;
+    const measure = () => {
+      const w = el.clientWidth - LEFT;
+      const cw = Math.max(MIN_CW, Math.floor((w - MIN_FV) / LEGS.length));
+      setFit({ cw, fvw: Math.max(MIN_FV, w - cw * LEGS.length) });
+    };
+    measure();
+    const ro = new ResizeObserver(measure); ro.observe(el);
+    return () => ro.disconnect();
+  }, [view]);
   const clickSort = (key) => setSort((s) => (s.key === key ? { key, dir: -s.dir } : { key, dir: key === "team" ? -1 : 1 }));
   const fmtSp = (v) => (v == null ? "" : v > 0 ? "+" + v : v === 0 ? "PK" : String(v));
   const pct = (v) => (v == null ? "–" : Math.round(v * 100) + "%");
@@ -684,8 +703,8 @@ export default function CircaSurvivorPlanner() {
       {view === "planner" && audit && <AuditPanel legId={legId} data={data} params={params} merr={merr} stats={stats} evNote={evNote} />}
       {view === "planner" && <>
 
-      <div className="wrap" onScroll={(e) => e.currentTarget.classList.toggle("scrolled", e.currentTarget.scrollTop > 2)}>
-        <table style={{ "--n": entries.length }}>
+      <div className="wrap" ref={wrapRef} onScroll={(e) => e.currentTarget.classList.toggle("scrolled", e.currentTarget.scrollTop > 2)}>
+        <table style={{ "--n": entries.length, "--cw": fit.cw + "px", "--fvw": fit.fvw + "px" }}>
           <thead><tr><Header top /></tr></thead>
           <tbody className="sum">
             {entries.map((e, i) => (
@@ -711,9 +730,9 @@ export default function CircaSurvivorPlanner() {
               const inLeg = !!OPP[legId][team];
               return (
                 <tr key={team} className={usedLeg ? "gone" : ""}>
-                  <td className={"L ev num" + (st.ev == null ? " blank" : st.ev === topEv ? " top" : "")} title={st.dEv != null ? `EV ${st.ev.toFixed(2)}${dTip("was", (st.ev - st.dEv).toFixed(2))}` : ""}>{st.ev == null ? (inLeg ? "–" : "") : st.ev.toFixed(2)}<Delta v={st.dEv} kind="ev" /></td>
-                  <td className={"L wp num" + (st.win == null ? " blank" : "") + (st.status === "single" || st.status === "degraded" ? " weak" : "")} title={inLeg ? (st.win == null ? "No two-sided moneyline posted yet for this game" : `${pct(st.win)} — ${STATUS_TEXT[st.status]}${st.status !== "closing" ? ` (${st.n})` : ""} · e.g. ${st.refBook} ${fmtSp(st.ml)} / ${fmtSp(st.oppMl)}${st.dWin != null ? dTip("was", pct(st.win - st.dWin)) : ""}`) : ""}>{inLeg ? pct(st.win) : ""}<Delta v={st.dWin} kind="pct" /></td>
-                  <td className={"L pp num" + (st.pick == null ? " blank" : "")} title={inLeg ? (st.act ? "Circa actual" : `field model ${pct(st.pm)}${st.dPick != null ? dTip("was", pct(st.pick - st.dPick)) : ""}`) : ""}>{inLeg ? (st.pick == null ? "–" : st.pick < 0.005 ? "<1%" : Math.round(st.pick * 100) + "%") : ""}<Delta v={st.dPick} kind="pct" /></td>
+                  <td className={"L ev num" + (st.ev == null ? " blank" : st.ev === topEv ? " top" : "")} title={st.dEv != null ? `EV ${st.ev.toFixed(2)}${dTip("was", (st.ev - st.dEv).toFixed(2))}` : ""}><Num d={st.dEv} kind="ev">{st.ev == null ? (inLeg ? "–" : "") : st.ev.toFixed(2)}</Num></td>
+                  <td className={"L wp num" + (st.win == null ? " blank" : "") + (st.status === "single" || st.status === "degraded" ? " weak" : "")} title={inLeg ? (st.win == null ? "No two-sided moneyline posted yet for this game" : `${pct(st.win)} — ${STATUS_TEXT[st.status]}${st.status !== "closing" ? ` (${st.n})` : ""} · e.g. ${st.refBook} ${fmtSp(st.ml)} / ${fmtSp(st.oppMl)}${st.dWin != null ? dTip("was", pct(st.win - st.dWin)) : ""}`) : ""}><Num d={st.dWin} kind="pct">{inLeg ? pct(st.win) : ""}</Num></td>
+                  <td className={"L pp num" + (st.pick == null ? " blank" : "")} title={inLeg ? (st.act ? "Circa actual" : `field model ${pct(st.pm)}${st.dPick != null ? dTip("was", pct(st.pick - st.dPick)) : ""}`) : ""}><Num d={st.dPick} kind="pct">{inLeg ? (st.pick == null ? "–" : st.pick < 0.005 ? "<1%" : Math.round(st.pick * 100) + "%") : ""}</Num></td>
                   <td className="L team" style={{ "--tc": COLORS[team][0] }}>
                     <span className="nm">{team}</span>
                     {TG_TEAMS.has(team) && <span className="hd" title="Plays in Thanksgiving leg" />}
