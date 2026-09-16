@@ -40,7 +40,24 @@ each with its own pick. Each team once per entry. Tie = loss. Schedule is hard-c
 `EV = W / (P + Σ over other games of P·W)`, then scaled so the pick-weighted average = 1.00 (Atlas / SurvivorGrid convention).
 
 ## Future value
-Sum over legs *after* the selected one of max(0, projected win − 0.60).
+Sum over legs *after* the selected one of max(0, projected win − 0.60)^1.5. Convex, so a 78% near-lock counts far
+more than a 64% lean: the near-locks are the scarce resource.
+
+## Power ratings prior
+The ridge fit is anchored to the Super Bowl futures market (implied title probabilities, averaged across books,
+log-odds standardized onto a points scale), refreshed every 3 days for 1 credit. That is the market's view of how
+good each team is *this* season, so early-season ratings do not lean on last year's results. If the futures
+fetch fails, last season's market ratings regressed 40% toward average are the fallback.
+
+## DILI ("do I love it?") — which team to actually pick this week
+`DILI = EV ÷ forfeit^k`, per entry.
+- **Forfeit**: for each later week, how much this team beats a *realistic* pick — the average of this entry's
+  top-3 other available teams that week — as a survival multiplier, weighted by the chance the entry is still
+  alive then (80%/week compounding). A team with no edge over a realistic pick later keeps its full EV.
+- **k = style × calendar**. Style: Now 0.5, Balanced 1.0, Future 1.35 (default; "save the studs, take risk
+  early"). Calendar: Weeks 1–6 ×1.5, 7–11 ×1.0, Thanksgiving–15 ×0.6, Christmas–18 ×0.25.
+- The entry's top three are shaded green; the grid sorts by DILI by default. The tooltip shows the arithmetic and
+  the later weeks that contribute most. It is a per-week heuristic, not a full-season solve.
 
 ## Actuals tab
 Contest size + Circa's posted selections per leg. `fieldTimeline()` derives live entries, implied value per entry

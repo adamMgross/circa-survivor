@@ -37,3 +37,17 @@ export function fitRatings(games, { lambda = 2, prior = {} } = {}) {
   for (const t of ALL_TEAMS) ratings[t] = Math.round((ratings[t] - mean) * 10) / 10;
   return { ratings, games: used };
 }
+
+// Prior from the Super Bowl futures market: the market's own view of how good each team is THIS season.
+// probs: { ABBR: implied title probability }. Mapped to the points scale by standardizing log-odds.
+export const PRIOR_SCALE = 3.5;
+export function priorFromFutures(probs) {
+  const teams = ALL_TEAMS.filter((t) => probs[t] > 0);
+  if (teams.length < 24) return null;
+  const lo = Object.fromEntries(teams.map((t) => [t, Math.log(probs[t] / (1 - probs[t]))]));
+  const mean = teams.reduce((s, t) => s + lo[t], 0) / teams.length;
+  const sd = Math.sqrt(teams.reduce((s, t) => s + (lo[t] - mean) ** 2, 0) / teams.length) || 1;
+  const out = {};
+  for (const t of ALL_TEAMS) out[t] = teams.includes(t) ? Math.round(((lo[t] - mean) / sd) * PRIOR_SCALE * 10) / 10 : 0;
+  return out;
+}

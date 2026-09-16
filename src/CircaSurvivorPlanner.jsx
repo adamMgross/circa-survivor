@@ -191,11 +191,49 @@ function fieldTimeline(data) {
 // ---------- Circa field model ----------
 // P(team) ∝ win^a · exp(-b · futureValue) · availability, over teams with a game that leg.
 // a = how hard the field chases the biggest favorite, b = how much it saves high-future-value teams.
+// Future value: how many strong-favorite spots the team offers in later weeks. Convex (power 1.5) so a
+// 78% near-lock counts far more than a 64% lean; the near-locks are the scarce resource.
+const FV_FLOOR = 0.6, FV_POWER = 1.5;
 function fvFor(legId, team, data) {
   const idx = LEGS.findIndex((l) => l.id === legId);
   let fv = 0;
-  for (const l of LEGS.slice(idx + 1)) { const ln = lineFor(l.id, team, data); if (ln) fv += Math.max(0, ln.win - 0.6); }
+  for (const l of LEGS.slice(idx + 1)) { const ln = lineFor(l.id, team, data); if (ln) fv += Math.pow(Math.max(0, ln.win - FV_FLOOR), FV_POWER); }
   return data?.ratings ? fv : 0;
+}
+
+// ---------- DILI: "do I love it?" — this week's EV net of what the team is worth to keep ----------
+// Future forfeit: in every later week, how much this team beats a REALISTIC pick (the average of the entry's
+// top-3 other available teams that week), weighted by the chance the entry is still alive to use it.
+// Expressed as a survival multiplier B ≥ 1. DILI = EV / B^k, where k = style × calendar (early weeks weigh
+// the future heavily, the last weeks hardly at all).
+export const STYLE = { now: 0.5, balanced: 1, future: 1.35 };
+const SURVIVE = 0.8;                       // typical week-to-week survival of a well-played entry
+function calendarWeight(legId) { const i = LEGS.findIndex((l) => l.id === legId); return i <= 5 ? 1.5 : i <= 10 ? 1.0 : i <= 15 ? 0.6 : 0.25; }
+function futureForfeit(legId, team, data, burned) {
+  const idx = LEGS.findIndex((l) => l.id === legId);
+  let logB = 0; const parts = [];
+  LEGS.slice(idx + 1).forEach((l, k) => {
+    const mine = lineFor(l.id, team, data); if (!mine || mine.win == null) return;
+    const others = Object.keys(OPP[l.id]).filter((t) => t !== team && !burned.has(t)).map((t) => lineFor(l.id, t, data)?.win).filter((v) => v != null).sort((a, b) => b - a).slice(0, 3);
+    if (others.length < 3) return;
+    const bar = others.reduce((a, b) => a + b, 0) / others.length;
+    const edge = mine.win - bar; if (edge <= 0) return;
+    const s = Math.pow(SURVIVE, k + 1);
+    logB += s * Math.log(1 + edge / bar);
+    parts.push({ leg: l, edge, bar, win: mine.win, s, contrib: s * Math.log(1 + edge / bar) });
+  });
+  parts.sort((a, b) => b.contrib - a.contrib);
+  return { B: Math.exp(logB), parts };
+}
+export function computeDili(legId, rows, data, burned, style = "future") {
+  const k = (STYLE[style] ?? 1) * calendarWeight(legId);
+  for (const t of Object.keys(OPP[legId])) {
+    const r = rows[t];
+    if (r.ev == null || burned.has(t)) { r.dili = null; continue; }
+    const f = futureForfeit(legId, t, data, burned);
+    r.forfeit = f.B; r.forfeitParts = f.parts; r.diliK = k; r.dili = r.ev / Math.pow(f.B, k);
+  }
+  return k;
 }
 // share of the field still holding each team going into legId, from actual picks in earlier legs
 function availability(legId, data) {
@@ -263,7 +301,7 @@ function modelError(data, params) {
   return n ? { err: e / n, n } : null;
 }
 
-export { linesFromOdds, consensusForGame, computeEV, EV_MIN_COVERAGE, buildData, devig, fieldTimeline, modelPick, fitParams, availability };
+export { linesFromOdds, consensusForGame, computeEV, EV_MIN_COVERAGE, buildData, devig, fieldTimeline, modelPick, fitParams, availability, fvFor };
 
 const CSS = `
 /* ---- tokens: paper, ink, one green ---- */
@@ -327,8 +365,16 @@ const CSS = `
 .csp .L.ev { left:0; width:64px; min-width:64px; }
 .csp .L.wp { left:64px; width:64px; min-width:64px; }
 .csp .L.pp { left:128px; width:60px; min-width:60px; }
-.csp .L.team { left:188px; width:116px; min-width:116px; text-align:left; padding:0 8px 0 12px; font-weight:600; }
-.csp .L.entry { left:64px; width:240px; min-width:240px; text-align:center; padding:0; }
+.csp .L.fv { left:188px; width:64px; min-width:64px; }
+.csp .L.dili { left:252px; width:64px; min-width:64px; }
+.csp .L.team { left:316px; width:var(--teamw,116px); min-width:var(--teamw,116px); text-align:left; padding:0 8px 0 12px; font-weight:600; }
+.csp .L.entry { left:64px; width:var(--entryw,368px); min-width:var(--entryw,368px); text-align:center; padding:0; }
+.csp td.L.fv .fvbar { height:3px; background:var(--panel); border-radius:2px; overflow:hidden; margin:0 12px 3px; }
+.csp td.L.fv .fvbar i { display:block; height:100%; background:var(--green); border-radius:2px; }
+.csp td.L.fv .v { height:auto; padding-top:5px; }
+.csp td.L.dili.num { color:var(--ink); font-weight:600; }
+.csp td.L.dili.pick1, .csp td.L.dili.pick2, .csp td.L.dili.pick3 { background:var(--green-bg); color:var(--green-ink); }
+.csp td.L.dili.pick1 { box-shadow:inset 0 0 0 1.5px var(--green); }
 .csp td.L.num .v { display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; height:100%; }
 .csp td.L.num .v .n { grid-column:2; }
 .csp td.L.num .d { grid-column:3; justify-self:start; width:0; overflow:visible; white-space:nowrap; padding-left:3px; font-size:9px; font-weight:500; letter-spacing:-0.01em; line-height:1; }
@@ -367,10 +413,6 @@ const CSS = `
 .csp td.c .oth { position:absolute; top:2px; right:4px; font-size:9px; color:var(--ink3); letter-spacing:1px; }
 .csp td.c.pick .oth { color:var(--green-ink); }
 
-.csp td.fv { width:var(--fvw,64px); min-width:var(--fvw,64px); height:var(--rh); padding:0 10px; }
-.csp td.fv .fvbar { height:6px; background:var(--panel); border-radius:3px; overflow:hidden; }
-.csp td.fv .fvbar i { display:block; height:100%; background:var(--green); border-radius:3px; }
-.csp th.fv { width:var(--fvw,64px); min-width:var(--fvw,64px); }
 
 /* entries panel on top of the board */
 .csp .sum td { position:sticky; top:var(--top); z-index:2; background:var(--panel); height:var(--rh); text-align:center; font-weight:500; cursor:pointer; border-bottom-color:var(--rule); }
@@ -457,7 +499,9 @@ export default function CircaSurvivorPlanner() {
   const [statusErr, setStatusErr] = useState(false);
   const [active, setActive] = useState(0);
   const [legId, setLegId] = useState(defaultLeg());
-  const [sort, setSort] = useState({ key: "ev", dir: 1 }); // key: ev|wp|pp|team|fv|<legId>
+  const [sort, setSort] = useState({ key: "dili", dir: 1 }); // key: dili|ev|wp|pp|team|fv|<legId>
+  const [style, setStyle] = useState(() => { try { return localStorage.getItem("csp-style") || "future"; } catch { return "future"; } });
+  const pickStyle = (v) => { setStyle(v); try { localStorage.setItem("csp-style", v); } catch {} };
   const [view, setView] = useState("planner");
   const [audit, setAudit] = useState(false);
   const [signin, setSignin] = useState(false);
@@ -544,17 +588,26 @@ export default function CircaSurvivorPlanner() {
   const params = useMemo(() => fitParams(data), [data]);
   const merr = useMemo(() => modelError(data, params), [data, params]);
   // per-team stats for selected leg (also computed on the previous refresh's data, for the deltas)
+  const burned = useMemo(() => new Set(Object.keys(usedBy).filter((t) => usedBy[t] !== legId)), [usedBy, legId]);
   const statsAll = useMemo(() => {
     const cur = computeStats(legId, data, params);
+    const k = computeDili(legId, cur.rows, data, burned, style);
     const prev = data.prev ? computeStats(legId, data.prev, params) : null;
-    if (prev) for (const t of ALL_TEAMS) {
-      const a = cur.rows[t], b = prev.rows[t];
-      a.dEv = a.ev != null && b.ev != null ? a.ev - b.ev : null;
-      a.dWin = a.win != null && b.win != null ? a.win - b.win : null;
-      a.dPick = !a.act && a.pick != null && b.pick != null ? a.pick - b.pick : null;
+    if (prev) {
+      computeDili(legId, prev.rows, data.prev, burned, style);
+      for (const t of ALL_TEAMS) {
+        const a = cur.rows[t], b = prev.rows[t];
+        a.dEv = a.ev != null && b.ev != null ? a.ev - b.ev : null;
+        a.dWin = a.win != null && b.win != null ? a.win - b.win : null;
+        a.dPick = !a.act && a.pick != null && b.pick != null ? a.pick - b.pick : null;
+        a.dDili = a.dili != null && b.dili != null ? a.dili - b.dili : null;
+      }
     }
-    return cur;
-  }, [data, legId, params]);
+    // the entry's top three by DILI
+    const ranked = ALL_TEAMS.filter((t) => cur.rows[t].dili != null).sort((a, b) => cur.rows[b].dili - cur.rows[a].dili);
+    ranked.slice(0, 3).forEach((t, i) => { cur.rows[t].diliRank = i + 1; });
+    return { ...cur, k };
+  }, [data, legId, params, burned, style]);
   const { rows: stats, ev: evInfo } = statsAll;
   const prevAt = data.prev?.oddsAt || null;
   const maxFv = Math.max(0.01, ...ALL_TEAMS.map((t) => stats[t].fv || 0));
@@ -571,6 +624,10 @@ export default function CircaSurvivorPlanner() {
   };
   // number stays centered in the column; the delta sits in the space to its right
   const Num = ({ children, d, kind }) => <span className="v"><span className="n">{children}</span><Delta v={d} kind={kind} /></span>;
+  const diliTip = (st) => {
+    const top = (st.forfeitParts || []).slice(0, 3).map((p) => `${legLabel(p.leg)} ${pct(p.win)} vs ${pct(p.bar)} bar`).join(", ");
+    return `EV ${st.ev.toFixed(2)} ÷ future forfeit ${st.forfeit.toFixed(2)}^${st.diliK.toFixed(1)} = ${st.dili.toFixed(2)}${top ? ` · biggest later edges: ${top}` : " · no edge over a realistic pick later"}${st.dDili != null ? dTip("was", (st.dili - st.dDili).toFixed(2)) : ""}`;
+  };
   const dTip = (label, was) => (prevAt ? ` · ${label} ${was} at the previous refresh (${fmtTime(prevAt)})` : "");
   void 0;
   function computeStats(legId, data, params) {
@@ -595,7 +652,7 @@ export default function CircaSurvivorPlanner() {
     const k = sort.key, d = sort.dir;
     const val = (t) => {
       if (k === "team") return t;
-      if (k === "ev" || k === "wp" || k === "pp" || k === "fv") { const v = { ev: stats[t].ev, wp: stats[t].win, pp: stats[t].pick, fv: stats[t].fv }[k]; return v == null ? -Infinity : v; }
+      if (k === "ev" || k === "wp" || k === "pp" || k === "fv" || k === "dili") { const v = { ev: stats[t].ev, wp: stats[t].win, pp: stats[t].pick, fv: stats[t].fv, dili: stats[t].dili }[k]; return v == null ? -Infinity : v; }
       const ln = lineFor(k, t, data); return ln && ln.spread != null ? -ln.spread : -Infinity; // favorites first
     };
     return [...ALL_TEAMS].sort((a, b) => { const va = val(a), vb = val(b); if (va === vb) return a < b ? -1 : 1; return (va < vb ? 1 : -1) * d; });
@@ -603,14 +660,14 @@ export default function CircaSurvivorPlanner() {
 
   // stretch the week columns (and the Future column absorbs the remainder) so the board fills its container
   const wrapRef = useRef(null);
-  const [fit, setFit] = useState({ cw: 52, fvw: 64 });
+  const [fit, setFit] = useState({ cw: 50, teamw: 116 });
   useEffect(() => {
     const el = wrapRef.current; if (!el) return;
-    const LEFT = 304, MIN_CW = 52, MIN_FV = 64;
+    const LEFT = 316, MIN_CW = 50, MIN_TEAM = 116;
     const measure = () => {
-      const w = el.clientWidth - LEFT;
-      const cw = Math.max(MIN_CW, Math.floor((w - MIN_FV) / LEGS.length));
-      setFit({ cw, fvw: Math.max(MIN_FV, w - cw * LEGS.length) });
+      const w = el.clientWidth - LEFT - MIN_TEAM;
+      const cw = Math.max(MIN_CW, Math.floor(w / LEGS.length));
+      setFit({ cw, teamw: Math.max(MIN_TEAM, MIN_TEAM + w - cw * LEGS.length) });
     };
     measure();
     const ro = new ResizeObserver(measure); ro.observe(el);
@@ -626,10 +683,12 @@ export default function CircaSurvivorPlanner() {
 
   const Header = ({ top }) => (
     <>
-      {top ? <><th className="L ev blank" /><th className="L entry" colSpan={3}>Entry</th></> : <>
+      {top ? <><th className="L ev blank" /><th className="L entry" colSpan={5}>Entry</th></> : <>
         <th className={"L ev" + (sort.key === "ev" ? " sorted" : "") + (evNote ? " partial" : "")} onClick={() => clickSort("ev")} title={(evNote || `EV for ${legLabel(cur)}`) + (prevAt ? ` · small numbers = change since the previous refresh (${fmtTime(prevAt)})` : "")}>EV{evNote ? "*" : ""}</th>
         <th className={"L wp" + (sort.key === "wp" ? " sorted" : "")} onClick={() => clickSort("wp")} title={`True Win % — median of each book's no-vig moneyline probability · ${stamp}`}>W%</th>
         <th className={"L pp" + (sort.key === "pp" ? " sorted" : "")} onClick={() => clickSort("pp")} title="Circa pick popularity (actual once posted, field model before)">P%</th>
+        <th className={"L fv" + (sort.key === "fv" ? " sorted" : "")} onClick={() => clickSort("fv")} title="Future value: strong-favorite spots left after this week (near-locks count most)">Future</th>
+        <th className={"L dili" + (sort.key === "dili" ? " sorted" : "")} onClick={() => clickSort("dili")} title={`DILI — "do I love it?": this week's EV net of what the team is worth to keep, for this entry. Style: ${style}${prevAt ? ` · small numbers = change since ${fmtTime(prevAt)}` : ""}`}>DILI</th>
         <th className={"L team" + (sort.key === "team" ? " sorted" : "")} onClick={() => clickSort("team")}>Team</th>
       </>}
       {LEGS.map((l) => (
@@ -637,7 +696,6 @@ export default function CircaSurvivorPlanner() {
           {l.label}
         </th>
       ))}
-      {top ? <th className="fv blank" /> : <th className={"fv" + (sort.key === "fv" ? " sorted" : "")} onClick={() => clickSort("fv")} title="Future value: strong-favorite spots left after this leg">Future</th>}
     </>
   );
   // books contributing to this leg's lines, for the note under the controls
@@ -700,16 +758,16 @@ export default function CircaSurvivorPlanner() {
         </div>
       )}
       {view === "actuals" && <Actuals data={data} params={params} canEdit={canEdit} onSave={saveActuals} />}
-      {view === "planner" && audit && <AuditPanel legId={legId} data={data} params={params} merr={merr} stats={stats} evNote={evNote} />}
+      {view === "planner" && audit && <AuditPanel legId={legId} data={data} params={params} merr={merr} stats={stats} evNote={evNote} style={style} pickStyle={pickStyle} diliK={statsAll.k} />}
       {view === "planner" && <>
 
       <div className="wrap" ref={wrapRef} onScroll={(e) => e.currentTarget.classList.toggle("scrolled", e.currentTarget.scrollTop > 2)}>
-        <table style={{ "--n": entries.length, "--cw": fit.cw + "px", "--fvw": fit.fvw + "px" }}>
+        <table style={{ "--n": entries.length, "--cw": fit.cw + "px", "--teamw": fit.teamw + "px", "--entryw": (252 + fit.teamw) + "px" }}>
           <thead><tr><Header top /></tr></thead>
           <tbody className="sum">
             {entries.map((e, i) => (
               <tr key={"s" + i} style={{ "--top": `calc(var(--th) + ${i} * var(--rh))` }}>
-                <td className="L ev blank" /><td className={"L entry" + (i === active ? " on" : "")} colSpan={3} onClick={() => setActive(i)} title="Click to plan this entry">{e.name}</td>
+                <td className="L ev blank" /><td className={"L entry" + (i === active ? " on" : "")} colSpan={5} onClick={() => setActive(i)} title="Click to plan this entry">{e.name}</td>
                 {LEGS.map((l) => {
                   const t = e.picks[l.id];
                   return (
@@ -717,10 +775,9 @@ export default function CircaSurvivorPlanner() {
                         onClick={() => setActive(i)}>{t ? <span className="chip" style={{ background: COLORS[t][0], color: COLORS[t][1] }}>{t}</span> : "·"}</td>
                   );
                 })}
-                <td className="blank" />
               </tr>
             ))}
-            <tr className="gap"><td colSpan={LEGS.length + 5}></td></tr>
+            <tr className="gap"><td colSpan={LEGS.length + 6}></td></tr>
             <tr className="hdr2"><Header /></tr>
           </tbody>
           <tbody>
@@ -733,6 +790,13 @@ export default function CircaSurvivorPlanner() {
                   <td className={"L ev num" + (st.ev == null ? " blank" : st.ev === topEv ? " top" : "")} title={st.dEv != null ? `EV ${st.ev.toFixed(2)}${dTip("was", (st.ev - st.dEv).toFixed(2))}` : ""}><Num d={st.dEv} kind="ev">{st.ev == null ? (inLeg ? "–" : "") : st.ev.toFixed(2)}</Num></td>
                   <td className={"L wp num" + (st.win == null ? " blank" : "") + (st.status === "single" || st.status === "degraded" ? " weak" : "")} title={inLeg ? (st.win == null ? "No two-sided moneyline posted yet for this game" : `${pct(st.win)} — ${STATUS_TEXT[st.status]}${st.status !== "closing" ? ` (${st.n})` : ""} · e.g. ${st.refBook} ${fmtSp(st.ml)} / ${fmtSp(st.oppMl)}${st.dWin != null ? dTip("was", pct(st.win - st.dWin)) : ""}`) : ""}><Num d={st.dWin} kind="pct">{inLeg ? pct(st.win) : ""}</Num></td>
                   <td className={"L pp num" + (st.pick == null ? " blank" : "")} title={inLeg ? (st.act ? "Circa actual" : `field model ${pct(st.pm)}${st.dPick != null ? dTip("was", pct(st.pick - st.dPick)) : ""}`) : ""}><Num d={st.dPick} kind="pct">{inLeg ? (st.pick == null ? "–" : st.pick < 0.005 ? "<1%" : Math.round(st.pick * 100) + "%") : ""}</Num></td>
+                  <td className={"L fv num" + (st.fv == null ? " blank" : "")} title={st.fv == null ? "No power ratings yet" : `${st.fv.toFixed(2)} — later weeks above ${Math.round(FV_FLOOR * 100)}% win chance, near-locks weighted most`}>
+                    {st.fv != null && <span className="v"><span className="n">{st.fv.toFixed(2)}</span></span>}
+                    {st.fv != null && <div className="fvbar"><i style={{ width: (100 * st.fv / maxFv) + "%" }} /></div>}
+                  </td>
+                  <td className={"L dili num" + (st.dili == null ? " blank" : "") + (st.diliRank ? " pick" + st.diliRank : "")} title={st.dili == null ? (inLeg ? (usedLeg ? "Already used" : "Needs an EV") : "") : diliTip(st)}>
+                    <Num d={st.dDili} kind="ev">{st.dili == null ? (inLeg ? "–" : "") : st.dili.toFixed(2)}</Num>
+                  </td>
                   <td className="L team" style={{ "--tc": COLORS[team][0] }}>
                     <span className="nm">{team}</span>
                     {TG_TEAMS.has(team) && <span className="hd" title="Plays in Thanksgiving leg" />}
@@ -762,9 +826,6 @@ export default function CircaSurvivorPlanner() {
                       </td>
                     );
                   })}
-                  <td className="fv" title={st.fv == null ? "No power ratings yet" : `${st.fv.toFixed(2)} — sum of win prob above 60% in remaining legs`}>
-                    {st.fv != null && <div className="fvbar"><i style={{ width: (100 * st.fv / maxFv) + "%" }} /></div>}
-                  </td>
                 </tr>
               );
             })}
@@ -778,7 +839,7 @@ export default function CircaSurvivorPlanner() {
 }
 
 // ---------- P% audit panel ----------
-function AuditPanel({ legId, data, params, merr, stats, evNote }) {
+function AuditPanel({ legId, data, params, merr, stats, evNote, style, pickStyle, diliK }) {
   const act = data.actuals[legId];
   const leg = data.legs[legId] || {};
   const av = availability(legId, data);
@@ -796,10 +857,14 @@ function AuditPanel({ legId, data, params, merr, stats, evNote }) {
         </>}
         <br /><b>True Win %</b>: {leg.games ? <>each book's two-sided moneyline is de-vigged on its own, the consensus is the <b>median</b> of the books' home-win probabilities (away = 1 − home) as of {fmtTime(leg.asof)} — {leg.games}/{leg.gamesTotal} games. Books asked: {(leg.books || []).map((b) => BOOK_NAME[b] || b).join(", ")}. 3+ books = normal, 2 = degraded, 1 = single-book (provisional); a quote more than 48 h older than the freshest book's, or taken after kickoff, is excluded.</> : "no moneylines captured for this leg yet (books post them about a week out)"}. Spreads and future weeks are display/projection only and never feed Win %.
         {evNote && <><br /><b>EV coverage</b>: {evNote}.</>}
+        <br /><b>DILI</b> ("do I love it?") = EV ÷ future forfeit<sup>k</sup>. The forfeit is how much this team beats a realistic pick (the average of this entry's top-3 other available teams) in each later week, weighted by the chance of still being alive then ({Math.round(SURVIVE * 100)}%/week), as a survival multiplier. k = style × calendar; this week k = {diliK.toFixed(2)}. Green = this entry's top three.
+        <span style={{ display: "inline-flex", gap: 4, marginLeft: 10, verticalAlign: "middle" }}>
+          {[["now", "Now"], ["balanced", "Balanced"], ["future", "Future"]].map(([v, l]) => <button key={v} className={"ghost" + (style === v ? " on" : "")} style={{ height: 24, lineHeight: "22px", padding: "0 9px", fontSize: 12 }} onClick={() => pickStyle(v)} title={v === "now" ? "Lean on this week's EV" : v === "future" ? "Save the studs, take risk early" : "Even weighting"}>{l}</button>)}
+        </span>
         <br /><b>Power ratings</b>: {data.ratingsSrc || "none"}{data.ratingsAt ? <>, updated {fmtTime(data.ratingsAt)}</> : null}.
       </div>
       <table>
-        <thead><tr><th>Team</th><th>ML</th><th>Win</th><th>Future value</th><th>Field holding</th><th>Model raw</th><th>Model %</th><th>Final</th></tr></thead>
+        <thead><tr><th>Team</th><th>ML</th><th>Win</th><th>Future value</th><th>Field holding</th><th>Model raw</th><th>Model %</th><th>Final P%</th><th>EV</th><th>Forfeit</th><th>DILI</th></tr></thead>
         <tbody>
           {teams.map((t) => (
             <tr key={t}>
@@ -810,7 +875,10 @@ function AuditPanel({ legId, data, params, merr, stats, evNote }) {
               <td title="share of the live field that has not used this team yet">{pc(av[t])}</td>
               <td className="mut">{raw[t] ? raw[t].toExponential(2) : "0"}</td>
               <td>{pc(tot ? raw[t] / tot : 0, 1)}</td>
-              <td className="fin">{pc(stats[t].pick, 1)}</td>
+              <td>{pc(stats[t].pick, 1)}</td>
+              <td>{stats[t].ev == null ? "–" : stats[t].ev.toFixed(2)}</td>
+              <td className="mut">{stats[t].forfeit == null ? "–" : stats[t].forfeit.toFixed(3)}</td>
+              <td className="fin">{stats[t].dili == null ? "–" : stats[t].dili.toFixed(2)}</td>
             </tr>
           ))}
         </tbody>

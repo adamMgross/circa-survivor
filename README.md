@@ -2,8 +2,8 @@
 
 Live site: **https://mfe-labs.github.io/circa-survivor/**
 
-Planner for three Circa Survivor entries: 20-leg pick grid, EV / True Win % / pick % per leg, spreads in every cell,
-future value, and an Actuals tab tracking the whole contest field. Friends can view; the owner signs in to edit.
+Planner for three Circa Survivor entries: 20-leg pick grid, EV / True Win % / pick % / future value / DILI per leg,
+spreads in every cell, and an Actuals tab tracking the whole contest field. Friends can view; the owner signs in to edit.
 
 Everything runs for free on GitHub: the site is GitHub Pages, the data files live in this repo, and a scheduled
 GitHub Action keeps the betting lines fresh. There is no server and no database.

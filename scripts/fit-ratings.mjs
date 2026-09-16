@@ -1,8 +1,9 @@
 // Fit power ratings from market spreads: nflverse closing lines for every 2026 game that has one,
 // plus the current DraftKings spreads in data/odds.json for games nflverse hasn't lined yet.
 import { readFileSync, writeFileSync } from "node:fs";
-import { fitRatings } from "../src/ratings.js";
+import { fitRatings, priorFromFutures } from "../src/ratings.js";
 import { loadGames } from "./nflverse.mjs";
+import { ABBR } from "../src/schedule.js";
 
 const OUT = new URL("../data/ratings.json", import.meta.url);
 const ODDS = new URL("../data/odds.json", import.meta.url);
@@ -14,9 +15,29 @@ for (const r of await loadGames()) {
   if (r.season === "2025") last.push(g);
   if (r.season === "2026") { games.push(g); seen.add(`${r.away}@${r.home}`); }
 }
-// prior = last season's market ratings, regressed 40% toward average (teams change in the offseason)
-const prev = fitRatings(last, { lambda: 0.5 }).ratings;
-const prior = Object.fromEntries(Object.entries(prev).map(([t, r]) => [t, 0.6 * r]));
+// Prior: the Super Bowl futures market (the market's view of each team THIS season), refreshed every 3 days
+// (1 credit). Falls back to last season's market ratings regressed 40% toward average if futures are unavailable.
+let existing = {}; try { existing = JSON.parse(readFileSync(OUT, "utf8")); } catch {}
+let futures = existing.futures || null;
+const KEY = process.env.ODDS_API_KEY;
+if (KEY && (!futures || Date.now() - new Date(futures.fetchedAt).getTime() > 3 * 86400e3)) {
+  try {
+    const r = await fetch(`https://api.the-odds-api.com/v4/sports/americanfootball_nfl_super_bowl_winner/odds?apiKey=${KEY}&regions=us&markets=outrights&oddsFormat=american`);
+    if (!r.ok) throw new Error(`Odds API ${r.status}`);
+    const [ev] = await r.json();
+    const imp = {};
+    for (const bk of ev?.bookmakers || []) for (const m of bk.markets) {
+      if (m.key !== "outrights") continue;
+      const q = {}; let tot = 0;
+      for (const o of m.outcomes) { const t = ABBR[o.name]; if (!t) continue; const p = o.price; q[t] = p > 0 ? 100 / (p + 100) : -p / (-p + 100); tot += q[t]; }
+      for (const [t, v] of Object.entries(q)) (imp[t] ||= []).push(v / tot);
+    }
+    const probs = Object.fromEntries(Object.entries(imp).map(([t, v]) => [t, v.reduce((a, b) => a + b, 0) / v.length]));
+    if (Object.keys(probs).length >= 24) { futures = { fetchedAt: new Date().toISOString(), books: (ev.bookmakers || []).map((b) => b.key), probs }; console.log(`futures: ${Object.keys(probs).length} teams from ${futures.books.join(", ")} (credits this pull ${r.headers.get("x-requests-last")})`); }
+  } catch (e) { console.warn("futures fetch skipped:", e.message); }
+}
+let prior = futures ? priorFromFutures(futures.probs) : null, priorSource = "Super Bowl futures market";
+if (!prior) { const prev = fitRatings(last, { lambda: 0.5 }).ratings; prior = Object.fromEntries(Object.entries(prev).map(([t, r]) => [t, 0.6 * r])); priorSource = "last season's market ratings"; }
 const fromNflverse = games.length;
 try {
   const odds = JSON.parse(readFileSync(ODDS, "utf8"));
@@ -29,9 +50,9 @@ try {
     games.push({ home, away, margin: -med, neutral: false });
   }
 } catch {}
-const { ratings, games: used } = fitRatings(games, { lambda: 3, prior });
-let prevR = null;
-try { const o = JSON.parse(readFileSync(OUT, "utf8")); if (o.ratings) prevR = { updatedAt: o.updatedAt, ratings: o.ratings }; } catch {}
-writeFileSync(OUT, JSON.stringify({ updatedAt: new Date().toISOString(), prev: prevR, source: `market spreads: ${used} games this season (nflverse closing lines + current book), shrunk toward last season`, games: used, ratings }, null, 1) + "\n");
+const { ratings, games: used } = fitRatings(games, { lambda: 2, prior });
+const prevR = existing.ratings ? { updatedAt: existing.updatedAt, ratings: existing.ratings } : null;
+writeFileSync(OUT, JSON.stringify({ updatedAt: new Date().toISOString(), prev: prevR, source: `market spreads: ${used} games this season (nflverse closing lines + current book), anchored to the ${priorSource}`, games: used, priorSource, prior, futures, ratings }, null, 1) + "\n");
 const top = Object.entries(ratings).sort((a, b) => b[1] - a[1]);
-console.log(`ratings from ${used} games (${fromNflverse} nflverse, prior from ${last.length} 2025 games)`, "top:", top.slice(0, 5).map(([t, r]) => `${t} ${r}`).join(", "), "bottom:", top.slice(-3).map(([t, r]) => `${t} ${r}`).join(", "));
+console.log(`ratings from ${used} games (${fromNflverse} nflverse), prior = ${priorSource}`, "top:", top.slice(0, 5).map(([t, r]) => `${t} ${r}`).join(", "), "bottom:", top.slice(-3).map(([t, r]) => `${t} ${r}`).join(", "));
+console.log("prior top:", Object.entries(prior).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([t, r]) => `${t} ${r}`).join(", "), "| SF", ratings.SF, "(prior", prior.SF + ")", "BAL", ratings.BAL, "(prior", prior.BAL + ")", "TB", ratings.TB);
