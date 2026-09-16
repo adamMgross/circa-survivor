@@ -789,7 +789,7 @@ export default function CircaSurvivorPlanner() {
               const st = stats[team];
               const inLeg = !!OPP[legId][team];
               return (
-                <tr key={team} className={usedLeg ? "gone" : ""}>
+                <tr key={team} className={usedLeg && usedLeg !== legId ? "gone" : ""}>
                   <td className={"L ev num" + (st.ev == null ? " blank" : st.ev === topEv ? " top" : "")} title={st.dEv != null ? `EV ${st.ev.toFixed(2)}${dTip("was", (st.ev - st.dEv).toFixed(2))}` : ""}><Num d={st.dEv} kind="ev">{st.ev == null ? (inLeg ? "–" : "") : st.ev.toFixed(2)}</Num></td>
                   <td className={"L wp num" + (st.win == null ? " blank" : "") + (st.status === "single" || st.status === "degraded" ? " weak" : "")} title={inLeg ? (st.win == null ? "No two-sided moneyline posted yet for this game" : `${pct(st.win)} — ${STATUS_TEXT[st.status]}${st.status !== "closing" ? ` (${st.n})` : ""} · e.g. ${st.refBook} ${fmtSp(st.ml)} / ${fmtSp(st.oppMl)}${st.dWin != null ? dTip("was", pct(st.win - st.dWin)) : ""}`) : ""}><Num d={st.dWin} kind="pct">{inLeg ? pct(st.win) : ""}</Num></td>
                   <td className={"L pp num" + (st.pick == null ? " blank" : "")} title={inLeg ? (st.act ? "Circa actual" : `field model ${pct(st.pm)}${st.dPick != null ? dTip("was", pct(st.pick - st.dPick)) : ""}`) : ""}><Num d={st.dPick} kind="pct">{inLeg ? (st.pick == null ? "–" : st.pick < 0.005 ? "<1%" : Math.round(st.pick * 100) + "%") : ""}</Num></td>
@@ -803,7 +803,7 @@ export default function CircaSurvivorPlanner() {
                     <span className="nm">{team}</span>
                     {TG_TEAMS.has(team) && <span className="hd" title="Plays in Thanksgiving leg" />}
                     {XM_TEAMS.has(team) && <span className="hd x" title="Plays in Christmas leg" />}
-                    {usedLeg && <span className="used">{LEGS.find((l) => l.id === usedLeg).label}</span>}
+                    {usedLeg && usedLeg !== legId && <span className="used">{LEGS.find((l) => l.id === usedLeg).label}</span>}
                   </td>
                   {LEGS.map((l) => {
                     const g = OPP[l.id][team];
