@@ -234,7 +234,7 @@ function futureForfeit(legId, team, data, burned) {
 // ((n−1)/n)^p, where n = eligible teams this entry still has. Mild at a full pool, sharper as it depletes,
 // and 0 at n = 1.
 const HOLIDAY_LEGS = [{ id: "TG", teams: TG_TEAMS }, { id: "XM", teams: XM_TEAMS }];
-const SCARCITY_P = 0.25;
+const SCARCITY_P = 0.5;
 function holidayScarcity(legId, team, burned, style) {
   const idx = LEGS.findIndex((l) => l.id === legId);
   const p = SCARCITY_P * (STYLE[style] ?? 1);
@@ -413,7 +413,6 @@ const CSS = `
 .csp .controls .note.err { color:var(--red); }
 .csp .L.entry { left:348px; width:var(--teamw,116px); min-width:var(--teamw,116px); text-align:right; padding:0 10px 0 0; }
 .csp td.L.dili.num { color:var(--ink); font-weight:600; }
-.csp td.L.dili.pick1, .csp td.L.dili.pick2, .csp td.L.dili.pick3 { color:var(--green-ink); }
 .csp td.L.num .v { display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; height:100%; }
 .csp td.L.num .v .n { grid-column:2; }
 .csp td.L.num .d { grid-column:3; justify-self:start; width:0; overflow:visible; white-space:nowrap; padding-left:3px; font-size:9px; font-weight:500; letter-spacing:-0.01em; line-height:1; }
@@ -425,7 +424,9 @@ const CSS = `
 .csp td.L.num { color:var(--ink2); }
 .csp td.L.num.blank { color:var(--ink3); }
 .csp td.L.ev.num { color:var(--ink); font-weight:600; }
-.csp td.L.num.top { color:var(--green-ink); }
+/* highlights: green on the best five EV / W% / DILI and on a cheap Future; red on a crowded P% */
+.csp td.L.num.hi { color:var(--green-ink); }
+.csp td.L.num.warn { color:var(--red); }
 .csp td.L.num.weak .n::after { content:""; display:inline-block; width:5px; height:5px; border-radius:50%; background:var(--amber); margin-left:4px; vertical-align:2px; }
 .csp .team { box-shadow:inset 3px 0 0 var(--tc); }
 .csp .team .hd { display:inline-block; width:6px; height:6px; border-radius:50%; margin-left:5px; vertical-align:1px; background:var(--sand-ink); opacity:.7; }
@@ -652,14 +653,14 @@ export default function CircaSurvivorPlanner() {
         a.dDili = a.dili != null && b.dili != null ? a.dili - b.dili : null;
       }
     }
-    // the entry's top three by DILI
-    const ranked = ALL_TEAMS.filter((t) => cur.rows[t].dili != null).sort((a, b) => cur.rows[b].dili - cur.rows[a].dili);
-    ranked.slice(0, 3).forEach((t, i) => { cur.rows[t].diliRank = i + 1; });
+    // mark the best five in each of the three ranked columns
+    const TOP = 5;
+    for (const [key, flag] of [["dili", "diliTop"], ["ev", "evTop"], ["win", "winTop"]])
+      ALL_TEAMS.filter((t) => cur.rows[t][key] != null).sort((a, b) => cur.rows[b][key] - cur.rows[a][key]).slice(0, TOP).forEach((t) => { cur.rows[t][flag] = true; });
     return { ...cur, k };
   }, [data, legId, params, burned, style]);
   const { rows: stats, ev: evInfo } = statsAll;
   const prevAt = data.prev?.oddsAt || null;
-  const topEv = Math.max(...ALL_TEAMS.map((t) => stats[t].ev || 0));
   const evNote = evInfo.blanked ? `EV unavailable: only ${evInfo.covered}/${evInfo.gamesTotal} games have a Win % (need ${Math.round(EV_MIN_COVERAGE * 100)}%)`
     : evInfo.coverage < 1 ? `EV based on ${evInfo.covered}/${evInfo.gamesTotal} games — teams without a Win % are left out, which flatters the rest` : null;
   // small signed change shown next to a number; hidden when it rounds to nothing
@@ -843,13 +844,13 @@ export default function CircaSurvivorPlanner() {
               const inLeg = !!OPP[legId][team];
               return (
                 <tr key={team} className={usedLeg && usedLeg !== legId ? "gone" : ""}>
-                  <td className={"L wp num" + (st.win == null ? " blank" : "") + (st.status === "single" || st.status === "degraded" ? " weak" : "")} title={inLeg ? (st.win == null ? "No two-sided moneyline posted yet for this game" : `${pct(st.win)} — ${STATUS_TEXT[st.status]}${st.status !== "closing" ? ` (${st.n})` : ""} · e.g. ${st.refBook} ${fmtSp(st.ml)} / ${fmtSp(st.oppMl)}${st.dWin != null ? dTip("was", pct(st.win - st.dWin)) : ""}`) : ""}><Num d={st.dWin} kind="pct">{inLeg ? pct(st.win) : ""}</Num></td>
-                  <td className={"L pp num" + (st.pick == null ? " blank" : "")} title={inLeg ? (st.act ? "Circa actual" : `field model ${pct(st.pm)}${st.dPick != null ? dTip("was", pct(st.pick - st.dPick)) : ""}`) : ""}><Num d={st.dPick} kind="pct">{inLeg ? (st.pick == null ? "–" : st.pick < 0.005 ? "<1%" : Math.round(st.pick * 100) + "%") : ""}</Num></td>
-                  <td className={"L ev num" + (st.ev == null ? " blank" : st.ev === topEv ? " top" : "")} title={st.dEv != null ? `EV ${st.ev.toFixed(2)}${dTip("was", (st.ev - st.dEv).toFixed(2))}` : ""}><Num d={st.dEv} kind="ev">{st.ev == null ? (inLeg ? "–" : "") : st.ev.toFixed(2)}</Num></td>
-                  <td className={"L fv num" + (st.fv == null ? " blank" : "")} title={st.fv == null ? "No power ratings yet" : `About ${st.fv.toFixed(1)} strong-favorite weeks left after this one (a 75% spot counts ~1, 65% counts ½, 55% a little)`}>
+                  <td className={"L wp num" + (st.win == null ? " blank" : st.winTop ? " hi" : "") + (st.status === "single" || st.status === "degraded" ? " weak" : "")} title={inLeg ? (st.win == null ? "No two-sided moneyline posted yet for this game" : `${pct(st.win)} — ${STATUS_TEXT[st.status]}${st.status !== "closing" ? ` (${st.n})` : ""} · e.g. ${st.refBook} ${fmtSp(st.ml)} / ${fmtSp(st.oppMl)}${st.dWin != null ? dTip("was", pct(st.win - st.dWin)) : ""}`) : ""}><Num d={st.dWin} kind="pct">{inLeg ? pct(st.win) : ""}</Num></td>
+                  <td className={"L pp num" + (st.pick == null ? " blank" : st.pick > 0.099 ? " warn" : "")} title={inLeg ? (st.act ? "Circa actual" : `field model ${pct(st.pm)}${st.dPick != null ? dTip("was", pct(st.pick - st.dPick)) : ""}`) : ""}><Num d={st.dPick} kind="pct">{inLeg ? (st.pick == null ? "–" : st.pick < 0.005 ? "<1%" : Math.round(st.pick * 100) + "%") : ""}</Num></td>
+                  <td className={"L ev num" + (st.ev == null ? " blank" : st.evTop ? " hi" : "")} title={st.dEv != null ? `EV ${st.ev.toFixed(2)}${dTip("was", (st.ev - st.dEv).toFixed(2))}` : ""}><Num d={st.dEv} kind="ev">{st.ev == null ? (inLeg ? "–" : "") : st.ev.toFixed(2)}</Num></td>
+                  <td className={"L fv num" + (st.fv == null ? " blank" : Math.round(st.fv * 10) / 10 <= 2 ? " hi" : "")} title={st.fv == null ? "No power ratings yet" : `About ${st.fv.toFixed(1)} strong-favorite weeks left after this one (a 75% spot counts ~1, 65% counts ½, 55% a little)`}>
                     <span className="v"><span className="n">{st.fv == null ? "–" : st.fv.toFixed(1)}</span></span>
                   </td>
-                  <td className={"L dili num" + (st.dili == null ? " blank" : "") + (st.diliRank ? " pick" + st.diliRank : "")} title={st.dili == null ? (inLeg ? (usedLeg ? "Already used" : "Needs an EV") : "") : diliTip(st)}>
+                  <td className={"L dili num" + (st.dili == null ? " blank" : st.diliTop ? " hi" : "")} title={st.dili == null ? (inLeg ? (usedLeg ? "Already used" : "Needs an EV") : "") : diliTip(st)}>
                     <Num d={st.dDili} kind="ev">{st.dili == null ? (inLeg ? "–" : "") : st.dili.toFixed(2)}</Num>
                   </td>
                   <td className="L team" style={{ "--tc": COLORS[team][0] }}>
@@ -917,7 +918,7 @@ function AuditPanel({ legId, data, params, merr, stats, evNote, style, pickStyle
         </div>
         <div className="sec">
           <h4>DILI — do I love it?</h4>
-          <p>EV divided by the future forfeit<sup>k</sup>, times a holiday-scarcity factor. The forfeit is how much this team beats a realistic pick, the average of this entry's top-3 other available teams, in each later week, weighted by the chance of still being alive then ({Math.round(SURVIVE * 100)}% per week). k = style × calendar, this week {diliK.toFixed(2)}. Green marks this entry's top three.</p>
+          <p>EV divided by the future forfeit<sup>k</sup>, times a holiday-scarcity factor. The forfeit is how much this team beats a realistic pick, the average of this entry's top-3 other available teams, in each later week, weighted by the chance of still being alive then ({Math.round(SURVIVE * 100)}% per week). k = style × calendar, this week {diliK.toFixed(2)}. Green marks this entry's best five.</p>
           <p><b>Holiday scarcity.</b> Thanksgiving has 10 eligible teams and Christmas 8, six of them in both, and an entry with none left must miss that leg. Teams carrying a {"\u25CF"} (Thanksgiving) or {"\u25CF"} (Christmas) dot are docked by how much of the pool they would take with them, whether they are favored that day or not; the dock grows as the pool empties and is total on the last eligible team.</p>
           <div className="row"><span className="lbl">Style</span>
             <span className="seg">
