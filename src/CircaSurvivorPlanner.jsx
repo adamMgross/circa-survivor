@@ -227,13 +227,36 @@ function futureForfeit(legId, team, data, burned) {
   parts.sort((a, b) => b.contrib - a.contrib);
   return { B: Math.exp(logB), parts };
 }
+// Holiday scarcity. Thanksgiving has only 10 eligible teams and Christmas only 8, and six are in both
+// (BUF, CHI, DEN, GB, LAR, PHI). Burning one on an ordinary week costs flexibility no other pick costs, and an
+// entry with none left MUST miss that leg, which is a loss. So this depends only on eligibility — never on how
+// good the team looks that day, since a holiday dog is still a body in the pool. Factor per leg still ahead:
+// ((n−1)/n)^p, where n = eligible teams this entry still has. Mild at a full pool, sharper as it depletes,
+// and 0 at n = 1.
+const HOLIDAY_LEGS = [{ id: "TG", teams: TG_TEAMS }, { id: "XM", teams: XM_TEAMS }];
+const SCARCITY_P = 0.25;
+function holidayScarcity(legId, team, burned, style) {
+  const idx = LEGS.findIndex((l) => l.id === legId);
+  const p = SCARCITY_P * (STYLE[style] ?? 1);
+  let f = 1; const parts = [];
+  for (const h of HOLIDAY_LEGS) {
+    if (LEGS.findIndex((l) => l.id === h.id) <= idx) continue;   // that leg is this week or already gone
+    if (!h.teams.has(team)) continue;                            // team can't play it anyway
+    const n = [...h.teams].filter((t) => !burned.has(t)).length; // pool still open to this entry, incl. `team`
+    const fh = n <= 1 ? 0 : Math.pow((n - 1) / n, p);
+    f *= fh; parts.push({ id: h.id, n, f: fh });
+  }
+  return { f, parts };
+}
 export function computeDili(legId, rows, data, burned, style = "future") {
   const k = (STYLE[style] ?? 1) * calendarWeight(legId);
   for (const t of Object.keys(OPP[legId])) {
     const r = rows[t];
     if (r.ev == null || burned.has(t)) { r.dili = null; continue; }
     const f = futureForfeit(legId, t, data, burned);
-    r.forfeit = f.B; r.forfeitParts = f.parts; r.diliK = k; r.dili = r.ev / Math.pow(f.B, k);
+    const h = holidayScarcity(legId, t, burned, style);
+    r.forfeit = f.B; r.forfeitParts = f.parts; r.diliK = k; r.holiday = h.f; r.holidayParts = h.parts;
+    r.dili = (r.ev / Math.pow(f.B, k)) * h.f;
   }
   return k;
 }
@@ -651,7 +674,8 @@ export default function CircaSurvivorPlanner() {
   const Num = ({ children, d, kind }) => <span className="v"><span className="n">{children}</span><Delta v={d} kind={kind} /></span>;
   const diliTip = (st) => {
     const top = (st.forfeitParts || []).slice(0, 3).map((p) => `${legLabel(p.leg)} ${pct(p.win)} vs ${pct(p.bar)} bar`).join(", ");
-    return `EV ${st.ev.toFixed(2)} ÷ future forfeit ${st.forfeit.toFixed(2)}^${st.diliK.toFixed(1)} = ${st.dili.toFixed(2)}${top ? ` · biggest later edges: ${top}` : " · no edge over a realistic pick later"}${st.dDili != null ? dTip("was", (st.dili - st.dDili).toFixed(2)) : ""}`;
+    const hol = (st.holidayParts || []).map((p) => `${p.id === "TG" ? "Thanksgiving" : "Christmas"} pool down to ${p.n - 1}`).join(", ");
+    return `EV ${st.ev.toFixed(2)} ÷ future forfeit ${st.forfeit.toFixed(2)}^${st.diliK.toFixed(1)}${hol ? ` × holiday scarcity ${st.holiday.toFixed(2)}` : ""} = ${st.dili.toFixed(2)}${top ? ` · biggest later edges: ${top}` : " · no edge over a realistic pick later"}${hol ? ` · burning it leaves the ${hol}` : ""}${st.dDili != null ? dTip("was", (st.dili - st.dDili).toFixed(2)) : ""}`;
   };
   const dTip = (label, was) => (prevAt ? ` · ${label} ${was} at the previous refresh (${fmtTime(prevAt)})` : "");
   void 0;
@@ -893,7 +917,8 @@ function AuditPanel({ legId, data, params, merr, stats, evNote, style, pickStyle
         </div>
         <div className="sec">
           <h4>DILI — do I love it?</h4>
-          <p>EV divided by the future forfeit<sup>k</sup>. The forfeit is how much this team beats a realistic pick, the average of this entry's top-3 other available teams, in each later week, weighted by the chance of still being alive then ({Math.round(SURVIVE * 100)}% per week). k = style × calendar, this week {diliK.toFixed(2)}. Green marks this entry's top three.</p>
+          <p>EV divided by the future forfeit<sup>k</sup>, times a holiday-scarcity factor. The forfeit is how much this team beats a realistic pick, the average of this entry's top-3 other available teams, in each later week, weighted by the chance of still being alive then ({Math.round(SURVIVE * 100)}% per week). k = style × calendar, this week {diliK.toFixed(2)}. Green marks this entry's top three.</p>
+          <p><b>Holiday scarcity.</b> Thanksgiving has 10 eligible teams and Christmas 8, six of them in both, and an entry with none left must miss that leg. Teams carrying a {"\u25CF"} (Thanksgiving) or {"\u25CF"} (Christmas) dot are docked by how much of the pool they would take with them, whether they are favored that day or not; the dock grows as the pool empties and is total on the last eligible team.</p>
           <div className="row"><span className="lbl">Style</span>
             <span className="seg">
               {[["now", "Now"], ["balanced", "Balanced"], ["future", "Future"]].map(([v, l]) => <button key={v} className={style === v ? "on" : ""} onClick={() => pickStyle(v)} title={v === "now" ? "Lean on this week's EV" : v === "future" ? "Save the studs, take risk early" : "Even weighting"}>{l}</button>)}
@@ -907,7 +932,7 @@ function AuditPanel({ legId, data, params, merr, stats, evNote, style, pickStyle
       </div>
       <h4 className="th">This week, by team</h4>
       <table>
-        <thead><tr><th>Team</th><th>ML</th><th>Win</th><th>Future</th><th>Field holding</th><th>Model P%</th><th>Final P%</th><th>EV</th><th>Forfeit</th><th>DILI</th></tr></thead>
+        <thead><tr><th>Team</th><th>ML</th><th>Win</th><th>Future</th><th>Field holding</th><th>Model P%</th><th>Final P%</th><th>EV</th><th>Forfeit</th><th>Holiday</th><th>DILI</th></tr></thead>
         <tbody>
           {teams.map((t) => (
             <tr key={t}>
@@ -920,6 +945,7 @@ function AuditPanel({ legId, data, params, merr, stats, evNote, style, pickStyle
               <td>{pc(stats[t].pick, 1)}</td>
               <td>{stats[t].ev == null ? "–" : stats[t].ev.toFixed(2)}</td>
               <td className="mut">{stats[t].forfeit == null ? "–" : stats[t].forfeit.toFixed(3)}</td>
+              <td className="mut" title={(stats[t].holidayParts || []).map((h) => `${h.id} pool ${h.n}`).join(", ")}>{stats[t].holiday == null || stats[t].holiday === 1 ? "–" : stats[t].holiday.toFixed(3)}</td>
               <td className="fin">{stats[t].dili == null ? "–" : stats[t].dili.toFixed(2)}</td>
             </tr>
           ))}

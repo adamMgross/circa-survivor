@@ -56,6 +56,11 @@ fetch fails, last season's market ratings regressed 40% toward average are the f
 - **Forfeit**: for each later week, how much this team beats a *realistic* pick — the average of this entry's
   top-3 other available teams that week — as a survival multiplier, weighted by the chance the entry is still
   alive then (80%/week compounding). A team with no edge over a realistic pick later keeps its full EV.
+- **Holiday scarcity**: the Thanksgiving leg has only 10 eligible teams and Christmas only 8, and six (BUF, CHI,
+  DEN, GB, LAR, PHI) are in both. For each holiday leg still ahead that the team plays in, DILI is multiplied by
+  `((n−1)/n)^p` where `n` is the eligible teams this entry still has. It depends only on eligibility, never on how
+  good the team looks that day, since a holiday underdog is still a body in the pool. Mild at a full pool, sharper
+  as it empties, and zero on the entry's last eligible team, which it must keep or forfeit the leg.
 - **k = style × calendar**. Style: Now 0.5, Balanced 1.0, Future 1.35 (default; "save the studs, take risk
   early"). Calendar: Weeks 1–6 ×1.5, 7–11 ×1.0, Thanksgiving–15 ×0.6, Christmas–18 ×0.25.
 - The entry's top three are shaded green; the grid sorts by DILI by default. The tooltip shows the arithmetic and

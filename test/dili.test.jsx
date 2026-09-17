@@ -32,6 +32,21 @@ ok("late-season k is small", (() => { const r = {}; for (const t of ALL_TEAMS) r
 ok("stud has more spots left than a flat team", fvFor("W2", "KC", data) > fvFor("W2", "CIN", data) + 3, `KC ${fvFor("W2", "KC", data).toFixed(1)} CIN ${fvFor("W2", "CIN", data).toFixed(1)}`);
 ok("future value on a readable scale", fvFor("W2", "KC", data) < 18 && fvFor("W2", "KC", data) > 1);
 
+// holiday scarcity: eligibility only, sharpens as the pool empties, total on the last eligible team
+const holiday = (burnedList, style = "balanced") => { const r = mk(); computeDili("W2", r, data, new Set(burnedList), style); return r; };
+let h = holiday([]);
+ok("dual-eligible team docked twice", h.PHI.holidayParts.length === 2 && h.PHI.holiday < h.DAL.holiday, `PHI ${h.PHI.holiday.toFixed(3)} DAL ${h.DAL.holiday.toFixed(3)}`);
+ok("single-leg team docked once", h.DAL.holidayParts.length === 1 && h.DAL.holiday < 1 && h.SEA.holidayParts[0].id === "XM");
+ok("non-holiday team untouched", h.CIN.holiday === 1 && h.CIN.holidayParts.length === 0 && Math.abs(h.CIN.dili - h.CIN.ev / Math.pow(h.CIN.forfeit, h.CIN.diliK)) < 1e-12);
+ok("dock does not look at how good the team is that day", (() => { const a = holiday([]), b = holiday([]); return a.PHI.holiday === b.PHI.holiday && a.DAL.holiday === a.KC.holiday; })(), "same pool ⇒ same dock");
+const thin = holiday(["BUF", "CHI", "DEN", "GB", "HOU", "SEA"]);      // XM pool down to PHI + LAR
+ok("dock sharpens as the pool empties", thin.PHI.holiday < h.PHI.holiday - 0.1, `${h.PHI.holiday.toFixed(3)} → ${thin.PHI.holiday.toFixed(3)}`);
+const last = holiday(["BUF", "CHI", "DEN", "GB", "HOU", "SEA", "LAR"]); // PHI is the only XM team left
+ok("last eligible team is disqualified", last.PHI.holiday === 0 && last.PHI.dili === 0);
+ok("style scales the dock", holiday([], "now").PHI.holiday > holiday([], "future").PHI.holiday);
+// the holiday leg itself is not penalised for its own pool
+ok("no self-dock when picking on the holiday week", (() => { const r = {}; for (const t of Object.keys(OPP.XM)) r[t] = { win: 0.7, pick: 1 / 4, fv: 0 }; computeEV("XM", r); computeDili("XM", r, data, new Set(), "balanced"); return r.PHI.holidayParts.length === 0; })());
+
 // futures prior: monotone in title odds, centered, on a points scale
 const probs = Object.fromEntries(ALL_TEAMS.map((t, i) => [t, 0.002 + 0.006 * i]));
 const prior = priorFromFutures(probs);
