@@ -333,7 +333,7 @@ const CSS = `
 .csp { --paper:#FBFAF7; --panel:#F4F2EC; --surface:#FFFFFF; --ink:#17181C; --ink2:#5B5E66; --ink3:#9A9DA6; --rule:#E7E5DF; --rule2:#D6D3CB;
   --green:#2F8F3E; --green-ink:#1C5E2A; --green-bg:#DDF3DC; --sand:#F3EFE3; --sand-ink:#7A5A12; --amber:#C98A1A; --red:#D64545;
   --sel:#2F63C9; --sel-line:#9DB8E6; --sel-bg:#EAF0FA; --sel-bg2:#DCE6F6; --sel-bg3:#CFDCF2;
-  --th:40px; --rh:34px; --cw:52px;
+  --th:40px; --rh:34px; --cw:52px; --gap:20px;
   display:flex; flex-direction:column; height:100vh; background:var(--paper); color:var(--ink);
   font-family:"IBM Plex Sans", -apple-system, "Helvetica Neue", Helvetica, Arial, sans-serif; font-size:13px; font-variant-numeric:tabular-nums; -webkit-font-smoothing:antialiased; }
 .csp * { box-sizing:border-box; }
@@ -465,8 +465,8 @@ const CSS = `
 .csp .sum td.s { width:var(--cw); min-width:var(--cw); }
 .csp .sum td.s .chip { display:inline-block; min-width:38px; padding:2px 5px; border-radius:5px; font-size:11px; font-weight:600; line-height:16px; }
 .csp .sum td.empty { color:var(--rule2); font-weight:400; }
-.csp .sum tr.gap td { height:8px; background:var(--paper); cursor:default; position:sticky; top:calc(var(--th) + var(--n) * var(--rh)); z-index:4; border-bottom:1px solid var(--rule); }
-.csp .sum tr.hdr2 th { top:calc(var(--th) + var(--n) * var(--rh) + 8px); }
+.csp .sum tr.gap td { height:var(--gap); background:var(--paper); cursor:default; position:sticky; top:calc(var(--th) + var(--n) * var(--rh)); z-index:4; border-bottom:1px solid var(--rule); }
+.csp .sum tr.hdr2 th { top:calc(var(--th) + var(--n) * var(--rh) + var(--gap)); }
 .csp .sum tr.hdr2 th.L { z-index:5; }
 .csp .sum tr.top th, .csp .sum tr.top td { border-top:none; }
 
