@@ -349,7 +349,7 @@ const CSS = `
 .csp .ctl .note.msg { color:var(--ink); }
 .csp .ctl .note.err { color:var(--red); }
 .csp .who { font-size:12px; color:var(--ink2); }
-.csp .link { background:none; border:none; padding:0 4px; font:inherit; font-size:12px; color:var(--ink2); cursor:pointer; text-decoration:underline; text-underline-offset:3px; }
+.csp .link { display:inline-block; background:none; border:none; padding:0 4px; font:inherit; font-size:12px; color:var(--ink2); cursor:pointer; text-decoration:underline; text-underline-offset:3px; }
 .csp .link:hover { color:var(--ink); }
 
 /* one control system */
@@ -779,6 +779,7 @@ export default function CircaSurvivorPlanner() {
         <div className="ctl">
           <div className="row">
             {view === "actuals" && (status || !loaded) && <span className={"note" + (statusErr ? " err" : " msg")}>{!loaded ? "Loading…" : status}</span>}
+            <a className="link" href="guide.html" title="Plain-English walkthrough of every number here">How it works</a>
             {canEdit ? <><span className="who">{user}</span><button className="link" onClick={signOut}>Sign out</button></>
               : <button className="link" onClick={() => setSignin((s) => !s)}>Sign in to edit</button>}
           </div>
