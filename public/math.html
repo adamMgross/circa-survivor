@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The math behind the Circa Survivor planner</title>
+<meta name="description" content="Every projection on the dashboard worked out by hand, with rules of thumb you can run in your head.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%232b2f33'/%3E%3Ccircle cx='16' cy='16' r='9' fill='%23c9edc7'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#FBFAF7; --panel:#F4F2EC; --surface:#FFFFFF; --ink:#17181C; --ink2:#5B5E66; --ink3:#9A9DA6;
+  --rule:#E7E5DF; --rule2:#D6D3CB; --green:#2F8F3E; --green-ink:#1C5E2A; --green-bg:#EDF7EC;
+  --sel:#2F63C9; --sel-bg:#EAF0FA; --sel-line:#9DB8E6; --amber:#C98A1A; --red:#D64545; --sand:#F3EFE3;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:"IBM Plex Sans",-apple-system,"Helvetica Neue",Helvetica,Arial,sans-serif;
+  font-size:16px;line-height:1.6;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased}
+.wrap{max-width:820px;margin:0 auto;padding:0 24px 96px}
+
+header.top{border-bottom:1px solid var(--rule);background:var(--panel)}
+header.top .wrap{padding-top:40px;padding-bottom:36px}
+.kicker{font-size:13px;color:var(--ink2);margin:0 0 10px}
+h1{font-size:40px;line-height:1.12;letter-spacing:-0.02em;font-weight:600;margin:0 0 14px}
+.lede{font-size:18px;color:var(--ink2);margin:0;max-width:62ch}
+.links{margin-top:22px;display:flex;gap:10px;flex-wrap:wrap}
+.backlink{display:inline-block;font-size:14px;font-weight:500;color:var(--ink);text-decoration:none;
+  border:1px solid var(--rule2);background:var(--surface);border-radius:8px;padding:8px 14px}
+.backlink:hover{border-color:var(--ink3)}
+
+h2{font-size:26px;line-height:1.2;letter-spacing:-0.01em;font-weight:600;margin:64px 0 6px;scroll-margin-top:20px}
+h2 .q{display:block;font-size:14px;font-weight:400;color:var(--ink2);margin-top:6px}
+h3{font-size:17px;font-weight:600;margin:34px 0 8px}
+h4{font-size:15px;font-weight:600;margin:24px 0 6px}
+p{margin:0 0 16px;max-width:68ch}
+ul,ol{margin:0 0 16px;padding-left:22px;max-width:66ch}
+li{margin:0 0 7px}
+a{color:var(--sel)}
+.small{font-size:14px;color:var(--ink2)}
+hr{border:0;border-top:1px solid var(--rule);margin:56px 0 0}
+code{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-size:14px;background:var(--panel);padding:1px 5px;border-radius:4px}
+
+nav.toc{margin:34px 0 0;padding:18px 20px;background:var(--surface);border:1px solid var(--rule);border-radius:12px}
+nav.toc p{font-size:13px;color:var(--ink2);margin:0 0 10px}
+nav.toc ol{columns:2;column-gap:28px;margin:0;padding-left:20px;font-size:15px}
+nav.toc a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--rule2)}
+nav.toc a:hover{border-color:var(--ink)}
+@media (max-width:600px){nav.toc ol{columns:1}}
+
+/* the arithmetic blocks */
+.calc{background:var(--surface);border:1px solid var(--rule);border-radius:12px;padding:6px 20px 14px;margin:0 0 20px;
+  font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-size:14.5px;overflow-x:auto}
+.calc .row{display:flex;gap:14px;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--rule)}
+.calc .val{min-width:0}
+.calc .row:last-child{border-bottom:none}
+.calc .lbl{flex:0 0 190px;color:var(--ink2);font-family:"IBM Plex Sans",sans-serif;font-size:14px;white-space:normal}
+.calc .val{color:var(--ink);min-width:0}
+.calc .row.total{font-weight:500}
+.calc .row.total .val{color:var(--green-ink)}
+.rule{background:var(--sel-bg);border:1px solid var(--sel-line);border-radius:12px;padding:14px 18px;margin:0 0 20px}
+.rule b{color:var(--sel);font-weight:600}
+.rule p{margin:0;max-width:64ch}
+.rule p + p{margin-top:8px}
+.example{background:var(--green-bg);border:1px solid #CDE6CC;border-radius:12px;padding:18px 20px;margin:0 0 20px}
+.example h4{margin:0 0 10px;font-size:13px;font-weight:600;color:var(--green-ink);letter-spacing:.02em}
+.example p:last-child{margin-bottom:0}
+.note{border-left:3px solid var(--amber);padding:2px 0 2px 16px;margin:0 0 18px;color:var(--ink2);font-size:15px}
+.note strong{color:var(--ink)}
+
+table{border-collapse:collapse;width:100%;font-size:14.5px;margin:0 0 20px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--rule)}
+th{font-weight:600;font-size:13px;color:var(--ink2);border-bottom-color:var(--rule2)}
+td.n,th.n{text-align:right}
+tbody tr:last-child td{border-bottom:none}
+.tw{overflow-x:auto;margin-bottom:20px}
+.tw table{min-width:520px;margin-bottom:0}
+.cheat td:first-child{font-weight:500}
+.cheat td:last-child{color:var(--ink2)}
+
+details{background:var(--surface);border:1px solid var(--rule);border-radius:10px;padding:0;margin:0 0 12px}
+details summary{cursor:pointer;padding:13px 18px;font-weight:500;list-style:none;display:flex;justify-content:space-between;gap:12px}
+details summary::-webkit-details-marker{display:none}
+details summary::after{content:"Show working";color:var(--sel);font-size:13px;font-weight:500;white-space:nowrap}
+details[open] summary::after{content:"Hide"}
+details[open] summary{border-bottom:1px solid var(--rule)}
+details .body{padding:14px 18px 4px}
+details .body p:last-child{margin-bottom:12px}
+
+footer{border-top:1px solid var(--rule);margin-top:64px;padding-top:24px;font-size:14px;color:var(--ink2)}
+@media (max-width:560px){
+  .wrap{padding:0 18px 72px}
+  header.top .wrap{padding-top:28px;padding-bottom:26px}
+  h1{font-size:30px}.lede{font-size:16.5px}h2{font-size:22px;margin-top:48px}
+  .calc .lbl{flex-basis:130px}
+}
+</style>
+</head>
+<body>
+
+<header class="top"><div class="wrap">
+  <p class="kicker">Circa Survivor 2026</p>
+  <h1>The math, worked by hand</h1>
+  <p class="lede">Every projected number on the dashboard, broken into pieces you can multiply on a napkin. By the end you should be able to look at a team and estimate its numbers in your head, and know which changes matter and which do not.</p>
+  <div class="links">
+    <a class="backlink" href="./">← Dashboard</a>
+    <a class="backlink" href="guide.html">How it works</a>
+  </div>
+</div></header>
+
+<div class="wrap">
+
+<nav class="toc">
+  <p>What's here</p>
+  <ol>
+    <li><a href="#tools">Three tools</a></li>
+    <li><a href="#w">W% — the easy one</a></li>
+    <li><a href="#p">P% — the crowd</a></li>
+    <li><a href="#ev">EV — value this week</a></li>
+    <li><a href="#dili">DILI — the verdict</a></li>
+    <li><a href="#cheat">The cheat sheet</a></li>
+    <li><a href="#practice">Practice questions</a></li>
+    <li><a href="#knobs">Where the numbers came from</a></li>
+  </ol>
+</nav>
+
+<h2 id="tools">Three tools<span class="q">Everything on the dashboard is built from these</span></h2>
+<p>You need three ideas. If you can do these, you can do all of it.</p>
+
+<h3>1. Taking a cut</h3>
+<p>Multiplying by a number smaller than 1 takes a slice off. Multiplying by 0.9 leaves 90% of what you had, so it takes 10% off. Do it twice and you have 0.81, which is 19% off, not 20%, because the second cut comes off the smaller number. That is the same reason a 10% raise followed by a 10% pay cut does not get you back where you started.</p>
+<p>The dashboard uses this constantly. Whenever you see a team "docked" or "charged", it is being multiplied by something a bit under 1.</p>
+
+<h3>2. Raising to a power, to amplify a difference</h3>
+<p>A power just means multiplying a number by itself several times. What matters here is what it does to a <em>comparison</em>.</p>
+<p>The 49ers are 88% to win this week and the Bucs are 78%. That is a ratio of 88 ÷ 78 = 1.13, so the 49ers are only 13% better. But raise that to the 9th power and you get 3.3. A small edge, amplified nine times over, becomes a big one.</p>
+<p>Why would anyone do that? Because the betting crowd does not split evenly. People pile onto the safest-looking team far harder than "13% better" would suggest. Raising to a power is how you turn a small real edge into the lopsided behaviour you actually see.</p>
+
+<h3>3. Making a list add up to 100%</h3>
+<p>If you score six teams and get 3, 2, 1, 1, 0.5 and 0.5, those add to 8. Divide each by 8 and you get 37.5%, 25%, 12.5%, 12.5%, 6.25% and 6.25%, which add to 100%. That is all "normalizing" means. Scores become shares.</p>
+<div class="rule"><p><b>Handy consequence.</b> If you only want to <em>compare</em> two teams, you can skip the adding-up step entirely. Their ratio is the same before and after. So "the 49ers should be about twice the Bucs" is something you can work out without touching the other 30 teams.</p></div>
+
+<h2 id="w">W% — the chance they win<span class="q">The only column with no model in it</span></h2>
+<p>The <a href="guide.html#w">walkthrough covers this in full</a>. In short: take a sportsbook's price, turn it into a percentage, remove the book's built-in profit margin so the two sides add to exactly 100, repeat at five books, and take the middle number.</p>
+<p>No estimating. No power ratings. If the books have not posted a price, the cell is empty. Everything below is built on top of this number, which is why it comes first on the dashboard.</p>
+
+<h2 id="p">P% — how much of the crowd takes them<span class="q">Three multipliers, then share it out</span></h2>
+<p>Before a week locks, nobody knows what the field will do, so the app scores every team that is favored and turns the scores into percentages. The score is three things multiplied together.</p>
+
+<div class="calc">
+  <div class="row"><span class="lbl">Start with</span><span class="val">win chance, raised to the 9th power</span></div>
+  <div class="row"><span class="lbl">then take a cut for</span><span class="val">future value — multiply by 0.9, once per point</span></div>
+  <div class="row"><span class="lbl">then scale by</span><span class="val">availability — the share of the field that can still use them</span></div>
+  <div class="row total"><span class="lbl">and finally</span><span class="val">divide every team's score by the total, so they add to 100%</span></div>
+</div>
+
+<h3>What each piece is doing</h3>
+<p><strong>Win chance to the 9th</strong> is the crowd-chasing part. It says the field piles onto whoever looks safest, much harder than the raw odds justify.</p>
+<div class="rule"><p><b>Rule of thumb.</b> Every extra 10 points of win chance makes a team roughly <b>three times</b> more popular. Between 60% and 70% it is closer to four times; between 80% and 90% closer to three. Three is a good number to carry around.</p></div>
+
+<p><strong>The future-value cut</strong> is the saving-for-later part. The field does not spend its best long-term assets early, so a team with a loaded schedule ahead gets marked down.</p>
+<div class="rule"><p><b>Rule of thumb.</b> Knock off <b>10% per point of future value</b>. Two points is about 18% off, four points is a third off, seven points is roughly half off. (Multiply by 0.9 once per point and you will be within a percent of the real answer.)</p></div>
+
+<p><strong>Availability</strong> is the simplest of the three. It is just the fraction of surviving entries that have not already burned the team, and it multiplies straight through. If by Week 10 only 40% of the field still has the Chiefs available, the Chiefs get 40% of the popularity they would otherwise have. Right now, in Week 2, almost every team is near 100%, so this piece is barely doing anything. It becomes a major factor by midseason.</p>
+
+<h3>The whole calculation, on one team</h3>
+<div class="example">
+<h4>WORKED EXAMPLE · 49ers, Week 2</h4>
+<div class="calc" style="background:#fff;margin-bottom:12px">
+  <div class="row"><span class="lbl">win chance</span><span class="val">0.88</span></div>
+  <div class="row"><span class="lbl">raised to the 9th</span><span class="val">0.88 × 0.88 × … = 0.303</span></div>
+  <div class="row"><span class="lbl">future value 4.4, so × 0.9 four-and-a-bit times</span><span class="val">× 0.64 → 0.194</span></div>
+  <div class="row"><span class="lbl">availability (nobody has used them)</span><span class="val">× 1.00 → 0.194</span></div>
+  <div class="row total"><span class="lbl">every team's score added together came to 0.59, so</span><span class="val">0.194 ÷ 0.59 = 33%</span></div>
+</div>
+<p class="small">The dashboard shows 33%.</p>
+</div>
+
+<h3>The shortcut: compare two teams instead</h3>
+<p>You almost never need the full calculation. To ask "should the 49ers be more popular than the Bucs, and by how much", just compare.</p>
+<div class="calc">
+  <div class="row"><span class="lbl">win chance: 88% vs 78%</span><span class="val">10 points better → about 3× (call it 2.7 at this level)</span></div>
+  <div class="row"><span class="lbl">future value: 4.4 vs 2.0</span><span class="val">2.4 points worse → about 22% off → × 0.78</span></div>
+  <div class="row total"><span class="lbl">so the 49ers should be about</span><span class="val">2.7 × 0.78 = 2.1× the Bucs</span></div>
+</div>
+<p>The dashboard has them at 33% and 16%, which is 2.1 times. That whole comparison is doable in your head at a bar.</p>
+
+<div class="note"><strong>How much should you trust it?</strong> For Week 1 the model predicted 27% on the Jaguars and the real answer was 32.5%. It gets the shape right and the exact number wrong. The moment Circa publishes the real figures, P% switches to those and stops guessing.</div>
+
+<h2 id="ev">EV — how good is this pick <em>this week</em><span class="q">Surviving is not the same as gaining</span></h2>
+<p>Here is the idea, before any arithmetic. You are in a race with 17,000 people. You want to survive, and you want other people not to. Winning a week where everyone else also wins moves you nowhere. So EV is your chance of surviving, divided by how crowded it will be if you do.</p>
+
+<div class="calc">
+  <div class="row"><span class="lbl">top</span><span class="val">your team's win chance</span></div>
+  <div class="row"><span class="lbl">bottom</span><span class="val">the share of the whole field expected to survive, if your team wins</span></div>
+  <div class="row total"><span class="lbl">then rescale everything so that</span><span class="val">1.00 = what a typical entry achieves</span></div>
+</div>
+
+<h3>The surprise, and the reason this is easy</h3>
+<p>You would expect the bottom number to swing a lot between teams. It does not. Here it is for six different Week 2 teams: 0.785, 0.784, 0.794, 0.783, 0.780, 0.795. They are all about 0.79.</p>
+<p>The reason is that the bottom number is dominated by all the <em>other</em> games, which are identical no matter which team you pick. Your own team only nudges it.</p>
+<div class="rule">
+  <p><b>The rule that falls out of that.</b> EV is very close to <b>your win chance divided by 0.78</b>.</p>
+  <p>Put another way: <b>EV is 1.00 when your team's win chance matches the crowd's average</b>, which this week is about 78%. Every point above that is worth roughly <b>1.2% more EV</b>.</p>
+</div>
+
+<div class="tw"><table>
+<thead><tr><th>Team</th><th class="n">Win chance</th><th class="n">Win ÷ 78</th><th class="n">Real EV</th></tr></thead>
+<tbody>
+<tr><td>49ers</td><td class="n">88%</td><td class="n">1.13</td><td class="n">1.11</td></tr>
+<tr><td>Bucs</td><td class="n">78%</td><td class="n">1.00</td><td class="n">1.00</td></tr>
+<tr><td>Ravens</td><td class="n">77%</td><td class="n">0.99</td><td class="n">1.01</td></tr>
+<tr><td>Chargers</td><td class="n">72%</td><td class="n">0.92</td><td class="n">0.94</td></tr>
+<tr><td>Panthers</td><td class="n">57%</td><td class="n">0.73</td><td class="n">0.76</td></tr>
+</tbody></table></div>
+<p>Never off by more than about 0.03. You can compute the EV column in your head.</p>
+
+<h3>So where does being contrarian come in?</h3>
+<p>It is the difference between the two columns above, and it is small right now. Adding 10 points of popularity to a team costs it only about <strong>2% of its EV</strong>.</p>
+<div class="rule"><p><b>The trade-off, in one line.</b> One point of win chance is worth roughly <b>six points of popularity</b>. If you are choosing between a 74% team that 6% of the field is on and a 78% team that 16% is on, the 78% team still wins, comfortably.</p></div>
+<p>Why so lopsided? Because people who picked your team were mostly going to survive anyway. If your team is 88% to win, the crowd riding along with you was 88% safe without you. You are only really "sharing" survival with the 12% of them who would otherwise have been knocked out. The safer your team, the less a crowd costs you.</p>
+<div class="note"><strong>This changes later in the season.</strong> Right now roughly three quarters of the field survives any given week, so differentiating is worth little. When the field is down to a few hundred entries and half of them are on one team, that same crowding term becomes the whole game. Expect the six-to-one trade to narrow every week.</div>
+
+<h2 id="dili">DILI — should you actually pick them<span class="q">EV, minus what you are burning</span></h2>
+<p>EV only knows about this week. It has no idea that the team you are about to spend is your best Week 11 option, or that it is one of only eight teams eligible at Christmas. DILI starts from EV and charges you for both.</p>
+
+<div class="calc">
+  <div class="row"><span class="lbl">Start with</span><span class="val">EV</span></div>
+  <div class="row"><span class="lbl">Charge 1 — future forfeit</span><span class="val">how much better than your backup plan they are, later</span></div>
+  <div class="row"><span class="lbl">Charge 2 — holiday scarcity</span><span class="val">how much of a holiday pool they take with them</span></div>
+  <div class="row total"><span class="lbl">what is left is</span><span class="val">DILI, on the same 1.00-is-average scale as EV</span></div>
+</div>
+
+<h3>Charge 1: the future forfeit</h3>
+<p>For every week ahead, the app compares this team against a <strong>realistic backup</strong>, which is the average of the three best other teams you still have that week. Not the single best one, because you rarely take the biggest favorite anyway and nobody can predict who it will be in November.</p>
+<p>If the team beats that backup by 5% in one week and 3% in another, and you are only maybe 60% likely to still be alive for the second one, the charges get added up with the far-off ones discounted. The result is printed as a number just above 1, like 1.07, meaning "about 7% better than your backups, all in".</p>
+<div class="rule"><p><b>Rule of thumb.</b> The haircut is about <b>double the forfeit percentage</b>. A forfeit of 1.05 costs you roughly 9% of your EV. 1.07 costs 13%. 1.10 costs 18%. (It is doubled because of the exponent, which is currently about 2.)</p></div>
+
+<div class="example">
+<h4>WORKED EXAMPLE · Ravens, Week 2</h4>
+<p>EV <strong>1.01</strong>, among the best on the board. But their forfeit is <strong>1.074</strong>, meaning they are about 7% better than your realistic backups across the weeks ahead. Double it: about 13% off.</p>
+<p>1.01 × 0.87 = <strong>0.88</strong>. The dashboard says 0.87. Good team, wrong week.</p>
+</div>
+
+<h4>What sets that "double"?</h4>
+<p>Two things, and both are meant to be argued about.</p>
+<ul>
+<li><strong>Your style</strong>, set in the Model details panel. <em>Now</em> halves the charge, <em>Future</em> raises it by about a third. The dashboard ships on Future, which is the "save the studs, take risk early" setting.</li>
+<li><strong>The calendar.</strong> The charge is at its heaviest through Week 6 and fades to almost nothing in the last three weeks, because by then there is no later to save anyone for.</li>
+</ul>
+
+<h3>Charge 2: holiday scarcity</h3>
+<p>This one is a rule of the contest, not a matter of taste. Thanksgiving week has only <strong>10 eligible teams</strong> and Christmas week only <strong>8</strong>. If you run out of eligible teams for one of those weeks, you have no legal pick, and that is an automatic loss. Six teams are in both pools: Bills, Bears, Broncos, Packers, Rams and Eagles.</p>
+<p>So any team playing a holiday week you have not reached yet gets charged for the slice of that pool they would take with them. It looks only at <em>eligibility</em>, never at whether they are good that day, because a holiday underdog is still a body in the pool.</p>
+
+<div class="tw"><table>
+<thead><tr><th class="n">Eligible teams you have left</th><th class="n">Charge</th><th>Feel</th></tr></thead>
+<tbody>
+<tr><td class="n">10 or 9</td><td class="n">7–8% off</td><td>Mild. A nudge, not a veto.</td></tr>
+<tr><td class="n">6</td><td class="n">12% off</td><td>Starting to bite.</td></tr>
+<tr><td class="n">4</td><td class="n">18% off</td><td>Think hard.</td></tr>
+<tr><td class="n">3</td><td class="n">24% off</td><td>Almost never worth it.</td></tr>
+<tr><td class="n">2</td><td class="n">37% off</td><td>Effectively off the board.</td></tr>
+<tr><td class="n">1</td><td class="n">everything</td><td>DILI reads 0.00. Spending them forfeits that week.</td></tr>
+</tbody></table></div>
+<div class="rule"><p><b>Rule of thumb, for now.</b> While the pools are full, a holiday team costs about <b>8%</b>, and a team in <em>both</em> pools costs about <b>15%</b>. That grows fast as the season goes on, so re-check it rather than reusing this number in November.</p></div>
+
+<div class="example">
+<h4>WORKED EXAMPLE · Eagles, Week 2</h4>
+<p>EV <strong>0.96</strong>, second best on the whole board, and essentially no future forfeit.</p>
+<p>But they are in both holiday pools, so they are charged twice: about 8% for Thanksgiving and 9% for Christmas, which compound to roughly 15% off.</p>
+<p>0.96 × 0.84 = <strong>0.81</strong>, which drops them from second to sixth. A fine pick and an expensive one, and the column says so.</p>
+</div>
+
+<h3>Putting all three charges together</h3>
+<div class="tw"><table>
+<thead><tr><th>Team</th><th class="n">EV</th><th>Future forfeit</th><th>Holiday</th><th class="n">DILI</th><th>What happened</th></tr></thead>
+<tbody>
+<tr><td>Bucs</td><td class="n">1.00</td><td>none</td><td>none</td><td class="n">1.00</td><td>Nothing to charge. Cheap and decent.</td></tr>
+<tr><td>49ers</td><td class="n">1.11</td><td>7% → 13% off</td><td>none</td><td class="n">0.96</td><td>Best raw pick, real long-term cost.</td></tr>
+<tr><td>Chargers</td><td class="n">0.94</td><td>none</td><td>none</td><td class="n">0.94</td><td>Modest all round, costs nothing.</td></tr>
+<tr><td>Ravens</td><td class="n">1.01</td><td>7% → 13% off</td><td>none</td><td class="n">0.87</td><td>Too valuable to spend now.</td></tr>
+<tr><td>Eagles</td><td class="n">0.96</td><td>none</td><td>15% off</td><td class="n">0.81</td><td>Holiday scarcity alone sinks it.</td></tr>
+<tr><td>Panthers</td><td class="n">0.76</td><td>none</td><td>none</td><td class="n">0.76</td><td>Nothing to lose, not much to gain.</td></tr>
+</tbody></table></div>
+
+<h2 id="cheat">The cheat sheet<span class="q">If you remember nothing else</span></h2>
+<div class="tw"><table class="cheat">
+<thead><tr><th>Question</th><th>Answer</th><th>Where it comes from</th></tr></thead>
+<tbody>
+<tr><td>Estimate a team's EV</td><td>win chance ÷ 78</td><td>The crowding term is nearly the same for everyone</td></tr>
+<tr><td>Worth of 1 point of win chance</td><td>about +1.2% EV</td><td>Same</td></tr>
+<tr><td>Worth of 1 point of popularity</td><td>about −0.2% EV</td><td>Most of a crowd would have survived anyway</td></tr>
+<tr><td>Win chance vs popularity</td><td>1 point of win ≈ 6 of popularity</td><td>Ratio of the two above</td></tr>
+<tr><td>Effect of +10 win chance on the crowd</td><td>about 3× more popular</td><td>Raised to the 9th power</td></tr>
+<tr><td>Effect of +1 future value on the crowd</td><td>about 10% less popular</td><td>Multiply by 0.9 per point</td></tr>
+<tr><td>Cost of the future forfeit</td><td>double the forfeit percentage</td><td>The exponent is about 2</td></tr>
+<tr><td>Cost of one holiday pool, now</td><td>about 8%</td><td>Pools are near full in September</td></tr>
+<tr><td>Cost of both holiday pools, now</td><td>about 15%</td><td>The two charges compound</td></tr>
+<tr><td>Last eligible holiday team</td><td>DILI is 0.00</td><td>Spending them forfeits that week</td></tr>
+</tbody></table></div>
+
+<h2 id="practice">Practice<span class="q">Try these before looking</span></h2>
+<p>Do them in your head. The answers include the working.</p>
+
+<details><summary>1. A team is 84% to win. Roughly what is their EV?</summary>
+<div class="body"><p>84 ÷ 78 = <strong>about 1.08</strong>.</p>
+<p>Or reason from the anchor: 78% is an EV of 1.00, this team is 6 points better, and each point is worth about 1.2%, so 1.00 + 7% = 1.07. Either route lands in the right place.</p></div></details>
+
+<details><summary>2. Team A is 76% and 4% of the field is on them. Team B is 80% and 20% of the field is on them. Which has the better EV?</summary>
+<div class="body"><p><strong>Team B.</strong> B is 4 points better on win chance, worth about +5% EV. A is 16 points less popular, worth about +3% EV. B wins by roughly 2%.</p>
+<p>This is the six-to-one rule doing its job. It is close, which is why contrarian picks are worth looking at, but the safer team still edges it in September. In December, with a much smaller field, the same question flips.</p></div></details>
+
+<details><summary>3. Two teams are both 72% to win. One has a future value of 1.5, the other 6.0. How much more popular should the crowd be on the low one?</summary>
+<div class="body"><p>The difference is 4.5 points of future value, at about 10% off each, so the high-future team is knocked down by roughly 37% relative to the other. (0.9 multiplied by itself 4.5 times is about 0.63.)</p>
+<p>So the low-future team should be about <strong>1.6 times</strong> more popular, despite identical win chances. Same odds, very different crowds.</p></div></details>
+
+<details><summary>4. A team has an EV of 1.05 and a future forfeit of 1.10. What is their DILI, and should you take them?</summary>
+<div class="body"><p>Double the forfeit: 10% becomes about 18% off. 1.05 × 0.82 = <strong>0.86</strong>.</p>
+<p>That is a big drop from a strong EV, and it is the model telling you this is one of your genuinely valuable assets. Unless nothing else is close this week, hold them.</p></div></details>
+
+<details><summary>5. It is Week 12. You have four Christmas-eligible teams left, and one of them is a 70% favorite this week with no future forfeit. What is their DILI?</summary>
+<div class="body"><p>EV first: 70 ÷ 78 = about 0.90. (The 78 anchor drifts week to week, so treat it as approximate.)</p>
+<p>Christmas pool of four means an 18% charge. 0.90 × 0.82 = <strong>about 0.74</strong>.</p>
+<p>The real lesson is the shape of the thing. With the pool down to four, an ordinary favorite is no longer an ordinary pick. Two more Christmas teams gone and the charge is 37%.</p></div></details>
+
+<details><summary>6. Why can the 49ers have the best EV on the board and not be the best DILI?</summary>
+<div class="body"><p>Because EV is a one-week question and DILI is a season question. The 49ers are 88% to win, which is the best win chance available, and that carries their EV to 1.11. But they also have 4.4 good weeks left, which is well above average, so spending them now forfeits real value later. That charge is worth about 13%, which lands them at 0.96, behind the Bucs at 1.00.</p>
+<p>The Bucs win not by being better but by being <em>cheap</em>: 2.0 good weeks left means almost nothing is lost by using them now.</p></div></details>
+
+<h2 id="knobs">Where these numbers came from<span class="q">And which ones are still moving</span></h2>
+<p>Three of the constants above were chosen, and the rest were fitted to data. It is worth knowing which is which.</p>
+<div class="tw"><table>
+<thead><tr><th>Number</th><th>Currently</th><th>How it was set</th></tr></thead>
+<tbody>
+<tr><td>The power in the crowd model</td><td>9</td><td><strong>Fitted.</strong> The app tries thousands of combinations against Circa's real published numbers and keeps the best.</td></tr>
+<tr><td>The future-value cut</td><td>10% per point</td><td><strong>Fitted</strong>, same way, at the same time.</td></tr>
+<tr><td>The forfeit exponent</td><td>about 2</td><td><strong>Chosen.</strong> Style setting times a calendar schedule. This is a judgement call about how much to value the future.</td></tr>
+<tr><td>The holiday charge</td><td>8% per full pool</td><td><strong>Chosen</strong>, then doubled once already because the first version felt too gentle.</td></tr>
+<tr><td>The backup bar</td><td>top 3 others</td><td><strong>Chosen.</strong> A stand-in for "a pick you would realistically make".</td></tr>
+</tbody></table></div>
+<p>The fitted numbers have exactly <strong>one week</strong> of real data behind them so far, so they are held close to sensible starting values on purpose. They will move, and they should get better every week that Circa publishes results. The chosen numbers will move too, when someone makes a better argument.</p>
+<p>The honest summary is that W% is solid, EV is solid given W% and P%, P% is a decent guess that improves weekly, and DILI is a reasonable framework with knobs still being tuned. Treat DILI as a ranking to argue with, not an instruction.</p>
+
+<footer>
+  <p>The code for every formula on this page is public at
+  <a href="https://github.com/mfe-labs/circa-survivor">github.com/mfe-labs/circa-survivor</a>.</p>
+  <p class="links"><a class="backlink" href="./">← Dashboard</a><a class="backlink" href="guide.html">How it works</a></p>
+</footer>
+
+</div>
+</body>
+</html>

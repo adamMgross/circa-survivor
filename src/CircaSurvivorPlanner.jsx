@@ -780,6 +780,7 @@ export default function CircaSurvivorPlanner() {
           <div className="row">
             {view === "actuals" && (status || !loaded) && <span className={"note" + (statusErr ? " err" : " msg")}>{!loaded ? "Loading…" : status}</span>}
             <a className="link" href="guide.html" title="Plain-English walkthrough of every number here">How it works</a>
+            <a className="link" href="math.html" title="Every projection worked out by hand, with rules of thumb">The math</a>
             {canEdit ? <><span className="who">{user}</span><button className="link" onClick={signOut}>Sign out</button></>
               : <button className="link" onClick={() => setSignin((s) => !s)}>Sign in to edit</button>}
           </div>

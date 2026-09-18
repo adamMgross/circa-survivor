@@ -1,6 +1,6 @@
 # Circa Survivor 2026 Planner
 
-Live site: **https://mfe-labs.github.io/circa-survivor/** · Walkthrough: **[/guide.html](https://mfe-labs.github.io/circa-survivor/guide.html)**
+Live site: **https://mfe-labs.github.io/circa-survivor/** · Walkthrough: **[/guide.html](https://mfe-labs.github.io/circa-survivor/guide.html)** · The math: **[/math.html](https://mfe-labs.github.io/circa-survivor/math.html)**
 
 Planner for three Circa Survivor entries. A 20-week pick grid with a market win chance, pick popularity, future
 value, EV and a DILI ("do I love it?") score for every team, spreads in every cell, and an Actuals tab tracking the
@@ -18,6 +18,7 @@ GitHub Actions keep the lines, ratings and Circa results fresh. There is no serv
 - `src/ratings.js` — the ridge fit that turns market spreads into power ratings, and the Super Bowl futures prior.
 - `src/github.js` — read/write the data files through the GitHub Contents API.
 - `public/guide.html` — the plain-English walkthrough, served at `/guide.html`.
+- `public/math.html` — every projection worked by hand, with rules of thumb, served at `/math.html`.
 
 **The data** (all in `data/`, all written by machines, all versioned in git)
 - `picks.json` — the three entries' picks. Written by the app; confirmed against Circa's file after each lock.
