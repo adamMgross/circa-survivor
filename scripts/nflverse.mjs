@@ -1,8 +1,9 @@
 // nflverse game data (schedule, results, closing lines) for every NFL game. Free, public, updated daily.
 import { norm } from "../src/schedule.js";
+import { fetchRetry } from "./http.mjs";
 const SRC = "https://github.com/nflverse/nfldata/raw/master/data/games.csv";
 export async function loadGames() {
-  const csv = await (await fetch(SRC)).text();
+  const csv = await (await fetchRetry(SRC, {}, { label: "nflverse games.csv" })).text();
   const [hdr, ...rows] = csv.trim().split("\n");
   const cols = hdr.split(",");
   const num = (v) => (v === "" || v === "NA" || v == null ? null : parseFloat(v));

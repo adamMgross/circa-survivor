@@ -5,6 +5,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { ABBR, legForGame } from "../src/schedule.js";
 import { loadGames } from "./nflverse.mjs";
+import { fetchRetry } from "./http.mjs";
 
 const KEY = process.env.ODDS_API_KEY;
 if (!KEY) { console.error("ODDS_API_KEY not set"); process.exit(1); }
@@ -14,7 +15,7 @@ const FILE = new URL("../data/odds.json", import.meta.url);
 const now = Date.now();
 
 const url = `https://api.the-odds-api.com/v4/sports/americanfootball_nfl/odds?apiKey=${KEY}&markets=h2h,spreads&oddsFormat=american&bookmakers=${BOOKS.join(",")}`;
-const r = await fetch(url);
+const r = await fetchRetry(url, {}, { label: "The Odds API" });
 if (!r.ok) { console.error("Odds API", r.status, (await r.text()).slice(0, 200)); process.exit(1); }
 console.log(`credits: this pull ${r.headers.get("x-requests-last")}, used ${r.headers.get("x-requests-used")}, remaining ${r.headers.get("x-requests-remaining")}`);
 const games = await r.json();

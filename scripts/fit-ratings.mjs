@@ -3,6 +3,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { fitRatings, priorFromFutures } from "../src/ratings.js";
 import { loadGames } from "./nflverse.mjs";
+import { fetchRetry } from "./http.mjs";
 import { ABBR } from "../src/schedule.js";
 
 const OUT = new URL("../data/ratings.json", import.meta.url);
@@ -22,7 +23,7 @@ let futures = existing.futures || null;
 const KEY = process.env.ODDS_API_KEY;
 if (KEY && (!futures || Date.now() - new Date(futures.fetchedAt).getTime() > 3 * 86400e3)) {
   try {
-    const r = await fetch(`https://api.the-odds-api.com/v4/sports/americanfootball_nfl_super_bowl_winner/odds?apiKey=${KEY}&regions=us&markets=outrights&oddsFormat=american`);
+    const r = await fetchRetry(`https://api.the-odds-api.com/v4/sports/americanfootball_nfl_super_bowl_winner/odds?apiKey=${KEY}&regions=us&markets=outrights&oddsFormat=american`, {}, { label: "Super Bowl futures" });
     if (!r.ok) throw new Error(`Odds API ${r.status}`);
     const [ev] = await r.json();
     const imp = {};

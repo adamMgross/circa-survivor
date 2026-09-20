@@ -8,6 +8,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { LEGS, OPP } from "../src/schedule.js";
 import { parseSelections, selectionFileNames, resultsFromScoreboard, espnWeek } from "./circa.mjs";
+import { fetchRetry, fetchOrNull } from "./http.mjs";
 
 const ACTUALS = new URL("../data/actuals.json", import.meta.url);
 const PICKS = new URL("../data/picks.json", import.meta.url);
@@ -30,8 +31,8 @@ function liveBefore(legId) {
 }
 async function findSelections(legId, known) {
   for (const url of known ? [known, ...selectionFileNames(legId)] : selectionFileNames(legId)) {
-    const r = await fetch(url, { method: "HEAD" });
-    if (r.ok && /pdf/i.test(r.headers.get("content-type") || "")) return url;
+    const r = await fetchOrNull(url, { method: "HEAD" }, { tries: 2, label: url.split("/").pop() });
+    if (r?.ok && /pdf/i.test(r.headers.get("content-type") || "")) return url;
   }
   return null;
 }
@@ -46,7 +47,7 @@ for (const leg of LEGS) {
     if (!url) { console.log(`${leg.id}: selections PDF not posted yet`); if (!cur) continue; }
     else {
       const pdf = join(tmp, `${leg.id}.pdf`);
-      writeFileSync(pdf, Buffer.from(await (await fetch(url)).arrayBuffer()));
+      writeFileSync(pdf, Buffer.from(await (await fetchRetry(url, {}, { label: "selections PDF" })).arrayBuffer()));
       const text = execFileSync("pdftotext", ["-layout", pdf, "-"], { encoding: "utf8", maxBuffer: 1 << 28 });
       const parsed = parseSelections(text);
       if (parsed.unknown.length) console.warn(`${leg.id}: unknown team names in PDF: ${parsed.unknown.join(", ")}`);
@@ -61,8 +62,9 @@ for (const leg of LEGS) {
     }
   }
   // ---- results from ESPN ----
-  const sb = await (await fetch(`https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?seasontype=2&week=${espnWeek(leg.id)}&dates=2026`)).json();
-  const res = resultsFromScoreboard(leg.id, sb);
+  const sbRes = await fetchOrNull(`https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?seasontype=2&week=${espnWeek(leg.id)}&dates=2026`, {}, { label: `ESPN week ${espnWeek(leg.id)}` });
+  if (!sbRes) { console.warn(`${leg.id}: no scoreboard, leaving results as they were`); continue; }
+  const res = resultsFromScoreboard(leg.id, await sbRes.json());
   const won = [], lost = [], pending = [];
   for (const t of Object.keys(picks)) {
     const r = t === "NOPICK" ? "lost" : res[t] || "pending";
