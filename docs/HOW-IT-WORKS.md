@@ -71,6 +71,12 @@ fetch fails, last season's market ratings regressed 40% toward average are the f
 Contest size + Circa's posted selections per leg. `fieldTimeline()` derives live entries, implied value per entry
 (pool ÷ live), and equity (share × entries alive × value).
 
+## Which week opens
+The dashboard opens on the first week whose results are not final: no Circa actuals yet, or actuals with teams
+still `pending`. Circa posts picks at Saturday's lock, so a week gets its actuals entry before any game is played;
+keying on `pending` keeps you on the current week until its last game ends, which also handles the holiday legs
+that finish midweek. If a result never lands, the next week's start date unsticks it.
+
 ## Weekly loop
 1. Lines refresh themselves; check the grid any time. 2. Set 3 picks (signed in), check dupes, enter at Circa.
 3. After lock and after each game, picks and results arrive on their own. Check the Actuals tab Tuesday morning; the editor is there if Circa's file was late or wrong.

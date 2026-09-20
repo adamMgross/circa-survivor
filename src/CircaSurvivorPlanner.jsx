@@ -163,6 +163,20 @@ function marketLine(legId, team, data) {
   const ln = data?.legs?.[legId]?.lines?.[team];
   return ln && ln.market && ln.win != null ? { ...ln, proj: false } : null;
 }
+// The week to open on. A week stays current while its games are still being played, so Saturday's lock
+// (which is when Circa posts picks, and therefore when a week first gets an actuals entry) does not jump
+// you forward before a single game has kicked off. `pending` empties as ESPN reports finals, so the switch
+// happens after the last game of the week. If a result never lands, the next week's start unsticks it.
+export function openLeg(actualLegs, now = Date.now()) {
+  for (let i = 0; i < LEGS.length; i++) {
+    const l = LEGS[i], a = actualLegs?.[l.id];
+    if (!a) return l.id;                                  // not locked yet: this is the week being planned
+    if (!a.pending?.length) continue;                     // week is final, move on
+    const next = LEGS[i + 1];
+    if (!next || new Date(next.start + "T00:00:00-04:00").getTime() > now) return l.id;   // games still running
+  }
+  return LEGS[LEGS.length - 1].id;
+}
 function defaultLeg() {
   const now = Date.now();
   for (let i = 0; i < LEGS.length; i++) {
@@ -575,12 +589,12 @@ export default function CircaSurvivorPlanner() {
     return failed;
   };
   useEffect(() => { (async () => { await loadAll(token); setLoaded(true); })(); }, []); // eslint-disable-line
-  // once data is in, jump to the first week that has no Circa results yet (never earlier than today's week)
+  // once data is in, open on the first week whose results are not final yet
   const jumped = useRef(false);
   useEffect(() => {
     if (!loaded || jumped.current) return; jumped.current = true;
-    const open = LEGS.find((l) => !files.actuals.json?.legs?.[l.id]);
-    if (open && LEGS.findIndex((l) => l.id === open.id) > LEGS.findIndex((l) => l.id === legId)) setLegId(open.id);
+    const open = openLeg(files.actuals.json?.legs);
+    if (open !== legId) setLegId(open);
   }, [loaded]); // eslint-disable-line
   useEffect(() => {
     if (!token) { setUser(null); return; }
