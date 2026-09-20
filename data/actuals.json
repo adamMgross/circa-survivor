@@ -79,6 +79,64 @@
    ],
    "pending": [],
    "source": "https://www.circasports.com/wp-content/uploads/2026/09/Circa-Survivor-2026-Week-1-Selections.pdf"
+  },
+  "W2": {
+   "asOf": "Sep 20 (20 pending)",
+   "picks": {
+    "TB": 6061,
+    "KC": 241,
+    "SF": 6741,
+    "NE": 239,
+    "PHI": 916,
+    "LAC": 1357,
+    "SEA": 27,
+    "BAL": 835,
+    "LAR": 146,
+    "CAR": 147,
+    "DAL": 47,
+    "CIN": 3,
+    "ATL": 10,
+    "BUF": 38,
+    "GB": 54,
+    "CHI": 50,
+    "HOU": 7,
+    "DEN": 9,
+    "DET": 1,
+    "NYJ": 4,
+    "LV": 2,
+    "JAX": 1,
+    "NOPICK": 42
+   },
+   "won": [
+    "BUF"
+   ],
+   "lost": [
+    "DET",
+    "NOPICK"
+   ],
+   "pending": [
+    "TB",
+    "KC",
+    "SF",
+    "NE",
+    "PHI",
+    "LAC",
+    "SEA",
+    "BAL",
+    "LAR",
+    "CAR",
+    "DAL",
+    "CIN",
+    "ATL",
+    "GB",
+    "CHI",
+    "HOU",
+    "DEN",
+    "NYJ",
+    "LV",
+    "JAX"
+   ],
+   "source": "https://www.circasports.com/wp-content/uploads/2026/09/Circa-Survivor-2026-Week-2-Selections.pdf"
   }
  }
 }
