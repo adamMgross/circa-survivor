@@ -2,9 +2,10 @@ name: Update Circa results
 
 on:
   schedule:
-    # every 3 hours Thu–Mon (picks post Saturday evening; games finish Thu/Sun/Mon), plus Tuesday morning
-    - cron: "41 */3 * * 0,1,4,5,6"
-    - cron: "41 15 * * 2"
+    # every 3 hours, every day. The old Thu-Mon window left no run between Monday 21:41 UTC and Tuesday
+    # 15:41, which is exactly when Monday Night Football finishes, so the last result of a week sat
+    # unrecorded for half a day. The job exits in seconds when there is nothing new.
+    - cron: "41 */3 * * *"
   workflow_dispatch:
 
 permissions:
@@ -32,9 +33,15 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/actuals.json data/picks.json
-          if git diff --cached --quiet; then echo "no changes"; exit 0; fi
-          git commit -m "Update Circa results"
-          git pull --rebase origin main
-          git push
-          gh workflow run deploy.yml
+          # picks.json can also be written by the app, so on a raced push do not replay a stale copy:
+          # reset to main and recompute, which reads whatever is actually there now.
+          for i in 1 2 3; do
+            git add data/actuals.json data/picks.json
+            if git diff --cached --quiet; then echo "no changes"; exit 0; fi
+            git commit -q -m "Update Circa results"
+            if git push -q origin HEAD:main; then gh workflow run deploy.yml; exit 0; fi
+            echo "push raced with another run, recomputing on top of main ($i)"
+            git fetch -q origin main && git reset -q --hard origin/main
+            node scripts/fetch-actuals.mjs
+          done
+          echo "could not push after 3 attempts"; exit 1

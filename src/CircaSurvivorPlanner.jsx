@@ -309,21 +309,26 @@ function modelPick(legId, data, params) {
 // count a little), because EV depends almost entirely on the few teams the field piles onto.
 // A mild penalty holds the knobs near PRIOR while there are only a week or two of actuals; once several
 // weeks accumulate the evidence outweighs it and the knobs go wherever Circa's numbers say.
-const PRIOR = { a: 8, b: 0.1 };
-const PRIOR_WEIGHT = 0.5;        // roughly "one week of evidence"
+// The prior stops an early-season fit chasing one odd week. Each knob is measured against a plausible
+// SPREAD, not against its own size: dividing by the value itself made any movement in b (which starts near
+// 0.15) cost hundreds of times more than the error it saved, so b was frozen rather than restrained. The
+// error term sums over legs, so the prior weakens on its own as weeks accumulate.
+const PRIOR = { a: 8, b: 0.15 };
+const PRIOR_SPREAD = { a: 6, b: 0.25 };
+const PRIOR_WEIGHT = 0.03;
 const SHARE_FLOOR = 0.02;
 function fitParams(data) {
   const legs = Object.keys(data.actuals).filter((id) => OPP[id] && Object.keys(OPP[id]).some((t) => marketLine(id, t, data)));
   if (!legs.length) return { ...PRIOR, legs: 0, err: null };
   let best = null;
-  for (let a = 2; a <= 24; a += 1) for (let b = 0; b <= 0.5; b += 0.025) {
+  for (let a = 2; a <= 24; a += 1) for (let b = 0; b <= 0.8; b += 0.02) {
     let err = 0;
     for (const id of legs) {
       const act = data.actuals[id], tot = Object.values(act.picks).reduce((x, y) => x + y, 0);
       const m = modelPick(id, data, { a, b });
       for (const t of Object.keys(OPP[id])) { const share = (act.picks[t] || 0) / tot; err += (share + SHARE_FLOOR) * Math.abs((m[t] || 0) - share); }
     }
-    const penalty = PRIOR_WEIGHT * (((a - PRIOR.a) / PRIOR.a) ** 2 + ((b - PRIOR.b) / PRIOR.b) ** 2);
+    const penalty = PRIOR_WEIGHT * (((a - PRIOR.a) / PRIOR_SPREAD.a) ** 2 + ((b - PRIOR.b) / PRIOR_SPREAD.b) ** 2);
     const score = err + penalty;
     if (!best || score < best.score) best = { a, b, err, score, legs: legs.length };
   }
@@ -338,6 +343,18 @@ function modelError(data, params) {
     e += Object.keys(OPP[id]).reduce((s, t) => s + Math.abs((m[t] || 0) - (act.picks[t] || 0) / tot), 0); n++;
   }
   return n ? { err: e / n, n } : null;
+}
+
+// An entry is out the moment one of its picks loses, or when a finished week went by with no pick at all.
+// A week with games still pending cannot eliminate anyone who has not already lost.
+export function entryStatus(entry, actualLegs) {
+  for (const l of LEGS) {
+    const a = actualLegs?.[l.id]; if (!a) break;
+    const t = entry.picks?.[l.id];
+    if (t && a.lost.includes(t)) return { alive: false, leg: l };
+    if (!t && !a.pending?.length) return { alive: false, leg: l };
+  }
+  return { alive: true, leg: null };
 }
 
 export { linesFromOdds, consensusForGame, computeEV, EV_MIN_COVERAGE, buildData, devig, fieldTimeline, modelPick, fitParams, availability, fvFor };
@@ -470,6 +487,13 @@ const CSS = `
 .csp .sum td { position:sticky; top:var(--top); z-index:2; background:var(--panel); height:var(--rh); text-align:center; font-weight:500; border-bottom-color:var(--rule); }
 .csp .sum td.L { z-index:5; background:var(--panel); }
 .csp .sum td.entry { color:var(--ink2); font-weight:500; }
+/* an eliminated entry: struck through and faded, still selectable so its history stays readable */
+.csp .seg button.out .nm { text-decoration:line-through; text-decoration-thickness:1px; opacity:.6; }
+.csp .seg button.out .n { color:var(--red); opacity:.85; }
+.csp .sum tr.out td { opacity:.5; }
+.csp .sum tr.out td.entry .nm { text-decoration:line-through; text-decoration-thickness:1px; }
+.csp .sum tr.out.sel td { opacity:.62; }
+.csp .sum td.entry .tag { margin-left:7px; font-size:10px; font-weight:500; color:var(--red); letter-spacing:.01em; }
 /* selected entry: the same wash across the row inside a soft blue frame */
 .csp .sum tr.sel td { background:var(--sel-bg); border-top:2px solid var(--sel-line); border-bottom:2px solid var(--sel-line); }
 .csp .sum tr.sel td.entry { color:var(--ink); font-weight:600; border-left:2px solid var(--sel-line); }
@@ -622,6 +646,7 @@ export default function CircaSurvivorPlanner() {
   const setJson = (kind, fn) => setFiles((prev) => ({ ...prev, [kind]: { ...prev[kind], json: fn(prev[kind].json) } }));
   const setPick = (lg, team) => {
     if (!canEdit) { say("Sign in to change picks", false); return; }
+    if (activeOut) { say(`${entry.name} is out — no more picks for it`, false); return; }
     setJson("picks", (p) => ({ ...p, entries: p.entries.map((e, i) => { if (i !== active) return e; const picks = { ...e.picks }; if (picks[lg] === team) delete picks[lg]; else picks[lg] = team; return { ...e, picks }; }) }));
     clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => save("picks", `Picks: ${entries[active]?.name} ${lg} ${team}`), 800);
@@ -647,6 +672,9 @@ export default function CircaSurvivorPlanner() {
   };
 
   const entry = entries[active] || { name: "", picks: {} };
+  const standing = useMemo(() => entries.map((e) => entryStatus(e, data.actuals)), [entries, data.actuals]);
+  const activeOut = standing[active] && !standing[active].alive;
+  const canPick = canEdit && !activeOut;
   const usedBy = useMemo(() => { const m = {}; for (const [leg, team] of Object.entries(entry.picks)) m[team] = leg; return m; }, [entry]);
 
   const params = useMemo(() => fitParams(data), [data]);
@@ -773,7 +801,7 @@ export default function CircaSurvivorPlanner() {
   })();
 
   return (
-    <div className={"csp" + (canEdit ? "" : " ro")} onMouseDown={(e) => { if (e.target.closest("button")) e.preventDefault(); }}>
+    <div className={"csp" + (canPick ? "" : " ro")} onMouseDown={(e) => { if (e.target.closest("button")) e.preventDefault(); }}>
       <style>{CSS}</style>
       <div className="bar">
         <div className="left">
@@ -784,8 +812,9 @@ export default function CircaSurvivorPlanner() {
           </span>
           {view === "planner" && <span className="seg">
             {entries.map((e, i) => (
-              <button key={i} className={i === active ? "on" : ""} onClick={() => setActive(i)} title="Plan this entry">
-                {e.name}<span className="n">{Object.keys(e.picks).length}/20</span>
+              <button key={i} className={(i === active ? "on" : "") + (standing[i]?.alive === false ? " out" : "")} onClick={() => setActive(i)}
+                      title={standing[i]?.alive === false ? `Out in ${legLabel(standing[i].leg)} — still viewable, but no new picks` : "Plan this entry"}>
+                <span className="nm">{e.name}</span><span className="n">{standing[i]?.alive === false ? "out" : Object.keys(e.picks).length + "/20"}</span>
               </button>
             ))}
           </span>}
@@ -840,8 +869,10 @@ export default function CircaSurvivorPlanner() {
               <Header top />
             </tr>
             {entries.map((e, i) => (
-              <tr key={"s" + i} className={i === active ? "sel" : ""} style={{ "--top": `calc(var(--th) + ${i} * var(--rh))` }}>
-                <td className="L entry">{e.name}</td>
+              <tr key={"s" + i} className={(i === active ? "sel" : "") + (standing[i]?.alive === false ? " out" : "")} style={{ "--top": `calc(var(--th) + ${i} * var(--rh))` }}>
+                <td className="L entry" title={standing[i]?.alive === false ? `Out in ${legLabel(standing[i].leg)}` : ""}>
+                  <span className="nm">{e.name}</span>{standing[i]?.alive === false && <span className="tag">out {standing[i].leg.label}</span>}
+                </td>
                 {LEGS.map((l) => {
                   const t = e.picks[l.id];
                   return (
@@ -889,7 +920,7 @@ export default function CircaSurvivorPlanner() {
                     const label = !g ? "" : (g.neutral ? "n " : g.home ? "vs " : "@ ") + g.opp;
                     const fav = ln && ln.spread != null && ln.spread < 0 && !dead ? Math.min(1, -ln.spread / 14) : 0;
                     const tip = !g ? `${team} bye` : dead ? `${team} already used (${legLabel(LEGS.find((x) => x.id === usedLeg))})`
-                      : `${legLabel(l)}: ${team} ${g.home || g.neutral ? "vs" : "at"} ${g.opp}${g.neutral ? " (neutral)" : ""}${ln ? ` · ${fmtSp(ln.spread)}${ln.market ? ` · ML ${fmtSp(ln.ml)} / ${fmtSp(ln.oppMl)} · True Win ${pct(ln.win)}` : ln.proj ? ` · projected ${pct(ln.win)} (ratings, not market)` : ""}` : ""}${others ? ` · also picked by entry ${others.split("").join(" and ")}` : ""}${canEdit ? "" : " · sign in to change picks"}`;
+                      : `${legLabel(l)}: ${team} ${g.home || g.neutral ? "vs" : "at"} ${g.opp}${g.neutral ? " (neutral)" : ""}${ln ? ` · ${fmtSp(ln.spread)}${ln.market ? ` · ML ${fmtSp(ln.ml)} / ${fmtSp(ln.oppMl)} · True Win ${pct(ln.win)}` : ln.proj ? ` · projected ${pct(ln.win)} (ratings, not market)` : ""}` : ""}${others ? ` · also picked by entry ${others.split("").join(" and ")}` : ""}${canPick ? "" : activeOut ? " · this entry is out" : " · sign in to change picks"}`;
                     return (
                       <td key={l.id} className={cls} title={tip} style={fav > 0 && !pickHere ? { "--fav": (0.03 + 0.15 * fav).toFixed(3) } : undefined} onClick={() => g && !dead && setPick(l.id, team)}>
                         {label}

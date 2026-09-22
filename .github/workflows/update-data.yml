@@ -33,9 +33,17 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/odds.json data/ratings.json
-          if git diff --cached --quiet; then echo "no changes"; exit 0; fi
-          git commit -m "Update lines & ratings"
-          git pull --rebase origin main
-          git push
-          gh workflow run deploy.yml
+          # These two files are regenerated from scratch every run, so the newest generation simply wins.
+          # Rebasing onto a concurrent run's commit conflicted on every line; replaying our files on top
+          # of whatever is on main cannot conflict.
+          mkdir -p "$RUNNER_TEMP/out" && cp data/odds.json data/ratings.json "$RUNNER_TEMP/out/"
+          for i in 1 2 3; do
+            git fetch -q origin main && git reset -q --hard origin/main
+            cp "$RUNNER_TEMP/out/"*.json data/
+            git add data/odds.json data/ratings.json
+            if git diff --cached --quiet; then echo "no changes"; exit 0; fi
+            git commit -q -m "Update lines & ratings"
+            if git push -q origin HEAD:main; then gh workflow run deploy.yml; exit 0; fi
+            echo "push raced with another run, retrying ($i)"; sleep 5
+          done
+          echo "could not push after 3 attempts"; exit 1
