@@ -113,17 +113,17 @@ future value       = sum of those weights</code>
 <code class="f">score = win^a × e^(−b × future value) × availability
 P%    = score ÷ (sum of scores over teams favored that week)</code>
 <ul>
-<li><code>win^a</code> amplifies small differences in win chance, because the field concentrates on the safest-looking team far harder than the odds alone imply. At a = 9, ten extra points of win chance make a team roughly three times more attractive.</li>
-<li><code>e^(−b × future value)</code> marks down teams the field is saving. At b = 0.1 each point of future value costs about 10%.</li>
+<li><code>win^a</code> amplifies small differences in win chance, because the field concentrates on the safest-looking team far harder than the odds alone imply. At a = 11, ten extra points of win chance make a team roughly three times more attractive.</li>
+<li><code>e^(−b × future value)</code> marks down teams the field is saving. At b = 0.34 each point of future value costs about 29%.</li>
 <li><code>availability</code> is the share of surviving entries that have not already used the team, derived from Circa's past results. Near 1.00 in September, a major factor by midseason.</li>
 <li>Teams below 50% win chance score zero.</li>
 </ul>
-<p>The two constants are fitted, not chosen: a grid search over every week that has Circa's actual numbers, scoring each candidate by the total error across teams, weighted by each team's real share so the big picks matter most. A penalty holds them near 8 and 0.1 until several weeks of data accumulate. They currently sit at <strong>a = 9, b = 0.1</strong> on one week of data.</p>
+<p>The two constants are fitted, not chosen: a grid search over every week that has Circa's actual numbers, scoring each candidate by the total error across teams, weighted by each team's real share so the big picks matter most. A penalty holds them near 8 and 0.15, measured against a plausible spread for each, and weakens on its own as weeks accumulate. They currently sit at <strong>a = 11, b = 0.34</strong> on two weeks of data.</p>
 <div class="eg">
 <h3>49ers, Week 2</h3>
-<p>0.88<sup>9</sup> = 0.303. Future value 4.4, so e<sup>−0.44</sup> = 0.641. Availability 1.00. Score 0.303 × 0.641 = 0.194.</p>
-<p>The scores of all favored teams sum to 0.592, so P% = 0.194 ÷ 0.592 = <strong>32.8%</strong>.</p>
-<p>For reference, the Week 1 fit predicted 27% on the Jaguars against an actual 32.5%.</p>
+<p>0.88<sup>11</sup> = 0.245. Future value 4.4, so e<sup>−1.50</sup> = 0.224. Availability 1.00. Score 0.245 × 0.224 = 0.055.</p>
+<p>Divided by the sum of every favored team's score, that came out at <strong>40%</strong> against an actual 39.7%.</p>
+<p>Across the two weeks so far the fit lands within about 3 points on the biggest picks, except the Week 2 Bucs, where it still says 26% against an actual 36%.</p>
 </div>
 
 <h2 id="ev"><span class="n">5</span>EV</h2>
