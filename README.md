@@ -9,6 +9,10 @@ whole contest field. Friends can view; the owner signs in to edit.
 Everything runs for free on GitHub: the site is GitHub Pages, the data files are JSON in this repo, and scheduled
 GitHub Actions keep the lines, ratings and Circa results fresh. There is no server and no database.
 
+## Strategy research
+
+What the contest pays, what a pick should maximize, and how to validate it: [docs/research/README.md](docs/research/README.md). Project state and priorities: [STATE.md](STATE.md), `tk ready`.
+
 ## How the pieces fit
 
 **The app**
