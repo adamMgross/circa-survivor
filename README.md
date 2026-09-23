@@ -1,6 +1,6 @@
 # Circa Survivor 2026 Planner
 
-Live site: **https://mfe-labs.github.io/circa-survivor/** · Walkthrough: **[/guide.html](https://mfe-labs.github.io/circa-survivor/guide.html)** · The math: **[/math.html](https://mfe-labs.github.io/circa-survivor/math.html)**
+Live site: **https://adammgross.github.io/circa-survivor/** · Walkthrough: **[/guide.html](https://adammgross.github.io/circa-survivor/guide.html)** · The math: **[/math.html](https://adammgross.github.io/circa-survivor/math.html)**
 
 Planner for three Circa Survivor entries. A 20-week pick grid with a market win chance, pick popularity, future
 value, EV and a DILI ("do I love it?") score for every team, spreads in every cell, and an Actuals tab tracking the
@@ -50,7 +50,7 @@ GitHub Actions keep the lines, ratings and Circa results fresh. There is no serv
 
 ## Editing (owner)
 1. Click **Sign in to edit** and paste a GitHub fine-grained personal access token
-   (GitHub → Settings → Developer settings → Fine-grained tokens): repository `mfe-labs/circa-survivor` only,
+   (GitHub → Settings → Developer settings → Fine-grained tokens): repository `adamMgross/circa-survivor` only,
    permissions **Contents: read & write** and **Actions: read & write**. The token stays in your browser.
 2. Click cells to set picks. Each change is committed to the repo within a second.
 3. Nothing to do after lock: Circa's picks and the results arrive on their own. The Actuals editor is a manual override.

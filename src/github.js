@@ -1,6 +1,6 @@
 // Read/write the data files in the GitHub repo. Reads work without a token (public repo);
 // writes need a fine-grained personal access token with Contents: read & write on this repo.
-export const REPO = "mfe-labs/circa-survivor";
+export const REPO = "adamMgross/circa-survivor";
 export const BRANCH = "main";
 const API = "https://api.github.com";
 const hdr = (token) => ({ Accept: "application/vnd.github+json", ...(token ? { Authorization: "Bearer " + token } : {}) });
