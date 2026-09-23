@@ -1,37 +1,48 @@
-# football-survivor
+# circa-survivor
 
-The analytical half of a Circa Survivor entry: what the contest pays, what that makes us
-maximize, and how to compute the weekly pick. The one rule that matters most here is that
-this project is currently documents only, by decision 0001. Do not write code.
+The Circa Survivor planner and the strategy research behind it: what the contest pays, what
+that makes us maximize, and how to compute the weekly pick. Forked from Jamie's planner by
+decision 0002, which also ended the documents-only phase of decision 0001.
 
 This repo follows `~/.claude/CLAUDE.md` in full. This file adds only what is specific to this
 repo and not derivable from the documents.
 
 ## Reading order
 
-1. `VISION.md`: the problem, the goals, and the phases.
-2. `docs/research/README.md`: the ten findings, then the numbered documents in order.
-3. `STATE.md`: Current State, then the newest Log entries.
-4. `docs/decisions/README.md`: index. Read the record before revisiting the choice it holds.
-5. `tk ready`: what to work on.
+1. `README.md` and `docs/HOW-IT-WORKS.md`: what the app does and how its data jobs run.
+2. `VISION.md`: the problem, the goals, and the phases.
+3. `docs/research/README.md`: the ten findings, then the numbered documents in order.
+4. `STATE.md`: Current State, then the newest Log entries.
+5. `docs/decisions/README.md`: index. Read the record before revisiting the choice it holds.
+6. `tk ready`: what to work on.
 
 `docs/kickoff-transcript.txt` is a source document and is never edited.
 
 ## Who is who
 
-Jamie built and owns the dashboard, holds the contest relationship, and is Speaker A in the
+Jamie built the planner this repository forks, holds the contest relationship, and is Speaker A in the
 transcript. Adam owns the algorithm, the data, and the validation, and is Speaker B. Jeremy
 holds roughly 55 percent of the economics and is the risk principal. The transcript's
 auto-generated summary reverses the speakers. Trust the transcript body, not its summary.
 
 ## Commands
 
-No build, no test suite, no runtime. There is nothing to run yet, and phase 2 in `VISION.md`
-is where that changes.
-
 ```bash
+npm install
+npm test         # bundles and runs every suite in test/
+npm run dev      # http://localhost:5173
+npm run build
 tk ready
 ```
+
+The data jobs in `scripts/` run on GitHub Actions and need `ODDS_API_KEY`, and
+`fetch-actuals.mjs` needs `pdftotext` from poppler.
+
+## Remotes
+
+`origin` is `adamMgross/circa-survivor`. `upstream` is Jamie's `mfe-labs/circa-survivor`,
+fetch only, with its push URL set to `DISABLE`. Never push, open a pull request, or file an
+issue there. Upstream is not synced, and a wanted fix is copied by hand.
 
 ## Session protocol
 

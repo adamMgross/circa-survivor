@@ -2,10 +2,10 @@
 id: 1
 title: Settle the objective on paper before writing any code, and carry the standard portfolio doc set
 date: 2026-09-16
-status: accepted
+status: superseded
 decided_by: owner
 supersedes: null
-superseded_by: null
+superseded_by: 2
 verified_at: null
 ---
 

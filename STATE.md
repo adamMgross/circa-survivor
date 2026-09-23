@@ -6,58 +6,31 @@ holistically.
 
 ## Current State
 
-**Phase:** 1 of 5, research, documents only by decision 0001. `docs/research/` holds the
-answer to what the contest pays, what that makes us maximize, what the inputs must be, and
-how the pick is computed. No code exists and none should be written yet.
+**Phase:** the documents-only research phase ended with decision 0002. This repository is a
+fork of Jamie's planner with the research merged in. `VISION.md` still describes the
+documents-only plan and is due a holistic rewrite during portfolio onboarding.
 
-**Deployed vs main:** nothing is deployed. There is no runtime, no test suite, and no build.
+**Deployed vs main:** the fork is at `adamMgross/circa-survivor` and points the app at its
+own data files. Its Actions, Pages, and `ODDS_API_KEY` secret are not configured yet, so
+nothing is deployed from the fork and its data jobs do not run.
 
-**What works, verified 2026-09-16:** the research pass is complete and every factual claim in
-it was verified live against a primary source during the pass. The official 2026 rules PDF was
-fetched and read in full. The Circa weekly team-availability file was fetched for 2026 Week 2,
-2025 Weeks 2 to 6 and 9 to 18, and spot-checked for 2024, and its aggregate row was parsed:
-16,978 entries alive, 16 distinct availability sets, Jacksonville used by 8,127 surviving
-entries. Season winner files for 2023 to 2025 were fetched and the entry counts and implied
-field survival rates derived from them. Clair and Letscher (2007) and the March Madness
-multi-entry paper were read in the relevant sections.
+**What works, verified 2026-09-23:** `npm test` passes 105 checks across eight suites and
+`npm run build` succeeds. The app is Jamie's v2.0 unchanged apart from the repository name.
 
-**What the season is doing:** the 2026 contest is one week old. 25,017 entries, a $25,017,000
-pool, no rake. Week 1 killed 8,039 entries, a field survival rate of 0.679 that lands exactly
-on the 2023 to 2025 mean of 0.677. The Chargers took 7,585 entries down with them, 30.3
-percent of the field in one game and the largest single-pick loss Circa has recorded. Carrying
-the historical survival rate forward puts 2026 at roughly ten survivors and a season-ending
-split near $2.5M per entry, so the modal outcome is a split, not a lone winner.
+**What the season is doing:** after Week 2, 8,610 of 25,017 entries are alive. Only
+CIRCAmcised-2 is ours (DET, SF, KC planned for Week 3). CIRCAmcised-3 lost on LAC and
+CIRCAmcised-4 lost on TB. The Week 3 deadline is Saturday 2026-09-26 at 4:00 PM PT.
 
-**The Week 2 deadline is Saturday 2026-09-19 at 4:00 PM PT.** Nothing here is required to make
-that pick and nothing here is built. Jamie's dashboard makes it.
+**What the app's model gets right and wrong:** its EV is `w / E[survivors | win]`, within a
+few percent of exact enumeration on the real Week 1 and Week 2 fields, but it under-credits
+non-chalk picks enough to reorder the top candidates. On the Week 3 slate KC still ranks
+first for CIRCAmcised-2 under both. Future value and DILI rest on nine hand-set constants.
+Research finding 2 criticizes `a/p`, which the app does not use.
 
-**Blockers:** the four owner tickets are all real gates. `fs-mgyt` blocks every backtest,
-`fs-2crt` blocks the benchmark this project claims to beat, `fs-d7a3` changes the
-recommendation itself, and `fs-t1qd` is a correctness check against rule 15(a).
+**Next:** onboard to the portfolio layout, then extract the model from
+`src/CircaSurvivorPlanner.jsx` with the tests untouched, then exact EV (`fs-0d0o`).
 
-**Open questions:**
-
-- Is the dashboard's expected-value column actually a product or ratio of win probability and
-  pick popularity? The claim in `docs/research/02-objective-function.md` that it misorders
-  candidates is about a formula nobody here has read. `fs-2crt`.
-- Does the availability archive reach back before 2024, and where are 2025 Weeks 1, 7 and 8?
-  `fs-frk2`.
-- Is the inferred mapping of the twenty contest weeks onto the NFL calendar right? `fs-yc7e`.
-- Does the syndicate want expected value or something concave? `fs-d7a3`.
-
-**Untested assumptions:**
-
-| Assumption | Confidence | Settled by |
-|---|---|---|
-| Market beats public models on NFL win probability | medium, widely held, no head-to-head found | `fs-ta9j` |
-| Power or Shin de-vig beats multiplicative on lopsided lines | medium, secondary sources agree | `fs-ta9j` |
-| Games within a week are near-independent | low | `fs-qar4` |
-| Availability files exist for every week back to 2023 | low, three 2025 weeks not found | `fs-frk2` |
-| The 2026 NFL week mapping of the holiday legs | medium, inferred from rules 8, 9, 11 | `fs-yc7e` |
-| Aliases are stable identifiers across weeks | medium, pattern is consistent, never joined | `fs-gkjt` |
-| Field behavior is stable enough to pool across seasons | low | `fs-ri3y` |
-| An eight-week horizon transfers from a survival objective | low, different objective | `fs-zj45` |
-| The 58 percent single-team concentration figure | medium, real but selection-biased upward | `fs-gkjt` |
+**Blockers:** the fork's GitHub settings and API key need the owner.
 
 ## Log
 
@@ -102,3 +75,16 @@ automated fetch, so the closest public statement of the right framework went unr
 was tried and found to silently produce wrong numbers, which is recorded as a trap in
 `CLAUDE.md` and as an acceptance criterion on `fs-gkjt`, but no working parser was written,
 because phase 1 is documents only.
+
+### 2026-09-23
+
+**Done:** read Jamie's planner in full and checked its EV against exact enumeration on the
+real Week 1, 2 and 3 slates. Forked it to `adamMgross/circa-survivor`, pointed the app at the
+fork, disabled pushes to `upstream`, and merged the football-survivor research repository
+in with its history.
+
+**Decisions:** 0002, fork the planner, merge the research, end the documents-only phase.
+
+**Left unfinished:** enabling Actions and Pages on the fork and adding `ODDS_API_KEY`, which
+need the owner. `VISION.md`, the untested-assumptions table and the stale tickets
+(`fs-2crt`, `fs-t1qd`, `fs-d7a3`) are not yet revised for what the app turned out to be.

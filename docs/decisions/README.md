@@ -5,4 +5,5 @@ reopen one, write a new record that supersedes it.
 
 | # | Title | Date | Status |
 |---|---|---|---|
-| [0001](0001-research-before-code.md) | Settle the objective on paper before writing any code, and carry the standard portfolio doc set | 2026-09-16 | accepted |
+| [0001](0001-research-before-code.md) | Settle the objective on paper before writing any code, and carry the standard portfolio doc set | 2026-09-16 | superseded by 0002 |
+| [0002](0002-fork-the-planner-and-merge-the-research.md) | Fork Jamie's planner, merge the research into it, and end the documents-only phase | 2026-09-23 | accepted |
