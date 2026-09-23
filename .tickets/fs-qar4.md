@@ -4,7 +4,7 @@ status: open
 deps: []
 links: []
 created: 2026-09-16T15:30:52Z
-type: task
+type: chore
 priority: 3
 assignee: Adam Gross
 tags: [model]

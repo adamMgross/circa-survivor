@@ -1,7 +1,7 @@
 ---
 id: fs-rs6a
 status: open
-deps: [fs-mgyt]
+deps: [cs-unkn]
 links: []
 created: 2026-09-16T15:30:14Z
 type: feature
@@ -9,15 +9,15 @@ priority: 1
 assignee: Adam Gross
 tags: [ingest]
 ---
-# Archive an odds snapshot at every decision deadline, and backfill history
 
-The decision input is the Saturday 4:00 PM PT line, earlier for the two holiday legs. A backtest on closing lines measures a strategy nobody could have run. See docs/research/03-inputs-win-probability.md.
+# Archive a timestamped per-book odds snapshot before every deadline
+
+fetch-odds overwrites each game on every pull and keeps one previous set, so the lines a decision was made on are gone by the next pull. The decision input is the last snapshot before the deadline, Saturday 4:00 PM PT and earlier for the holiday legs. Historical deadline snapshots for 2024 and 2025 need the paid tier in fs-mgyt and are out of scope here.
 
 ## Design
 
-Store every book's raw price, not a pre-aggregated consensus, with the snapshot timestamp. De-vig at read time, never at write time, so the method stays a tunable the backtest can score.
+Append each pull's raw per-book prices with its timestamp to an archive that is never overwritten. De-vig at read time so the method stays something the backtest can score.
 
 ## Acceptance Criteria
 
-A snapshot exists for every remaining 2026 contest week, taken before its deadline and timestamped. Historical snapshots backfilled for the seasons the availability archive covers. A replay handed a snapshot later than its deadline raises.
-
+Every remaining 2026 leg has an archived snapshot taken before its deadline, and a replay handed a snapshot later than the deadline raises.

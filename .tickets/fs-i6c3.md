@@ -1,7 +1,7 @@
 ---
 id: fs-i6c3
 status: open
-deps: [fs-yc7e]
+deps: [cs-l0oa]
 links: []
 created: 2026-09-16T15:30:34Z
 type: feature

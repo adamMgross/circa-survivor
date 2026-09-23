@@ -5,7 +5,7 @@ deps: [fs-0d0o, fs-ri3y]
 links: []
 created: 2026-09-16T15:30:34Z
 type: feature
-priority: 2
+priority: 3
 assignee: Adam Gross
 tags: [core]
 ---

@@ -9,11 +9,11 @@ priority: 1
 assignee: Adam Gross
 tags: [strategy]
 ---
-# Decide the syndicate's risk objective: expected value or something concave
 
-Every recommendation in docs/research/ maximizes expected payout. That is the right objective only if the stakeholders are risk-neutral over their own stake. Adam holds 5 percent of each of three entries, roughly 150 dollars of exposure. Jeremy holds roughly 55 percent, eleven times that. docs/research/02-objective-function.md shows the choice changes the answer, most sharply in the endgame, where the expected-value argmax can be a play that pays nothing 85 percent of the time.
+# Decide CIRCAmcised-2's objective and the tie-break with Jamie's app
+
+Only CIRCAmcised-2 is alive after Week 2, so whether three entries are optimized jointly is moot. Two decisions remain. Whether the recommendation maximizes expected payout or something concave, which matters most in the endgame where the expected-value argmax can pay nothing most of the time and Jeremy holds about eleven times Adam's exposure. And, since Jamie submits at Circa and runs his own planner, whose recommendation wins when the two disagree.
 
 ## Acceptance Criteria
 
-A decision record states the objective, whether the three entries are optimized jointly or independently before the endgame, and who has the authority to override a recommendation. Only the syndicate can resolve this.
-
+A decision record states the objective, who may override a recommendation, and how a disagreement between the two apps is settled before a deadline. Only the syndicate can resolve this.

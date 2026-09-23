@@ -1,7 +1,7 @@
 ---
 id: fs-z5j7
 status: open
-deps: [fs-gkjt]
+deps: [fs-9x8g]
 links: []
 created: 2026-09-16T15:30:34Z
 type: feature
