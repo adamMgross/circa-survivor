@@ -6,37 +6,45 @@ holistically. Entries marked upstream were seeded from Jamie's git history at on
 
 ## Current State
 
-**Phase:** in season, per `VISION.md`. The layout is in place and the model lives in
-`src/model/`, separate from the page. Next is `cs-ascn`, returning rows as values instead of
-mutating them, which gates the exact EV (`fs-0d0o`). Holiday feasibility (`fs-i6c3`), the
-likelihood fit (`fs-ri3y`) and the deadline odds archive (`fs-rs6a`) are unblocked.
+**Phase:** in season, per `VISION.md`. The model lives in `src/model/` as values. The exact
+EV, holiday feasibility, the deadline odds archive and the likelihood field model are in. Next
+is deciding what the exact EV should replace (`fs-d7a3`), then derived future value
+(`cs-c584`) and archiving Circa's files (`fs-gkjt`).
 
-**Deployed vs main:** matches. https://adammgross.github.io/circa-survivor/ is served from
-`main` by `deploy.yml`, and the lines, ratings and actuals jobs run on schedule on the fork
-with its own `ODDS_API_KEY`, first verified by run 35933411028 on 2026-09-23.
+**Deployed vs main:** matches after the 2026-09-23 push. https://adammgross.github.io/circa-survivor/
+is served from `main` by `deploy.yml`, and the lines, ratings and actuals jobs run on schedule
+on the fork with its own `ODDS_API_KEY`. The odds archive and the prediction record have run
+only against a stubbed API, not yet on GitHub.
 
-**What works, verified 2026-09-23:** `npm test` passes 166 checks across nine suites and
-`npm run build` succeeds. The app is Jamie's v2.0 apart from the repository name. The lines
-pull priced 32 games at DraftKings and FanDuel, 16 at BetMGM and Pinnacle, none at Caesars.
+**What works, verified 2026-09-23:** `npm test` exits 0 with 234 checks across thirteen
+suites, `npm run build` succeeds, and the board renders the Exact column with no errors in
+Chrome. `npm run parity` against the pre-extraction commit found every output identical.
 
-**What the season is doing:** after Week 2, 8,610 of 25,017 entries are alive, a Week 2
-field survival of 0.507. Only CIRCAmcised-2 is ours, having used DET and SF, with KC planned
-for Week 3. CIRCAmcised-3 lost on LAC and CIRCAmcised-4 on TB. The Week 3 deadline is
-Saturday 2026-09-26 at 4:00 PM PT, and the last lines pull before it is Saturday's 22:17 UTC
-run, 43 minutes before the lock.
+**What the season is doing:** after Week 2, 8,610 of 25,017 entries are alive. Only
+CIRCAmcised-2 is ours, having used DET and SF, with KC planned for Week 3. The Week 3 deadline
+is Saturday 2026-09-26 at 4:00 PM PT, and the last lines pull before it is Saturday's 22:17
+UTC run, 43 minutes before the lock.
 
-**What the model gets right and wrong:** EV is `w / E[survivors | win]`. Against exact
-enumeration on the real fields it is within a few percent but under-credits non-chalk picks
-and reorders the top candidates (`fs-0d0o`). On the Week 3 slate, with the fitted popularity
-model, KC still ranks first for CIRCAmcised-2 both ways, and its lead over SEA roughly halves.
-Future value and DILI rest on about nine hand-set constants (`cs-c584`). No raw input is
-archived, so no recommendation can be replayed (`fs-gkjt`, `fs-rs6a`).
+**What the model says about Week 3, on lines as of 2026-09-23 23:24 UTC:** among teams
+CIRCAmcised-2 still holds, the linearized EV ranks KC 1.07, BUF 1.01, SEA 0.99, and the exact
+EV ranks BUF 1.05, KC 1.03, SEA 1.02. DILI still discounts the linearized EV and ranks KC
+first. No Week 3 pick breaks holiday feasibility. The likelihood field model and Jamie's both
+put about 45 percent of the field on KC.
+
+**What the model gets right and wrong:** the exact EV matches brute-force enumeration and is
+shown beside Jamie's, which stays the baseline and still feeds DILI. The likelihood fit beat
+Jamie's on a retro Week 2 (1.632 against 1.652 nats per entry, chalk 2.972), but that retro
+used closing lines and today's ratings, so Week 3 is the first deadline-clean score. Future
+value and DILI rest on about nine hand-set constants (`cs-c584`). Circa's files are not yet
+archived (`fs-gkjt`), and the field model's future-value feature uses today's ratings for past
+weeks.
 
 **Blockers:** none for the craft and model queue. Owner decisions gate the endgame.
 
 **Open questions:**
 
-- The objective for CIRCAmcised-2 and which app's pick wins when the two disagree, `fs-d7a3`.
+- The objective for CIRCAmcised-2, which app's pick wins when the two disagree, and whether
+  DILI should discount the exact EV, `fs-d7a3`.
 - Circa's reading of rule 19(d)(iv) on the final-week split, `cs-a6be`.
 - Why Caesars returns no lines, `cs-qr7x`.
 
@@ -49,7 +57,10 @@ archived, so no recommendation can be replayed (`fs-gkjt`, `fs-rs6a`).
 | Games within a week are near-independent | low | `fs-qar4` |
 | Selections names join cleanly across weeks despite truncation | low, never joined | `fs-9x8g` |
 | The 20 legs in `src/schedule.js` match the published schedule | medium, agrees with research 05, Weeks 1 and 2 ran | `fs-yc7e` |
-| Field behavior is stable enough to pool across seasons | low | `fs-ri3y`, `fs-fnhf` |
+| Field behavior is stable enough to pool across seasons | low | `fs-fnhf` |
+| Entries pick independently, so the likelihood standard errors hold | low, syndicates exist | none yet |
+| Ties are rare enough to leave out of the exact EV | medium | `fs-0d0o` notes |
+| The Odds API response shape matches the fixture built from `odds.json` | medium, not yet seen raw | first archived file |
 | ESPN's undocumented scoreboard keeps its shape | medium, two weeks parsed | none yet |
 | Circa keeps its Selections URL convention | medium, two weeks found | `fs-gkjt` |
 
@@ -204,3 +215,22 @@ The server-rendered page is byte-identical to `eeafebb` on the same data and clo
 
 **Left unfinished:** `openLeg` still defaults its clock to `Date.now()` (`cs-h96l`), and
 `computeEV` and `computeDili` still mutate the rows they are given (`cs-ascn`).
+
+### 2026-09-23 (cs-ascn, fs-0d0o, fs-i6c3, fs-rs6a, fs-ri3y)
+
+**Done:** `computeEV`, `computeDili` and `boardStats` return new rows, parity-checked at 3,648
+of 3,648 outputs and a byte-identical page. The exact EV is `w * E[N / (n + 1 + Z)]` by
+convolution, shown as an Exact column, matching brute force and reproducing the Week 1 and
+Week 2 orderings from a fixture. Holiday feasibility refuses picks by Hall's condition on
+`HOLIDAY_TEAMS`, taken from rules 8a and 9a. Every lines pull archives the raw games of the
+leg locking next (decision 0005), and a replay refuses a snapshot taken at or after the
+deadline. The field model is fit by multinomial likelihood beside Jamie's fit and a chalk
+baseline, and each leg's prediction is recorded before its deadline and scored by log loss.
+
+**Findings:** on Week 3 the exact EV puts BUF ahead of KC for CIRCAmcised-2, where the
+linearized EV and DILI put KC first.
+
+**Left unfinished:** the page's P% and DILI still use Jamie's fit and EV. Ties are not in the
+exact EV. The archive and the prediction record have not run on GitHub yet, so the first
+scheduled run after the push is the check. The Actuals view and audit panel were not clicked
+through in a browser.
