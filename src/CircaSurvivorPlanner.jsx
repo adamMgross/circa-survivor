@@ -1,7 +1,11 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { LEGS, ALL_TEAMS, OPP, TG_TEAMS, XM_TEAMS, legLabel } from "./schedule.js";
-import { HFA } from "./ratings.js";
 import { REPO, readFile, writeFile, whoAmI, dispatchWorkflow } from "./github.js";
+import { BOOK_NAME, STATUS_TEXT, buildData, lineFor } from "./model/lines.js";
+import { openLeg, entryStatus, fieldTimeline, availability } from "./model/field.js";
+import { EV_MIN_COVERAGE, SURVIVE } from "./model/value.js";
+import { PRIOR, modelPick, fitParams, modelError } from "./model/popularity.js";
+import { boardStats } from "./model/board.js";
 // Bundled copies of the data files (built into the site on every deploy). The page also re-reads the
 // live files from the repo on load so viewers see saves made since the last deploy.
 import picksBundled from "../data/picks.json";
@@ -26,157 +30,11 @@ const COLORS = {
   SEA: ["#002244", "#69BE28"], TB: ["#D50A0A", "#FFFFFF"], TEN: ["#0C2340", "#4B92DB"], WAS: ["#5A1414", "#FFB612"],
 };
 
-// ---------- math ----------
-const normCdf = (x) => 0.5 * (1 + erf(x / Math.SQRT2));
-function erf(x) {
-  const t = 1 / (1 + 0.3275911 * Math.abs(x));
-  const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x);
-  return x < 0 ? -y : y;
-}
-const winFromMargin = (m) => normCdf(m / 13.5);
-// spread from this team's perspective (negative = favorite), and win prob, projected from power ratings
-function projected(legId, team, ratings) {
-  const g = OPP[legId][team];
-  if (!g || !ratings || ratings[team] == null || ratings[g.opp] == null) return null;
-  const margin = ratings[team] - ratings[g.opp] + (g.neutral ? 0 : g.home ? HFA : -HFA);
-  return { spread: Math.round(-margin * 10) / 10, win: winFromMargin(margin), proj: true };
-}
+export { openLeg, entryStatus, fieldTimeline, availability } from "./model/field.js";
+export { linesFromOdds, consensusForGame, buildData, devig } from "./model/lines.js";
+export { computeEV, EV_MIN_COVERAGE, computeDili, STYLE, fvFor } from "./model/value.js";
+export { modelPick, fitParams } from "./model/popularity.js";
 
-// ---------- True Win %: two-sided no-vig moneyline ----------
-const impliedProb = (ml) => (ml > 0 ? 100 / (ml + 100) : -ml / (-ml + 100));
-const validML = (ml) => Number.isFinite(ml) && Math.abs(ml) >= 100;
-function devig(mlA, mlB) {
-  if (!validML(mlA) || !validML(mlB)) return null;
-  const qA = impliedProb(mlA), qB = impliedProb(mlB);
-  return { a: qA / (qA + qB), b: qB / (qA + qB) };
-}
-// ---------- consensus True Win % across sportsbooks ----------
-// Each book is de-vigged on its own two prices; the consensus is the MEDIAN of the books' home-win
-// probabilities, and the away side is its complement (medians of the two sides need not sum to 1).
-const STALE_MS = 48 * 3600 * 1000;   // a book whose quote is this much older than the freshest book's is left out
-const BOOK_NAME = { pinnacle: "Pinnacle", betmgm: "BetMGM", draftkings: "DraftKings", fanduel: "FanDuel", williamhill_us: "Caesars", nflverse: "closing line (nflverse)" };
-const median = (xs) => { const s = [...xs].sort((a, b) => a - b), n = s.length; return n ? (n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2) : null; };
-const roundHalf = (v) => Math.round(v * 2) / 2;
-// status by number of contributing books
-const STATUS = { 0: "none", 1: "single", 2: "degraded" };
-const statusFor = (n, closing) => (closing ? "closing" : STATUS[n] || "consensus");
-const STATUS_TEXT = { consensus: "consensus of 3+ books", degraded: "2 books only (degraded)", single: "single book (provisional)", closing: "closing line from nflverse (game already played)", none: "no valid two-sided moneyline" };
-
-// One game's books → per-book de-vigged probabilities with exclusion reasons, plus the consensus.
-function consensusForGame(key, g) {
-  const [away, home] = key.split("@");
-  const kickoff = g.kickoff ? new Date(g.kickoff).getTime() : null;
-  const books = g.books || (g.ml ? { [/nflverse/.test(g.source || "") ? "nflverse" : "draftkings"]: { asof: g.asof, ml: g.ml, spread: g.spread || {} } } : {});
-  const rows = Object.entries(books).map(([bk, b]) => {
-    const row = { book: bk, name: BOOK_NAME[bk] || bk, ml: b.ml?.[home] ?? null, oppMl: b.ml?.[away] ?? null, asof: b.asof || null, spread: b.spread?.[home] ?? null, pHome: null, excluded: null };
-    const d = devig(row.ml, row.oppMl);
-    if (!d) row.excluded = "no valid two-sided moneyline";
-    else if (bk !== "nflverse" && kickoff && row.asof && new Date(row.asof).getTime() >= kickoff) row.excluded = "quoted after kickoff (in-game price)";
-    else row.pHome = d.a;
-    return row;
-  });
-  const fresh = rows.filter((r) => !r.excluded && r.asof).map((r) => new Date(r.asof).getTime());
-  const newest = fresh.length ? Math.max(...fresh) : null;
-  for (const r of rows) if (!r.excluded && r.asof && newest && newest - new Date(r.asof).getTime() > STALE_MS) { r.excluded = `stale (${Math.round((newest - new Date(r.asof).getTime()) / 3600000)} h older than the freshest book)`; r.pHome = null; }
-  const valid = rows.filter((r) => !r.excluded);
-  const closing = valid.length > 0 && valid.every((r) => r.book === "nflverse");
-  const pHome = valid.length ? median(valid.map((r) => r.pHome)) : null;
-  // reference book for the displayed raw prices: the contributing book closest to the consensus
-  const ref = valid.length ? valid.reduce((a, r) => (Math.abs(r.pHome - pHome) < Math.abs(a.pHome - pHome) ? r : a)) : null;
-  const sp = valid.map((r) => r.spread).filter((v) => v != null);
-  const asof = valid.length ? valid.map((r) => r.asof).filter(Boolean).sort().pop() || null : null;
-  return { key, away, home, kickoff: g.kickoff || null, rows, valid: valid.length, status: statusFor(valid.length, closing), pHome, ref, spreadHome: sp.length ? roundHalf(median(sp)) : null, asof };
-}
-// Turn one leg of data/odds.json ({ games: { "AWY@HOM": { kickoff, books: { <book>: { asof, ml, spread } } } } })
-// into per-team lines. Only games with at least one valid two-sided moneyline get a Win %; a spread alone never does.
-function linesFromOdds(legOdds) {
-  const lines = {}, games = {}; let asof = null, n = 0; const counts = {};
-  for (const [key, g] of Object.entries(legOdds?.games || {})) {
-    const c = consensusForGame(key, g);
-    games[key] = c;
-    if (c.pHome == null) continue;
-    const base = { market: true, status: c.status, n: c.valid, game: key };
-    lines[c.home] = { ...base, win: c.pHome, ml: c.ref.ml, oppMl: c.ref.oppMl, refBook: c.ref.name, spread: c.spreadHome };
-    lines[c.away] = { ...base, win: 1 - c.pHome, ml: c.ref.oppMl, oppMl: c.ref.ml, refBook: c.ref.name, spread: c.spreadHome == null ? null : -c.spreadHome };
-    n++; counts[c.status] = (counts[c.status] || 0) + 1;
-    if (!asof || (c.asof && c.asof > asof)) asof = c.asof;
-  }
-  return { lines, detail: games, asof, games: n, counts };
-}
-// EV_i = w_i / (p_i + sum over other games of p_j w_j), scaled so the field's pick-weighted average = 1.00
-// (the scale Atlas / SurvivorGrid use). Games without a Win % are left out of the denominator, which flatters
-// everyone else, so the caller gets the coverage and blanks EV when it is too low to trust.
-const EV_MIN_COVERAGE = 0.75;
-function computeEV(legId, rows) {
-  const teams = Object.keys(OPP[legId]);
-  const gamesTotal = teams.length / 2;
-  const covered = teams.filter((t) => rows[t].win != null).length / 2;
-  const coverage = gamesTotal ? covered / gamesTotal : 0;
-  for (const t of teams) { rows[t].raw = null; rows[t].ev = null; }
-  if (coverage < EV_MIN_COVERAGE) return { coverage, covered, gamesTotal, blanked: true };
-  const S = teams.reduce((a, t) => a + (rows[t].pick || 0) * (rows[t].win || 0), 0);
-  let wsum = 0, psum = 0;
-  for (const t of teams) {
-    const r = rows[t]; if (r.win == null) continue;
-    const opp = OPP[legId][t].opp;
-    const own = (r.pick || 0) * r.win, oppc = (rows[opp].pick || 0) * (rows[opp].win || 0);
-    const Si = (r.pick || 0) + (S - own - oppc);
-    r.raw = Si > 0 ? r.win / Si : null;
-    if (r.raw != null && r.pick) { wsum += r.pick * r.raw; psum += r.pick; }
-  }
-  const mean = psum > 0 ? wsum / psum : 1;
-  for (const t of teams) { const r = rows[t]; r.ev = r.raw == null ? null : r.raw / mean; }
-  return { coverage, covered, gamesTotal, blanked: false };
-}
-// Everything the model needs, assembled from the four data files. `prev` is the same view built from the quotes
-// and ratings of the refresh before the latest one (games without a stored previous quote reuse the current one).
-function buildData({ picks, actuals, odds, ratings }, withPrev = true) {
-  const legs = {};
-  for (const l of LEGS) {
-    const r = linesFromOdds(odds?.legs?.[l.id]);
-    if (r.games) legs[l.id] = { ...r, gamesTotal: Object.keys(OPP[l.id]).length / 2, books: odds.books || [] };
-  }
-  const data = {
-    entries: Array.isArray(picks?.entries) ? picks.entries : [],
-    legs, ratings: ratings?.ratings || null, ratingsAt: ratings?.updatedAt || null, ratingsSrc: ratings?.source || "", oddsAt: odds?.updatedAt || null,
-    actuals: actuals?.legs || {}, contest: actuals?.contest || { start: 0, pool: 0, share: 0 }, prev: null,
-  };
-  if (withPrev && odds?.legs) {
-    let any = false; const pl = {};
-    for (const [id, leg] of Object.entries(odds.legs)) {
-      const games = {};
-      for (const [k, g] of Object.entries(leg.games || {})) { if (g.prev?.books) { any = true; games[k] = { ...g, books: g.prev.books }; } else games[k] = g; }
-      pl[id] = { ...leg, games };
-    }
-    if (any) data.prev = buildData({ picks, actuals, odds: { ...odds, legs: pl, updatedAt: odds.prevUpdatedAt || null }, ratings: ratings?.prev?.ratings ? { ...ratings, ...ratings.prev, prev: null } : ratings }, false);
-  }
-  return data;
-}
-// lineFor: any line for display / future-value projection. Live market line if captured, else a projection
-// from power ratings (proj: true). NEVER use this for the selected leg's True Win % — use marketLine().
-function lineFor(legId, team, data) {
-  const live = data?.legs?.[legId]?.lines?.[team];
-  if (live) return { ...live, proj: false };
-  return projected(legId, team, data?.ratings);
-}
-function marketLine(legId, team, data) {
-  const ln = data?.legs?.[legId]?.lines?.[team];
-  return ln && ln.market && ln.win != null ? { ...ln, proj: false } : null;
-}
-// The week to open on. A week stays current while its games are still being played, so Saturday's lock
-// (which is when Circa posts picks, and therefore when a week first gets an actuals entry) does not jump
-// you forward before a single game has kicked off. `pending` empties as ESPN reports finals, so the switch
-// happens after the last game of the week. If a result never lands, the next week's start unsticks it.
-export function openLeg(actualLegs, now = Date.now()) {
-  for (let i = 0; i < LEGS.length; i++) {
-    const l = LEGS[i], a = actualLegs?.[l.id];
-    if (!a) return l.id;                                  // not locked yet: this is the week being planned
-    if (!a.pending?.length) continue;                     // week is final, move on
-    const next = LEGS[i + 1];
-    if (!next || new Date(next.start + "T00:00:00-04:00").getTime() > now) return l.id;   // games still running
-  }
-  return LEGS[LEGS.length - 1].id;
-}
 function defaultLeg() {
   const now = Date.now();
   for (let i = 0; i < LEGS.length; i++) {
@@ -185,179 +43,6 @@ function defaultLeg() {
   }
   return "W18";
 }
-
-// ---------- Circa field: actuals timeline ----------
-// derived per-leg field math, in leg order
-function fieldTimeline(data) {
-  const { contest, actuals } = data;
-  let live = contest.start;
-  const out = [];
-  for (const l of LEGS) {
-    const a = actuals[l.id]; if (!a) break;
-    const lost = Object.entries(a.picks).filter(([t]) => a.lost.includes(t)).reduce((s, [, n]) => s + n, 0);
-    const pend = Object.entries(a.picks).filter(([t]) => a.pending.includes(t)).reduce((s, [, n]) => s + n, 0);
-    const before = live; live = before - lost;
-    out.push({ leg: l, before, lost, pending: pend, after: live, value: contest.pool / live });
-  }
-  return out;
-}
-
-// ---------- Circa field model ----------
-// P(team) ∝ win^a · exp(-b · futureValue) · availability, over teams with a game that leg.
-// a = how hard the field chases the biggest favorite, b = how much it saves high-future-value teams.
-// Future value: expected number of strong-favorite spots the team has left. Each later week counts by how much
-// it looks like a strong spot: ~75% projected win counts nearly fully, 65% counts half, 55% a little, 45% nothing.
-// Reads as "about N good weeks left" and separates a team with two usable weeks from one with none.
-const FV_MID = 0.65, FV_WIDTH = 0.05;
-const spotWeight = (win) => 1 / (1 + Math.exp(-(win - FV_MID) / FV_WIDTH));
-function fvFor(legId, team, data) {
-  const idx = LEGS.findIndex((l) => l.id === legId);
-  let fv = 0;
-  for (const l of LEGS.slice(idx + 1)) { const ln = lineFor(l.id, team, data); if (ln && ln.win != null) fv += spotWeight(ln.win); }
-  return data?.ratings ? fv : 0;
-}
-
-// ---------- DILI: "do I love it?" — this week's EV net of what the team is worth to keep ----------
-// Future forfeit: in every later week, how much this team beats a REALISTIC pick (the average of the entry's
-// top-3 other available teams that week), weighted by the chance the entry is still alive to use it.
-// Expressed as a survival multiplier B ≥ 1. DILI = EV / B^k, where k = style × calendar (early weeks weigh
-// the future heavily, the last weeks hardly at all).
-export const STYLE = { now: 0.5, balanced: 1, future: 1.35 };
-const SURVIVE = 0.8;                       // typical week-to-week survival of a well-played entry
-function calendarWeight(legId) { const i = LEGS.findIndex((l) => l.id === legId); return i <= 5 ? 1.5 : i <= 10 ? 1.0 : i <= 15 ? 0.6 : 0.25; }
-function futureForfeit(legId, team, data, burned) {
-  const idx = LEGS.findIndex((l) => l.id === legId);
-  let logB = 0; const parts = [];
-  LEGS.slice(idx + 1).forEach((l, k) => {
-    const mine = lineFor(l.id, team, data); if (!mine || mine.win == null) return;
-    const others = Object.keys(OPP[l.id]).filter((t) => t !== team && !burned.has(t)).map((t) => lineFor(l.id, t, data)?.win).filter((v) => v != null).sort((a, b) => b - a).slice(0, 3);
-    if (others.length < 3) return;
-    const bar = others.reduce((a, b) => a + b, 0) / others.length;
-    const edge = mine.win - bar; if (edge <= 0) return;
-    const s = Math.pow(SURVIVE, k + 1);
-    logB += s * Math.log(1 + edge / bar);
-    parts.push({ leg: l, edge, bar, win: mine.win, s, contrib: s * Math.log(1 + edge / bar) });
-  });
-  parts.sort((a, b) => b.contrib - a.contrib);
-  return { B: Math.exp(logB), parts };
-}
-// Holiday scarcity. Thanksgiving has only 10 eligible teams and Christmas only 8, and six are in both
-// (BUF, CHI, DEN, GB, LAR, PHI). Burning one on an ordinary week costs flexibility no other pick costs, and an
-// entry with none left MUST miss that leg, which is a loss. So this depends only on eligibility — never on how
-// good the team looks that day, since a holiday dog is still a body in the pool. Factor per leg still ahead:
-// ((n−1)/n)^p, where n = eligible teams this entry still has. Mild at a full pool, sharper as it depletes,
-// and 0 at n = 1.
-const HOLIDAY_LEGS = [{ id: "TG", teams: TG_TEAMS }, { id: "XM", teams: XM_TEAMS }];
-const SCARCITY_P = 0.5;
-function holidayScarcity(legId, team, burned, style) {
-  const idx = LEGS.findIndex((l) => l.id === legId);
-  const p = SCARCITY_P * (STYLE[style] ?? 1);
-  let f = 1; const parts = [];
-  for (const h of HOLIDAY_LEGS) {
-    if (LEGS.findIndex((l) => l.id === h.id) <= idx) continue;   // that leg is this week or already gone
-    if (!h.teams.has(team)) continue;                            // team can't play it anyway
-    const n = [...h.teams].filter((t) => !burned.has(t)).length; // pool still open to this entry, incl. `team`
-    const fh = n <= 1 ? 0 : Math.pow((n - 1) / n, p);
-    f *= fh; parts.push({ id: h.id, n, f: fh });
-  }
-  return { f, parts };
-}
-export function computeDili(legId, rows, data, burned, style = "future") {
-  const k = (STYLE[style] ?? 1) * calendarWeight(legId);
-  for (const t of Object.keys(OPP[legId])) {
-    const r = rows[t];
-    if (r.ev == null || burned.has(t)) { r.dili = null; continue; }
-    const f = futureForfeit(legId, t, data, burned);
-    const h = holidayScarcity(legId, t, burned, style);
-    r.forfeit = f.B; r.forfeitParts = f.parts; r.diliK = k; r.holiday = h.f; r.holidayParts = h.parts;
-    r.dili = (r.ev / Math.pow(f.B, k)) * h.f;
-  }
-  return k;
-}
-// share of the field still holding each team going into legId, from actual picks in earlier legs
-function availability(legId, data) {
-  const idx = LEGS.findIndex((l) => l.id === legId);
-  const tl = fieldTimeline(data);
-  const burned = {};
-  for (let k = 0; k < Math.min(idx, tl.length); k++) {
-    const r = tl[k], a = data.actuals[r.leg.id];
-    let survive = 1;
-    for (let j = k + 1; j < Math.min(idx, tl.length); j++) survive *= tl[j].after / tl[j].before;
-    for (const [t, n] of Object.entries(a.picks)) if (a.won.includes(t)) burned[t] = (burned[t] || 0) + n * survive;
-  }
-  const live = idx < tl.length ? tl[idx].before : (tl.length ? tl[tl.length - 1].after : data.contest.start);
-  const out = {};
-  for (const t of ALL_TEAMS) out[t] = Math.max(0, 1 - (burned[t] || 0) / (live || 1));
-  return out;
-}
-function modelPick(legId, data, params) {
-  const { a, b } = params;
-  const av = availability(legId, data);
-  const sc = {};
-  let tot = 0;
-  for (const t of Object.keys(OPP[legId])) {
-    const ln = marketLine(legId, t, data); if (!ln || ln.win < 0.5) continue;
-    const v = Math.pow(ln.win, a) * Math.exp(-b * fvFor(legId, t, data)) * av[t];
-    sc[t] = v; tot += v;
-  }
-  const out = {};
-  for (const t of Object.keys(sc)) out[t] = tot > 0 ? sc[t] / tot : 0;
-  return out;
-}
-// Fit a, b to every leg that has both actuals and lines (grid search).
-// The miss on each team is weighted by that team's actual share (plus a small floor so ignored teams still
-// count a little), because EV depends almost entirely on the few teams the field piles onto.
-// A mild penalty holds the knobs near PRIOR while there are only a week or two of actuals; once several
-// weeks accumulate the evidence outweighs it and the knobs go wherever Circa's numbers say.
-// The prior stops an early-season fit chasing one odd week. Each knob is measured against a plausible
-// SPREAD, not against its own size: dividing by the value itself made any movement in b (which starts near
-// 0.15) cost hundreds of times more than the error it saved, so b was frozen rather than restrained. The
-// error term sums over legs, so the prior weakens on its own as weeks accumulate.
-const PRIOR = { a: 8, b: 0.15 };
-const PRIOR_SPREAD = { a: 6, b: 0.25 };
-const PRIOR_WEIGHT = 0.03;
-const SHARE_FLOOR = 0.02;
-function fitParams(data) {
-  const legs = Object.keys(data.actuals).filter((id) => OPP[id] && Object.keys(OPP[id]).some((t) => marketLine(id, t, data)));
-  if (!legs.length) return { ...PRIOR, legs: 0, err: null };
-  let best = null;
-  for (let a = 2; a <= 24; a += 1) for (let b = 0; b <= 0.8; b += 0.02) {
-    let err = 0;
-    for (const id of legs) {
-      const act = data.actuals[id], tot = Object.values(act.picks).reduce((x, y) => x + y, 0);
-      const m = modelPick(id, data, { a, b });
-      for (const t of Object.keys(OPP[id])) { const share = (act.picks[t] || 0) / tot; err += (share + SHARE_FLOOR) * Math.abs((m[t] || 0) - share); }
-    }
-    const penalty = PRIOR_WEIGHT * (((a - PRIOR.a) / PRIOR_SPREAD.a) ** 2 + ((b - PRIOR.b) / PRIOR_SPREAD.b) ** 2);
-    const score = err + penalty;
-    if (!best || score < best.score) best = { a, b, err, score, legs: legs.length };
-  }
-  return best;
-}
-// mean L1 error of the model vs Circa actuals on legs where both exist
-function modelError(data, params) {
-  let e = 0, n = 0;
-  for (const id of Object.keys(data.actuals)) {
-    const act = data.actuals[id], tot = Object.values(act.picks).reduce((x, y) => x + y, 0);
-    const m = modelPick(id, data, params); if (!Object.keys(m).length) continue;
-    e += Object.keys(OPP[id]).reduce((s, t) => s + Math.abs((m[t] || 0) - (act.picks[t] || 0) / tot), 0); n++;
-  }
-  return n ? { err: e / n, n } : null;
-}
-
-// An entry is out the moment one of its picks loses, or when a finished week went by with no pick at all.
-// A week with games still pending cannot eliminate anyone who has not already lost.
-export function entryStatus(entry, actualLegs) {
-  for (const l of LEGS) {
-    const a = actualLegs?.[l.id]; if (!a) break;
-    const t = entry.picks?.[l.id];
-    if (t && a.lost.includes(t)) return { alive: false, leg: l };
-    if (!t && !a.pending?.length) return { alive: false, leg: l };
-  }
-  return { alive: true, leg: null };
-}
-
-export { linesFromOdds, consensusForGame, computeEV, EV_MIN_COVERAGE, buildData, devig, fieldTimeline, modelPick, fitParams, availability, fvFor };
 
 const CSS = `
 /* ---- tokens: paper, ink, one green ---- */
@@ -679,28 +364,8 @@ export default function CircaSurvivorPlanner() {
 
   const params = useMemo(() => fitParams(data), [data]);
   const merr = useMemo(() => modelError(data, params), [data, params]);
-  // per-team stats for selected leg (also computed on the previous refresh's data, for the deltas)
   const burned = useMemo(() => new Set(Object.keys(usedBy).filter((t) => usedBy[t] !== legId)), [usedBy, legId]);
-  const statsAll = useMemo(() => {
-    const cur = computeStats(legId, data, params);
-    const k = computeDili(legId, cur.rows, data, burned, style);
-    const prev = data.prev ? computeStats(legId, data.prev, params) : null;
-    if (prev) {
-      computeDili(legId, prev.rows, data.prev, burned, style);
-      for (const t of ALL_TEAMS) {
-        const a = cur.rows[t], b = prev.rows[t];
-        a.dEv = a.ev != null && b.ev != null ? a.ev - b.ev : null;
-        a.dWin = a.win != null && b.win != null ? a.win - b.win : null;
-        a.dPick = !a.act && a.pick != null && b.pick != null ? a.pick - b.pick : null;
-        a.dDili = a.dili != null && b.dili != null ? a.dili - b.dili : null;
-      }
-    }
-    // mark the best five in each of the three ranked columns
-    const TOP = 5;
-    for (const [key, flag] of [["dili", "diliTop"], ["ev", "evTop"], ["win", "winTop"]])
-      ALL_TEAMS.filter((t) => cur.rows[t][key] != null).sort((a, b) => cur.rows[b][key] - cur.rows[a][key]).slice(0, TOP).forEach((t) => { cur.rows[t][flag] = true; });
-    return { ...cur, k };
-  }, [data, legId, params, burned, style]);
+  const statsAll = useMemo(() => boardStats(legId, data, params, burned, style), [data, legId, params, burned, style]);
   const { rows: stats, ev: evInfo } = statsAll;
   const prevAt = data.prev?.oddsAt || null;
   const evNote = evInfo.blanked ? `EV unavailable: only ${evInfo.covered}/${evInfo.gamesTotal} games have a Win % (need ${Math.round(EV_MIN_COVERAGE * 100)}%)`
@@ -721,24 +386,6 @@ export default function CircaSurvivorPlanner() {
     return `EV ${st.ev.toFixed(2)} ÷ future forfeit ${st.forfeit.toFixed(2)}^${st.diliK.toFixed(1)}${hol ? ` × holiday scarcity ${st.holiday.toFixed(2)}` : ""} = ${st.dili.toFixed(2)}${top ? ` · biggest later edges: ${top}` : " · no edge over a realistic pick later"}${hol ? ` · burning it leaves the ${hol}` : ""}${st.dDili != null ? dTip("was", (st.dili - st.dDili).toFixed(2)) : ""}`;
   };
   const dTip = (label, was) => (prevAt ? ` · ${label} ${was} at the previous refresh (${fmtTime(prevAt)})` : "");
-  void 0;
-  function computeStats(legId, data, params) {
-    const act = data.actuals[legId];
-    const actTot = act ? Object.values(act.picks).reduce((a, b) => a + b, 0) : 0;
-    const modelP = modelPick(legId, data, params);
-    const hasModel = Object.keys(modelP).length > 0;
-    const pick = act ? Object.fromEntries(Object.entries(act.picks).map(([t, n]) => [t, n / actTot])) : modelP;
-    const rows = {};
-    for (const t of ALL_TEAMS) {
-      const mk = marketLine(legId, t, data);          // True Win % (market only) — null if no valid two-sided ML
-      const disp = lineFor(legId, t, data);           // spread for display; may be a projection
-      rows[t] = { win: mk ? mk.win : null, ml: mk ? mk.ml : null, oppMl: mk ? mk.oppMl : null, status: mk ? mk.status : "none", n: mk ? mk.n : 0, refBook: mk ? mk.refBook : null,
-        pick: (act || hasModel) ? (pick[t] ?? (disp ? 0 : null)) : null, spread: disp ? disp.spread : null, proj: disp ? disp.proj : false, pm: modelP[t], act: !!act };
-    }
-    const ev = computeEV(legId, rows);
-    for (const t of ALL_TEAMS) rows[t].fv = data.ratings ? fvFor(legId, t, data) : null;
-    return { rows, ev };
-  }
 
   const sortedTeams = useMemo(() => {
     const k = sort.key, d = sort.dir;

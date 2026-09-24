@@ -37,6 +37,7 @@ npm install
 npm test         # bundles and runs every suite in test/
 npm run dev      # http://localhost:5173
 npm run build
+npm run parity -- <ref>   # model outputs at <ref> vs the working tree, must be identical
 tk ready
 ```
 

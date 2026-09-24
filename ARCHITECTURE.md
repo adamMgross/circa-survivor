@@ -14,8 +14,8 @@ in. There is no server.
  Circa PDF -----+--> scripts/fetch-actuals.mjs ---------> data/actuals.json -+--> Pages build
  ESPN json -----+    (pdftotext, circa.mjs parser) -----> data/picks.json  --+        |
                                                               ^                     v
-                                                              |      CircaSurvivorPlanner.jsx
-                                                              +------ owner save   (model + UI)
+                                                              |      src/model/ -> CircaSurvivorPlanner.jsx
+                                                              +------ owner save        (UI)
                                                                   via GitHub API
 ```
 
@@ -25,10 +25,17 @@ in. There is no server.
   team sets. Shared by the page and the scripts. Knows nothing about odds or picks.
 - `src/ratings.js`: the ridge fit of power ratings from spreads, and the futures prior.
   Pure.
-- `src/CircaSurvivorPlanner.jsx`: every model function (de-vig and consensus, projection,
-  field timeline and availability, popularity model and its fit, EV, future value, DILI, entry
-  status) and the whole UI, CSS and editors, in one file. `computeStats` and the board's
-  deltas and top-five flags are defined inside the component body.
+- `src/model/`: the model, with no React and no I/O.
+  - `lines.js`: de-vig, the per-book consensus, the four data files assembled by `buildData`,
+    and the line for a team in a leg, from the market (`marketLine`) or projected from ratings
+    (`lineFor`).
+  - `field.js`: the field timeline, availability, entry status and the week to open on.
+  - `value.js`: EV, future value, and DILI with its forfeit and holiday scarcity terms.
+  - `popularity.js`: the pick-share model and its grid fit.
+  - `board.js`: the per-team stats for one leg (`computeStats`) and the board's deltas and
+    top-five flags (`boardStats`).
+- `src/CircaSurvivorPlanner.jsx`: the page. State, loading and saving, sorting, layout, CSS
+  and the editors. It re-exports the model functions the tests import.
 - `src/github.js`: read and write the data files and dispatch a workflow through the GitHub
   REST API.
 - `scripts/fetch-odds.mjs`, `fit-ratings.mjs`, `fetch-actuals.mjs`: the scheduled jobs, each
@@ -82,6 +89,9 @@ What the code holds to today. Each is checkable in the named place.
 
 - Win % for a leg comes only from `marketLine`, which reads a consensus of moneylines. No
   spread, rating or model fallback produces one (decision 0004).
+- `src/model/` imports only `src/schedule.js`, `src/ratings.js` (for `HFA`) and itself.
+  `npm run parity -- <ref>` runs the model at a git ref and the working tree on the same data
+  files and asserts every output is deep-equal.
 - `consensusForGame`, `linesFromOdds`, `fitRatings`, `priorFromFutures`, `parseSelections`
   and `resultsFromScoreboard` are pure and take their inputs as arguments. `openLeg` takes
   the clock as an argument that defaults to `Date.now()`.
@@ -92,7 +102,7 @@ What the code holds to today. Each is checkable in the named place.
 - A scheduled lines pull lands in the hour before every leg's deadline
   (`test/deadlines.test.jsx`).
 
-Not yet held, each with a ticket: model functions separate from the UI (`cs-l0oa`), rows
+Not yet held, each with a ticket: rows
 returned as values instead of mutated (`cs-ascn`), raw inputs archived before parsing
 (`fs-gkjt`, `fs-rs6a`), named game keys and pick sources (`cs-8zgr`), and a counted-work pin
 on the popularity fit (`cs-q2qb`).

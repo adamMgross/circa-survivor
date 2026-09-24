@@ -51,7 +51,7 @@ economics and is the risk principal. Each of the friends holds 5 percent per ent
 
 ## Craft goals
 
-1. **A pure model core.** `src/model/` imports nothing but the schedule and itself. No React,
+1. **A pure model core.** `src/model/` imports nothing but the schedule, the ratings fit and itself. No React,
    no `fetch`, no clock. The data scripts are fetch, then a pure transform, then a write.
 2. **Values, not places.** Model functions return new rows. Nothing mutates a caller's object,
    and a row's fields do not depend on the order functions were called in.
