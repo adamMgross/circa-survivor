@@ -30,7 +30,9 @@ in. There is no server.
     and the line for a team in a leg, from the market (`marketLine`) or projected from ratings
     (`lineFor`).
   - `field.js`: the field timeline, availability, entry status and the week to open on.
-  - `value.js`: EV, future value, and DILI with its forfeit and holiday scarcity terms.
+  - `value.js`: EV (Jamie's linearization, the baseline), the exact EV by convolution of the
+    survivor count (`survivorDist`, `expectedShare`, `computeExactEV`), future value, and DILI
+    with its forfeit and holiday scarcity terms. DILI still discounts the linearized EV.
   - `popularity.js`: the pick-share model and its grid fit.
   - `board.js`: the per-team stats for one leg (`computeStats`) and the board's deltas and
     top-five flags (`boardStats`).

@@ -101,18 +101,19 @@ const CSS = `
 
 /* frozen left block: EV | W% | P% | Team */
 .csp .L { position:sticky; z-index:2; background:var(--surface); height:var(--rh); text-align:center; }
-/* frozen block: what we observe (W%, P%, Future) then what we conclude (EV, DILI); 348px total */
+/* frozen block: what we observe (W%, P%, Future) then what we conclude (EV, exact EV, DILI); 418px total */
 .csp .L.wp { left:0; width:70px; min-width:70px; }
 .csp .L.pp { left:70px; width:66px; min-width:66px; }
 .csp .L.fv { left:136px; width:66px; min-width:66px; }
 .csp .L.ev { left:202px; width:70px; min-width:70px; }
-.csp .L.dili { left:272px; width:76px; min-width:76px; }
-.csp .L.team { left:348px; width:var(--teamw,100px); min-width:var(--teamw,100px); text-align:left; padding:0 8px 0 12px; font-weight:600; }
-.csp .L.pctl { left:0; width:348px; min-width:348px; padding:0; }
+.csp .L.evx { left:272px; width:70px; min-width:70px; }
+.csp .L.dili { left:342px; width:76px; min-width:76px; }
+.csp .L.team { left:418px; width:var(--teamw,100px); min-width:var(--teamw,100px); text-align:left; padding:0 8px 0 12px; font-weight:600; }
+.csp .L.pctl { left:0; width:418px; min-width:418px; padding:0; }
 .csp .sum td.pctl { top:0; height:calc(var(--th) + var(--n) * var(--rh)); border-bottom:1px solid var(--rule); }
 /* the board's controls: a plain block pinned over the table's top-left corner, laid out on its own terms */
 .csp .corner { position:sticky; top:0; left:0; height:0; z-index:7; }
-.csp .controls { position:absolute; left:0; top:0; width:348px; height:calc(var(--th) + var(--n) * var(--rh)); box-sizing:border-box; padding:0 12px 0 16px; background:var(--panel); border-bottom:1px solid var(--rule); display:flex; flex-direction:column; justify-content:center; gap:10px; }
+.csp .controls { position:absolute; left:0; top:0; width:418px; height:calc(var(--th) + var(--n) * var(--rh)); box-sizing:border-box; padding:0 12px 0 16px; background:var(--panel); border-bottom:1px solid var(--rule); display:flex; flex-direction:column; justify-content:center; gap:10px; }
 .csp .controls .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
 .csp .sum tr.top th { background:var(--panel); }
 
@@ -122,7 +123,7 @@ const CSS = `
 .csp .controls .note { font-size:11px; color:var(--ink3); white-space:normal; line-height:1.3; max-width:180px; }
 .csp .controls .note.msg { color:var(--ink); }
 .csp .controls .note.err { color:var(--red); }
-.csp .L.entry { left:348px; width:var(--teamw,116px); min-width:var(--teamw,116px); text-align:right; padding:0 10px 0 0; }
+.csp .L.entry { left:418px; width:var(--teamw,116px); min-width:var(--teamw,116px); text-align:right; padding:0 10px 0 0; }
 .csp td.L.dili.num { color:var(--ink); font-weight:600; }
 .csp td.L.num .v { display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; height:100%; }
 .csp td.L.num .v .n { grid-column:2; }
@@ -134,7 +135,7 @@ const CSS = `
 .csp th.L.entry { cursor:default; }
 .csp td.L.num { color:var(--ink2); }
 .csp td.L.num.blank { color:var(--ink3); }
-.csp td.L.ev.num { color:var(--ink); font-weight:600; }
+.csp td.L.ev.num, .csp td.L.evx.num { color:var(--ink); font-weight:600; }
 /* highlights: green on the best five EV / W% / DILI and on a cheap Future; red on a crowded P% */
 .csp td.L.num.hi { color:var(--green-ink); }
 .csp td.L.num.warn { color:var(--red); }
@@ -386,7 +387,7 @@ export default function CircaSurvivorPlanner() {
     const k = sort.key, d = sort.dir;
     const val = (t) => {
       if (k === "team") return t;
-      if (k === "ev" || k === "wp" || k === "pp" || k === "fv" || k === "dili") { const v = { ev: stats[t].ev, wp: stats[t].win, pp: stats[t].pick, fv: stats[t].fv, dili: stats[t].dili }[k]; return v == null ? -Infinity : v; }
+      if (k === "ev" || k === "evx" || k === "wp" || k === "pp" || k === "fv" || k === "dili") { const v = { ev: stats[t].ev, evx: stats[t].evx, wp: stats[t].win, pp: stats[t].pick, fv: stats[t].fv, dili: stats[t].dili }[k]; return v == null ? -Infinity : v; }
       const ln = lineFor(k, t, data); return ln && ln.spread != null ? -ln.spread : -Infinity; // favorites first
     };
     return [...ALL_TEAMS].sort((a, b) => { const va = val(a), vb = val(b); if (va === vb) return a < b ? -1 : 1; return (va < vb ? 1 : -1) * d; });
@@ -397,7 +398,7 @@ export default function CircaSurvivorPlanner() {
   const [fit, setFit] = useState({ cw: 48, teamw: 116 });
   useEffect(() => {
     const el = wrapRef.current; if (!el) return;
-    const LEFT = 348, MIN_CW = 48, MIN_TEAM = 116;
+    const LEFT = 418, MIN_CW = 48, MIN_TEAM = 116;
     const measure = () => {
       const w = el.clientWidth - LEFT - MIN_TEAM;
       const cw = Math.max(MIN_CW, Math.floor(w / LEGS.length));
@@ -422,6 +423,7 @@ export default function CircaSurvivorPlanner() {
         <th className={"L pp" + (sort.key === "pp" ? " sorted" : "")} onClick={() => clickSort("pp")} title="Circa pick popularity (actual once posted, field model before)">P%</th>
         <th className={"L fv" + (sort.key === "fv" ? " sorted" : "")} onClick={() => clickSort("fv")} title="Future value: about how many strong-favorite weeks the team has left after this one">Future</th>
         <th className={"L ev" + (sort.key === "ev" ? " sorted" : "") + (evNote ? " partial" : "")} onClick={() => clickSort("ev")} title={(evNote || `EV for ${legLabel(cur)}`) + (prevAt ? ` · small numbers = change since the previous refresh (${fmtTime(prevAt)})` : "")}>EV{evNote ? "*" : ""}</th>
+        <th className={"L evx" + (sort.key === "evx" ? " sorted" : "")} onClick={() => clickSort("evx")} title={`Exact EV: win % × expected share of the survivors, by convolution over every other game's outcome. Same scale as EV, which is its linear approximation and the baseline.${prevAt ? ` · small numbers = change since ${fmtTime(prevAt)}` : ""}`}>Exact</th>
         <th className={"L dili" + (sort.key === "dili" ? " sorted" : "")} onClick={() => clickSort("dili")} title={`DILI — "do I love it?": this week's EV net of what the team is worth to keep, for this entry. Style: ${style}${prevAt ? ` · small numbers = change since ${fmtTime(prevAt)}` : ""}`}>DILI</th>
         <th className={"L team" + (sort.key === "team" ? " sorted" : "")} onClick={() => clickSort("team")}>Team</th>
       </>}
@@ -507,7 +509,7 @@ export default function CircaSurvivorPlanner() {
         <table>
           <tbody className="sum">
             <tr className="top" style={{ "--top": "0px" }}>
-              <td className="L pctl" colSpan={5} rowSpan={entries.length + 1} />
+              <td className="L pctl" colSpan={6} rowSpan={entries.length + 1} />
               <Header top />
             </tr>
             {entries.map((e, i) => (
@@ -523,7 +525,7 @@ export default function CircaSurvivorPlanner() {
                 })}
               </tr>
             ))}
-            <tr className="gap"><td colSpan={6} /> {LEGS.map((l) => <td key={l.id} className={l.id === legId ? "curcol" : ""} />)}</tr>
+            <tr className="gap"><td colSpan={7} /> {LEGS.map((l) => <td key={l.id} className={l.id === legId ? "curcol" : ""} />)}</tr>
             <tr className="hdr2"><Header /></tr>
           </tbody>
           <tbody>
@@ -539,6 +541,7 @@ export default function CircaSurvivorPlanner() {
                     <span className="v"><span className="n">{st.fv == null ? "–" : st.fv.toFixed(1)}</span></span>
                   </td>
                   <td className={"L ev num" + (st.ev == null ? " blank" : st.evTop ? " hi" : "")} title={st.dEv != null ? `EV ${st.ev.toFixed(2)}${dTip("was", (st.ev - st.dEv).toFixed(2))}` : ""}><Num d={st.dEv} kind="ev">{st.ev == null ? (inLeg ? "–" : "") : st.ev.toFixed(2)}</Num></td>
+                  <td className={"L evx num" + (st.evx == null ? " blank" : st.evxTop ? " hi" : "")} title={st.evx != null && st.ev != null ? `Exact ${st.evx.toFixed(3)} vs linearized ${st.ev.toFixed(3)}${st.dEvx != null ? dTip("was", (st.evx - st.dEvx).toFixed(2)) : ""}` : ""}><Num d={st.dEvx} kind="ev">{st.evx == null ? (inLeg ? "–" : "") : st.evx.toFixed(2)}</Num></td>
                   <td className={"L dili num" + (st.dili == null ? " blank" : st.diliTop ? " hi" : "")} title={st.dili == null ? (inLeg ? (usedLeg ? "Already used" : "Needs an EV") : "") : diliTip(st)}>
                     <Num d={st.dDili} kind="ev">{st.dili == null ? (inLeg ? "–" : "") : st.dili.toFixed(2)}</Num>
                   </td>
@@ -622,7 +625,7 @@ function AuditPanel({ legId, data, params, merr, stats, evNote, style, pickStyle
       </div>
       <h4 className="th">This week, by team</h4>
       <table>
-        <thead><tr><th>Team</th><th>ML</th><th>Win</th><th>Future</th><th>Field holding</th><th>Model P%</th><th>Final P%</th><th>EV</th><th>Forfeit</th><th>Holiday</th><th>DILI</th></tr></thead>
+        <thead><tr><th>Team</th><th>ML</th><th>Win</th><th>Future</th><th>Field holding</th><th>Model P%</th><th>Final P%</th><th>EV</th><th>Exact EV</th><th>Forfeit</th><th>Holiday</th><th>DILI</th></tr></thead>
         <tbody>
           {teams.map((t) => (
             <tr key={t}>
@@ -634,6 +637,7 @@ function AuditPanel({ legId, data, params, merr, stats, evNote, style, pickStyle
               <td className="mut">{pc(stats[t].pm, 1)}</td>
               <td>{pc(stats[t].pick, 1)}</td>
               <td>{stats[t].ev == null ? "–" : stats[t].ev.toFixed(2)}</td>
+              <td>{stats[t].evx == null ? "–" : stats[t].evx.toFixed(2)}</td>
               <td className="mut">{stats[t].forfeit == null ? "–" : stats[t].forfeit.toFixed(3)}</td>
               <td className="mut" title={(stats[t].holidayParts || []).map((h) => `${h.id} pool ${h.n}`).join(", ")}>{stats[t].holiday == null || stats[t].holiday === 1 ? "–" : stats[t].holiday.toFixed(3)}</td>
               <td className="fin">{stats[t].dili == null ? "–" : stats[t].dili.toFixed(2)}</td>

@@ -30,6 +30,12 @@ export function fieldTimeline(data) {
   return out;
 }
 
+// Entries alive going into legId.
+export function fieldSize(legId, data) {
+  const idx = LEGS.findIndex((l) => l.id === legId);
+  const tl = fieldTimeline(data);
+  return idx < tl.length ? tl[idx].before : (tl.length ? tl[tl.length - 1].after : data.contest.start);
+}
 // share of the field still holding each team going into legId, from actual picks in earlier legs
 export function availability(legId, data) {
   const idx = LEGS.findIndex((l) => l.id === legId);

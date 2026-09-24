@@ -31,6 +31,55 @@ export function computeEV(legId, rows) {
   return { coverage, covered, gamesTotal, blanked: false, rows: out };
 }
 
+// Distribution of the number of entries that survive a set of independent games. games: [{ nHome, nAway, pHome }].
+// Returns a Float64Array indexed by survivor count.
+export function survivorDist(games) {
+  const size = games.reduce((a, g) => a + Math.max(g.nHome, g.nAway), 0) + 1;
+  let dist = new Float64Array(size), top = 0;
+  dist[0] = 1;
+  for (const { nHome, nAway, pHome } of games) {
+    const next = new Float64Array(size);
+    for (let z = 0; z <= top; z++) {
+      const m = dist[z]; if (!m) continue;
+      next[z + nHome] += m * pHome;
+      next[z + nAway] += m * (1 - pHome);
+    }
+    top += Math.max(nHome, nAway); dist = next;
+  }
+  return dist;
+}
+// Our entry's expected share of the surviving field when it joins a cohort of n others on a team that wins with
+// probability w: w * E[1 / (n + 1 + Z)], Z distributed as dist.
+export function expectedShare(w, n, dist) {
+  let e = 0;
+  for (let z = 0; z < dist.length; z++) if (dist[z]) e += dist[z] / (n + 1 + z);
+  return w * e;
+}
+// Exact EV for every team in the leg, on computeEV's scale (pick-weighted mean 1.00). counts: entries per team.
+// Games without a Win % are left out, as in computeEV, and EV is blanked below the same coverage.
+export function computeExactEV(legId, rows, counts) {
+  const games = [];
+  for (const [t, g] of Object.entries(OPP[legId])) {
+    if (!g.home || rows[t].win == null || rows[g.opp].win == null) continue;
+    games.push({ home: t, away: g.opp, nHome: counts[t] || 0, nAway: counts[g.opp] || 0, pHome: rows[t].win });
+  }
+  const gamesTotal = Object.keys(OPP[legId]).length / 2;
+  const out = {};
+  for (const t of Object.keys(OPP[legId])) out[t] = null;
+  if (!gamesTotal || games.length / gamesTotal < EV_MIN_COVERAGE) return out;
+  const raw = {};
+  for (const g of games) {
+    const dist = survivorDist(games.filter((o) => o !== g));
+    raw[g.home] = expectedShare(g.pHome, g.nHome, dist);
+    raw[g.away] = expectedShare(1 - g.pHome, g.nAway, dist);
+  }
+  let wsum = 0, psum = 0;
+  for (const t of Object.keys(raw)) if (counts[t]) { wsum += counts[t] * raw[t]; psum += counts[t]; }
+  const mean = psum > 0 ? wsum / psum : 1;
+  for (const t of Object.keys(raw)) out[t] = raw[t] / mean;
+  return out;
+}
+
 // Future value: expected number of strong-favorite spots the team has left. Each later week counts by how much
 // it looks like a strong spot: ~75% projected win counts nearly fully, 65% counts half, 55% a little, 45% nothing.
 // Reads as "about N good weeks left" and separates a team with two usable weeks from one with none.

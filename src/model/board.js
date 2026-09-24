@@ -1,6 +1,7 @@
 import { ALL_TEAMS } from "../schedule.js";
 import { lineFor, marketLine } from "./lines.js";
-import { computeEV, computeDili, fvFor } from "./value.js";
+import { computeEV, computeExactEV, computeDili, fvFor } from "./value.js";
+import { fieldSize } from "./field.js";
 import { modelPick } from "./popularity.js";
 
 export function computeStats(legId, data, params) {
@@ -17,8 +18,11 @@ export function computeStats(legId, data, params) {
       pick: (act || hasModel) ? (pick[t] ?? (disp ? 0 : null)) : null, spread: disp ? disp.spread : null, proj: disp ? disp.proj : false, pm: modelP[t], act: !!act };
   }
   const { rows: evRows, ...ev } = computeEV(legId, rows);
+  const alive = fieldSize(legId, data);
+  const counts = act ? act.picks : Object.fromEntries(ALL_TEAMS.map((t) => [t, Math.round((rows[t].pick || 0) * alive)]));
+  const exact = computeExactEV(legId, rows, counts);
   const out = {};
-  for (const t of ALL_TEAMS) out[t] = { ...evRows[t], fv: data.ratings ? fvFor(legId, t, data) : null };
+  for (const t of ALL_TEAMS) out[t] = { ...evRows[t], ...(t in exact ? { evx: exact[t] } : {}), fv: data.ratings ? fvFor(legId, t, data) : null };
   return { rows: out, ev };
 }
 
@@ -29,12 +33,13 @@ export function boardStats(legId, data, params, burned, style) {
   const prevRows = data.prev ? computeDili(legId, computeStats(legId, data.prev, params).rows, data.prev, burned, style).rows : null;
   const TOP = 5;
   const top = (key) => new Set(ALL_TEAMS.filter((t) => diliRows[t][key] != null).sort((a, b) => diliRows[b][key] - diliRows[a][key]).slice(0, TOP));
-  const flags = [["dili", "diliTop"], ["ev", "evTop"], ["win", "winTop"]].map(([key, flag]) => [flag, top(key)]);
+  const flags = [["dili", "diliTop"], ["ev", "evTop"], ["evx", "evxTop"], ["win", "winTop"]].map(([key, flag]) => [flag, top(key)]);
   const rows = {};
   for (const t of ALL_TEAMS) {
     const a = diliRows[t], b = prevRows?.[t];
     rows[t] = { ...a, ...(b ? {
       dEv: a.ev != null && b.ev != null ? a.ev - b.ev : null,
+      dEvx: a.evx != null && b.evx != null ? a.evx - b.evx : null,
       dWin: a.win != null && b.win != null ? a.win - b.win : null,
       dPick: !a.act && a.pick != null && b.pick != null ? a.pick - b.pick : null,
       dDili: a.dili != null && b.dili != null ? a.dili - b.dili : null,
