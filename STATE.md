@@ -13,8 +13,8 @@ is deciding what the exact EV should replace (`fs-d7a3`), then derived future va
 
 **Deployed vs main:** matches after the 2026-09-23 push. https://adammgross.github.io/circa-survivor/
 is served from `main` by `deploy.yml`, and the lines, ratings and actuals jobs run on schedule
-on the fork with its own `ODDS_API_KEY`. The odds archive and the prediction record have run
-only against a stubbed API, not yet on GitHub.
+on the fork with its own `ODDS_API_KEY`. The odds archive and the prediction record ran on
+GitHub on 2026-09-24, and the archived W3 snapshot replays to the live page's Win % exactly.
 
 **What works, verified 2026-09-23:** `npm test` exits 0 with 234 checks across thirteen
 suites, `npm run build` succeeds, and the board renders the Exact column with no errors in
@@ -55,12 +55,12 @@ weeks.
 | Market beats public models on NFL win probability | medium, widely held | `fs-ta9j` |
 | Power or Shin de-vig beats multiplicative on lopsided lines | medium | `fs-ta9j` |
 | Games within a week are near-independent | low | `fs-qar4` |
+| GitHub starts the 22:17 UTC Saturday pull before the 23:00 lock | low, the 23:17 run of 2026-09-23 started 2 h 5 min late | none yet |
 | Selections names join cleanly across weeks despite truncation | low, never joined | `fs-9x8g` |
 | The 20 legs in `src/schedule.js` match the published schedule | medium, agrees with research 05, Weeks 1 and 2 ran | `fs-yc7e` |
 | Field behavior is stable enough to pool across seasons | low | `fs-fnhf` |
 | Entries pick independently, so the likelihood standard errors hold | low, syndicates exist | none yet |
 | Ties are rare enough to leave out of the exact EV | medium | `fs-0d0o` notes |
-| The Odds API response shape matches the fixture built from `odds.json` | medium, not yet seen raw | first archived file |
 | ESPN's undocumented scoreboard keeps its shape | medium, two weeks parsed | none yet |
 | Circa keeps its Selections URL convention | medium, two weeks found | `fs-gkjt` |
 
@@ -234,3 +234,12 @@ linearized EV and DILI put KC first.
 exact EV. The archive and the prediction record have not run on GitHub yet, so the first
 scheduled run after the push is the check. The Actuals view and audit panel were not clicked
 through in a browser.
+
+### 2026-09-24
+
+**Done:** a manual `update-data.yml` run (36004975159) archived 16 W3 games and wrote
+`data/predictions/W3.json`. `deadlineSnapshot` chose it over the earlier scheduled file, and
+its replay matches `odds.json` W3 on every team.
+
+**Findings:** the scheduled 23:17 UTC lines run of 2026-09-23 started at 01:22 UTC, 2 h 5 min
+late. A delay that long on Saturday would put the 22:17 pull after the 23:00 lock.
