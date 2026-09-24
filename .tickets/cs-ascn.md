@@ -1,6 +1,6 @@
 ---
 id: cs-ascn
-status: open
+status: closed
 deps: [cs-l0oa]
 links: []
 created: 2026-09-23T23:29:52Z
@@ -17,3 +17,9 @@ computeEV and computeDili write into the caller's rows, and the board memo adds 
 
 No model function assigns to an argument. The parity script from the extraction ticket still passes.
 
+
+## Notes
+
+**2026-09-24T01:03:32Z**
+
+computeEV and computeDili return { ...info, rows } and boardStats builds deltas and flags as new rows. Parity against e88c1a3: 3648/3648 identical, rendered page byte-identical. test/dili.test.jsx asserts the inputs are untouched.

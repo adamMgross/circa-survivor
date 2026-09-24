@@ -92,6 +92,8 @@ What the code holds to today. Each is checkable in the named place.
 - `src/model/` imports only `src/schedule.js`, `src/ratings.js` (for `HFA`) and itself.
   `npm run parity -- <ref>` runs the model at a git ref and the working tree on the same data
   files and asserts every output is deep-equal.
+- No model function assigns to an argument. `computeEV`, `computeDili` and `boardStats` return
+  new rows (`test/dili.test.jsx`).
 - `consensusForGame`, `linesFromOdds`, `fitRatings`, `priorFromFutures`, `parseSelections`
   and `resultsFromScoreboard` are pure and take their inputs as arguments. `openLeg` takes
   the clock as an argument that defaults to `Date.now()`.
@@ -102,7 +104,6 @@ What the code holds to today. Each is checkable in the named place.
 - A scheduled lines pull lands in the hour before every leg's deadline
   (`test/deadlines.test.jsx`).
 
-Not yet held, each with a ticket: rows
-returned as values instead of mutated (`cs-ascn`), raw inputs archived before parsing
+Not yet held, each with a ticket: raw inputs archived before parsing
 (`fs-gkjt`, `fs-rs6a`), named game keys and pick sources (`cs-8zgr`), and a counted-work pin
 on the popularity fit (`cs-q2qb`).

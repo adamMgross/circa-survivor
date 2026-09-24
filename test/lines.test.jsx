@@ -55,15 +55,15 @@ const mk = (wins) => { const rows = {}; for (const t of Object.keys(wins)) rows[
 import { OPP } from "../src/schedule.js";
 const w1 = Object.keys(OPP.W1);
 const full = {}; for (const t of w1) full[t] = OPP.W1[t].home ? 0.6 : 0.4;
-let rows = mk(full); let ev = computeEV("W1", rows);
+let ev = computeEV("W1", mk(full)); let rows = ev.rows;
 const teams = w1.filter((t) => rows[t].ev != null);
 const mean = teams.reduce((s, t) => s + rows[t].pick * rows[t].ev, 0) / teams.reduce((s, t) => s + rows[t].pick, 0);
 ok("full coverage: EV mean = 1.00, no flag", ev.coverage === 1 && !ev.blanked && near(mean, 1, 1e-9));
 const partial = { ...full }; partial.NE = null; partial.SEA = null;
-rows = mk(partial); ev = computeEV("W1", rows);
+ev = computeEV("W1", mk(partial)); rows = ev.rows;
 ok("15/16 games: EV shown, coverage flagged", !ev.blanked && ev.covered === 15 && ev.coverage < 1 && rows.KC.ev != null && rows.NE.ev == null);
 const poor = {}; for (const t of w1) poor[t] = null; for (const t of ["KC", "DEN", "DET", "NO", "SEA", "NE", "SF", "LAR", "TB", "CIN"]) poor[t] = full[t];
-rows = mk(poor); ev = computeEV("W1", rows);
+ev = computeEV("W1", mk(poor)); rows = ev.rows;
 ok(`5/16 games (<${Math.round(EV_MIN_COVERAGE * 100)}%): EV blanked`, ev.blanked && w1.every((t) => rows[t].ev == null));
 
 // 5. buildData carries the book list

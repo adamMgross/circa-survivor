@@ -16,29 +16,30 @@ export function computeStats(legId, data, params) {
     rows[t] = { win: mk ? mk.win : null, ml: mk ? mk.ml : null, oppMl: mk ? mk.oppMl : null, status: mk ? mk.status : "none", n: mk ? mk.n : 0, refBook: mk ? mk.refBook : null,
       pick: (act || hasModel) ? (pick[t] ?? (disp ? 0 : null)) : null, spread: disp ? disp.spread : null, proj: disp ? disp.proj : false, pm: modelP[t], act: !!act };
   }
-  const ev = computeEV(legId, rows);
-  for (const t of ALL_TEAMS) rows[t].fv = data.ratings ? fvFor(legId, t, data) : null;
-  return { rows, ev };
+  const { rows: evRows, ...ev } = computeEV(legId, rows);
+  const out = {};
+  for (const t of ALL_TEAMS) out[t] = { ...evRows[t], fv: data.ratings ? fvFor(legId, t, data) : null };
+  return { rows: out, ev };
 }
 
 // Stats for the selected leg, with deltas against the previous refresh and the best five in each ranked column.
 export function boardStats(legId, data, params, burned, style) {
   const cur = computeStats(legId, data, params);
-  const k = computeDili(legId, cur.rows, data, burned, style);
-  const prev = data.prev ? computeStats(legId, data.prev, params) : null;
-  if (prev) {
-    computeDili(legId, prev.rows, data.prev, burned, style);
-    for (const t of ALL_TEAMS) {
-      const a = cur.rows[t], b = prev.rows[t];
-      a.dEv = a.ev != null && b.ev != null ? a.ev - b.ev : null;
-      a.dWin = a.win != null && b.win != null ? a.win - b.win : null;
-      a.dPick = !a.act && a.pick != null && b.pick != null ? a.pick - b.pick : null;
-      a.dDili = a.dili != null && b.dili != null ? a.dili - b.dili : null;
-    }
-  }
-  // mark the best five in each of the three ranked columns
+  const { k, rows: diliRows } = computeDili(legId, cur.rows, data, burned, style);
+  const prevRows = data.prev ? computeDili(legId, computeStats(legId, data.prev, params).rows, data.prev, burned, style).rows : null;
   const TOP = 5;
-  for (const [key, flag] of [["dili", "diliTop"], ["ev", "evTop"], ["win", "winTop"]])
-    ALL_TEAMS.filter((t) => cur.rows[t][key] != null).sort((a, b) => cur.rows[b][key] - cur.rows[a][key]).slice(0, TOP).forEach((t) => { cur.rows[t][flag] = true; });
-  return { ...cur, k };
+  const top = (key) => new Set(ALL_TEAMS.filter((t) => diliRows[t][key] != null).sort((a, b) => diliRows[b][key] - diliRows[a][key]).slice(0, TOP));
+  const flags = [["dili", "diliTop"], ["ev", "evTop"], ["win", "winTop"]].map(([key, flag]) => [flag, top(key)]);
+  const rows = {};
+  for (const t of ALL_TEAMS) {
+    const a = diliRows[t], b = prevRows?.[t];
+    rows[t] = { ...a, ...(b ? {
+      dEv: a.ev != null && b.ev != null ? a.ev - b.ev : null,
+      dWin: a.win != null && b.win != null ? a.win - b.win : null,
+      dPick: !a.act && a.pick != null && b.pick != null ? a.pick - b.pick : null,
+      dDili: a.dili != null && b.dili != null ? a.dili - b.dili : null,
+    } : {}) };
+    for (const [flag, set] of flags) if (set.has(t)) rows[t][flag] = true;
+  }
+  return { rows, ev: cur.ev, k };
 }

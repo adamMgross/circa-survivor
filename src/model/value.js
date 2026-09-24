@@ -10,21 +10,25 @@ export function computeEV(legId, rows) {
   const gamesTotal = teams.length / 2;
   const covered = teams.filter((t) => rows[t].win != null).length / 2;
   const coverage = gamesTotal ? covered / gamesTotal : 0;
-  for (const t of teams) { rows[t].raw = null; rows[t].ev = null; }
-  if (coverage < EV_MIN_COVERAGE) return { coverage, covered, gamesTotal, blanked: true };
+  const out = { ...rows };
+  if (coverage < EV_MIN_COVERAGE) {
+    for (const t of teams) out[t] = { ...rows[t], raw: null, ev: null };
+    return { coverage, covered, gamesTotal, blanked: true, rows: out };
+  }
   const S = teams.reduce((a, t) => a + (rows[t].pick || 0) * (rows[t].win || 0), 0);
+  const raw = {};
   let wsum = 0, psum = 0;
   for (const t of teams) {
-    const r = rows[t]; if (r.win == null) continue;
+    const r = rows[t]; raw[t] = null; if (r.win == null) continue;
     const opp = OPP[legId][t].opp;
     const own = (r.pick || 0) * r.win, oppc = (rows[opp].pick || 0) * (rows[opp].win || 0);
     const Si = (r.pick || 0) + (S - own - oppc);
-    r.raw = Si > 0 ? r.win / Si : null;
-    if (r.raw != null && r.pick) { wsum += r.pick * r.raw; psum += r.pick; }
+    raw[t] = Si > 0 ? r.win / Si : null;
+    if (raw[t] != null && r.pick) { wsum += r.pick * raw[t]; psum += r.pick; }
   }
   const mean = psum > 0 ? wsum / psum : 1;
-  for (const t of teams) { const r = rows[t]; r.ev = r.raw == null ? null : r.raw / mean; }
-  return { coverage, covered, gamesTotal, blanked: false };
+  for (const t of teams) out[t] = { ...rows[t], raw: raw[t], ev: raw[t] == null ? null : raw[t] / mean };
+  return { coverage, covered, gamesTotal, blanked: false, rows: out };
 }
 
 // Future value: expected number of strong-favorite spots the team has left. Each later week counts by how much
@@ -86,13 +90,13 @@ function holidayScarcity(legId, team, burned, style) {
 }
 export function computeDili(legId, rows, data, burned, style = "future") {
   const k = (STYLE[style] ?? 1) * calendarWeight(legId);
+  const out = { ...rows };
   for (const t of Object.keys(OPP[legId])) {
     const r = rows[t];
-    if (r.ev == null || burned.has(t)) { r.dili = null; continue; }
+    if (r.ev == null || burned.has(t)) { out[t] = { ...r, dili: null }; continue; }
     const f = futureForfeit(legId, t, data, burned);
     const h = holidayScarcity(legId, t, burned, style);
-    r.forfeit = f.B; r.forfeitParts = f.parts; r.diliK = k; r.holiday = h.f; r.holidayParts = h.parts;
-    r.dili = (r.ev / Math.pow(f.B, k)) * h.f;
+    out[t] = { ...r, forfeit: f.B, forfeitParts: f.parts, diliK: k, holiday: h.f, holidayParts: h.parts, dili: (r.ev / Math.pow(f.B, k)) * h.f };
   }
-  return k;
+  return { k, rows: out };
 }
