@@ -33,7 +33,9 @@ in. There is no server.
   - `value.js`: EV (Jamie's linearization, the baseline), the exact EV by convolution of the
     survivor count (`survivorDist`, `expectedShare`, `computeExactEV`), future value, and DILI
     with its forfeit and holiday scarcity terms. DILI still discounts the linearized EV.
-  - `popularity.js`: the pick-share model and its grid fit.
+  - `popularity.js`: the pick-share model with Jamie's grid fit (the baseline), the same model
+    fit by multinomial likelihood over every team with a line, a chalk baseline, the log-loss
+    score, and the prediction record for a leg fit only on the legs before it.
   - `replay.js`: the odds archive's snapshot for a leg, and a leg of `odds.json` rebuilt
     from one, refusing a snapshot taken at or after the deadline.
   - `board.js`: the per-team stats for one leg (`computeStats`) and the board's deltas and
@@ -43,7 +45,10 @@ in. There is no server.
 - `src/github.js`: read and write the data files and dispatch a workflow through the GitHub
   REST API.
 - `scripts/fetch-odds.mjs`, `fit-ratings.mjs`, `fetch-actuals.mjs`: the scheduled jobs, each
-  fetching, transforming and writing in one top-level body.
+  fetching, transforming and writing in one top-level body. `record-predictions.mjs` runs after
+  the lines pull and writes the field models' prediction for the leg locking next.
+  `score-predictions.mjs` prints each posted leg's log loss by model.
+- `scripts/parity-model.mjs`: the model at a git ref against the working tree.
 - `scripts/circa.mjs`: pure parsers for the Selections text and ESPN's scoreboard.
   `scripts/nflverse.mjs` loads `games.csv`. `scripts/http.mjs` retries transient failures.
 - `public/guide.html`, `public/math.html`: static explainers served beside the app.
@@ -73,6 +78,8 @@ Licenses of the nflverse data and of Circa's files have not been checked.
 All four files are overwritten in place by each run, and their history lives only in `git log`.
 Beside them, every lines pull writes the raw Odds API games of the leg that locks next to
 `data/archive/odds/<leg>/<pulledAt>.json`, never rewritten (decision 0005).
+`data/predictions/<leg>.json` is rewritten on each pull until that leg's deadline, so the
+file left standing is the last prediction made before it.
 `odds.json` keeps each game's latest pre-kickoff quotes plus one `prev` set and never
 overwrites a game after its kickoff. `ratings.json` keeps the latest fit and one `prev`.
 `actuals.json` holds per-team pick counts and results per leg, not per-entry picks. The
