@@ -3,7 +3,7 @@ import { LEGS, ALL_TEAMS, OPP, TG_TEAMS, XM_TEAMS, legLabel } from "./schedule.j
 import { REPO, readFile, writeFile, whoAmI, dispatchWorkflow } from "./github.js";
 import { BOOK_NAME, STATUS_TEXT, buildData, lineFor } from "./model/lines.js";
 import { openLeg, entryStatus, fieldTimeline, availability } from "./model/field.js";
-import { EV_MIN_COVERAGE, SURVIVE } from "./model/value.js";
+import { EV_MIN_COVERAGE, SURVIVE, gauntletFeasible } from "./model/value.js";
 import { PRIOR, modelPick, fitParams, modelError } from "./model/popularity.js";
 import { boardStats } from "./model/board.js";
 // Bundled copies of the data files (built into the site on every deploy). The page also re-reads the
@@ -328,6 +328,7 @@ export default function CircaSurvivorPlanner() {
   const setPick = (lg, team) => {
     if (!canEdit) { say("Sign in to change picks", false); return; }
     if (activeOut) { say(`${entry.name} is out — no more picks for it`, false); return; }
+    if (entry.picks[lg] !== team && !gauntletFeasible(entry.picks, lg, team)) { say(`${team} in ${lg} would leave no team for the Thanksgiving or Christmas leg (rules 8 and 9)`, true); return; }
     setJson("picks", (p) => ({ ...p, entries: p.entries.map((e, i) => { if (i !== active) return e; const picks = { ...e.picks }; if (picks[lg] === team) delete picks[lg]; else picks[lg] = team; return { ...e, picks }; }) }));
     clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => save("picks", `Picks: ${entries[active]?.name} ${lg} ${team}`), 800);
@@ -360,8 +361,7 @@ export default function CircaSurvivorPlanner() {
 
   const params = useMemo(() => fitParams(data), [data]);
   const merr = useMemo(() => modelError(data, params), [data, params]);
-  const burned = useMemo(() => new Set(Object.keys(usedBy).filter((t) => usedBy[t] !== legId)), [usedBy, legId]);
-  const statsAll = useMemo(() => boardStats(legId, data, params, burned, style), [data, legId, params, burned, style]);
+  const statsAll = useMemo(() => boardStats(legId, data, params, entry.picks, style), [data, legId, params, entry, style]);
   const { rows: stats, ev: evInfo } = statsAll;
   const prevAt = data.prev?.oddsAt || null;
   const evNote = evInfo.blanked ? `EV unavailable: only ${evInfo.covered}/${evInfo.gamesTotal} games have a Win % (need ${Math.round(EV_MIN_COVERAGE * 100)}%)`
@@ -542,8 +542,8 @@ export default function CircaSurvivorPlanner() {
                   </td>
                   <td className={"L ev num" + (st.ev == null ? " blank" : st.evTop ? " hi" : "")} title={st.dEv != null ? `EV ${st.ev.toFixed(2)}${dTip("was", (st.ev - st.dEv).toFixed(2))}` : ""}><Num d={st.dEv} kind="ev">{st.ev == null ? (inLeg ? "–" : "") : st.ev.toFixed(2)}</Num></td>
                   <td className={"L evx num" + (st.evx == null ? " blank" : st.evxTop ? " hi" : "")} title={st.evx != null && st.ev != null ? `Exact ${st.evx.toFixed(3)} vs linearized ${st.ev.toFixed(3)}${st.dEvx != null ? dTip("was", (st.evx - st.dEvx).toFixed(2)) : ""}` : ""}><Num d={st.dEvx} kind="ev">{st.evx == null ? (inLeg ? "–" : "") : st.evx.toFixed(2)}</Num></td>
-                  <td className={"L dili num" + (st.dili == null ? " blank" : st.diliTop ? " hi" : "")} title={st.dili == null ? (inLeg ? (usedLeg ? "Already used" : "Needs an EV") : "") : diliTip(st)}>
-                    <Num d={st.dDili} kind="ev">{st.dili == null ? (inLeg ? "–" : "") : st.dili.toFixed(2)}</Num>
+                  <td className={"L dili num" + (st.dili == null ? " blank" : st.diliTop ? " hi" : "")} title={st.infeasible ? "Refused: this pick leaves no team for the Thanksgiving or Christmas leg (rules 8 and 9)" : st.dili == null ? (inLeg ? (usedLeg ? "Already used" : "Needs an EV") : "") : diliTip(st)}>
+                    <Num d={st.dDili} kind="ev">{st.infeasible ? "✕" : st.dili == null ? (inLeg ? "–" : "") : st.dili.toFixed(2)}</Num>
                   </td>
                   <td className="L team" style={{ "--tc": COLORS[team][0] }}>
                     <span className="nm">{team}</span>

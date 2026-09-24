@@ -94,6 +94,10 @@ What the code holds to today. Each is checkable in the named place.
 - `src/model/` imports only `src/schedule.js`, `src/ratings.js` (for `HFA`) and itself.
   `npm run parity -- <ref>` runs the model at a git ref and the working tree on the same data
   files and asserts every output is deep-equal.
+- A pick that leaves no team for a holiday leg still ahead is refused, not docked:
+  `gauntletFeasible` applies Hall's condition to `HOLIDAY_TEAMS` (rules 8a and 9a), `boardStats`
+  marks it infeasible with no DILI or flag, and the page will not save it
+  (`test/gauntlet.test.jsx`).
 - No model function assigns to an argument. `computeEV`, `computeDili` and `boardStats` return
   new rows (`test/dili.test.jsx`).
 - `consensusForGame`, `linesFromOdds`, `fitRatings`, `priorFromFutures`, `parseSelections`

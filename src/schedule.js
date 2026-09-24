@@ -50,8 +50,13 @@ for (const leg of LEGS) {
     OPP[leg.id][home] = { opp: away, home: true, neutral };
   }
 }
-export const TG_TEAMS = new Set(Object.keys(OPP.TG));
-export const XM_TEAMS = new Set(Object.keys(OPP.XM));
+// Rules 8a and 9a: the teams eligible for the two holiday legs, which an entry must still hold to survive them.
+export const HOLIDAY_TEAMS = {
+  TG: new Set(["GB", "LAR", "CHI", "DET", "PHI", "DAL", "KC", "BUF", "DEN", "PIT"]),
+  XM: new Set(["HOU", "PHI", "GB", "CHI", "BUF", "DEN", "LAR", "SEA"]),
+};
+export const TG_TEAMS = HOLIDAY_TEAMS.TG;
+export const XM_TEAMS = HOLIDAY_TEAMS.XM;
 
 // full name -> abbreviation (The Odds API and nflverse use full names / their own codes)
 export const ABBR = Object.fromEntries(Object.entries(FULL).map(([k, v]) => [v, k]));

@@ -12,6 +12,11 @@ const OUT = join(ROOT, "node_modules/.cache/parity");
 const base = process.argv[2] || "HEAD";
 const git = (...a) => execFileSync("git", a, { cwd: ROOT, encoding: "utf8" }).trim();
 
+const burnedFor = (picks, legId) => {
+  const usedBy = {};
+  for (const [leg, team] of Object.entries(picks)) usedBy[team] = leg;
+  return new Set(Object.keys(usedBy).filter((t) => usedBy[t] !== legId));
+};
 const API = ["buildData", "fitParams", "modelError", "openLeg", "fieldTimeline", "availability", "boardStats"];
 
 function liftBoardFromComponent(file) {
@@ -30,7 +35,7 @@ function liftBoardFromComponent(file) {
 
 function entryFor(tree) {
   if (existsSync(join(tree, "src/model/board.js")))
-    return ["lines", "field", "popularity", "board"].map((m) => `export * from ${JSON.stringify(join(tree, `src/model/${m}.js`))};`).join("\n");
+    return ["lines", "field", "value", "popularity", "board"].map((m) => `export * from ${JSON.stringify(join(tree, `src/model/${m}.js`))};`).join("\n");
   liftBoardFromComponent(join(tree, "src/CircaSurvivorPlanner.jsx"));
   return `export { ${API.join(", ")} } from ${JSON.stringify(join(tree, "src/CircaSurvivorPlanner.jsx"))};`;
 }
@@ -43,7 +48,8 @@ function load(tree, name) {
     "--loader:.jsx=jsx", "--jsx=automatic", "--external:react", "--external:react-dom", "--log-level=warning"], { stdio: "inherit" });
   const m = createRequire(join(OUT, "x.cjs"))(out);
   for (const f of API) if (typeof m[f] !== "function") throw new Error(`${name}: ${f} not found`);
-  return m;
+  if (m.gauntletFeasible) return m;
+  return { ...m, boardStats: (legId, data, params, picks, style) => m.boardStats(legId, data, params, burnedFor(picks, legId), style) };
 }
 
 const wt = mkdtempSync(join(tmpdir(), "parity-"));
@@ -68,11 +74,9 @@ try {
   const burnedSets = [["no picks", {}], ...dA.entries.map((e) => [e.name, e.picks || {}])];
   for (const l of LEGS) {
     same(`availability ${l.id}`, A.availability(l.id, dA), B.availability(l.id, dB));
-    for (const [who, picks] of burnedSets) {
-      const burned = new Set(Object.entries(picks).filter(([leg]) => leg !== l.id).map(([, team]) => team));
+    for (const [who, picks] of burnedSets)
       for (const style of ["now", "balanced", "future"])
-        same(`boardStats ${l.id} ${who} ${style}`, A.boardStats(l.id, dA, pA, burned, style), B.boardStats(l.id, dB, pB, burned, style));
-    }
+        same(`boardStats ${l.id} ${who} ${style}`, A.boardStats(l.id, dA, pA, picks, style), B.boardStats(l.id, dB, pB, picks, style));
   }
   console.log(`base ${git("rev-parse", "--short", base)} vs working tree on data from ${files.odds.updatedAt}: ${LEGS.length} legs, ${Object.keys(OPP).length} schedules, ${burnedSets.length} burned sets, fit a=${pB.a} b=${pB.b.toFixed(2)}`);
   console.log(`${checks - fails}/${checks} outputs identical`);

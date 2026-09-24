@@ -1,4 +1,4 @@
-import { LEGS, OPP, TG_TEAMS, XM_TEAMS } from "../schedule.js";
+import { LEGS, OPP, TG_TEAMS, XM_TEAMS, HOLIDAY_TEAMS } from "../schedule.js";
 import { lineFor } from "./lines.js";
 
 // EV_i = w_i / (p_i + sum over other games of p_j w_j), scaled so the field's pick-weighted average = 1.00
@@ -148,4 +148,16 @@ export function computeDili(legId, rows, data, burned, style = "future") {
     out[t] = { ...r, forfeit: f.B, forfeitParts: f.parts, diliK: k, holiday: h.f, holidayParts: h.parts, dili: (r.ev / Math.pow(f.B, k)) * h.f };
   }
   return { k, rows: out };
+}
+
+// Rules 8 and 9 as a two-slot matching: after `team` is picked in legId, every holiday leg from legId on without a pick
+// can still get its own unused eligible team. By Hall's condition that is each open leg having a free team and, with
+// both legs open, two free teams between them.
+export function gauntletFeasible(picks, legId, team) {
+  const next = { ...picks, [legId]: team };
+  const used = new Set(Object.values(next));
+  const idx = LEGS.findIndex((l) => l.id === legId);
+  const open = Object.keys(HOLIDAY_TEAMS).filter((id) => !next[id] && LEGS.findIndex((l) => l.id === id) >= idx);
+  const free = open.map((id) => [...HOLIDAY_TEAMS[id]].filter((t) => !used.has(t)));
+  return free.every((f) => f.length > 0) && new Set(free.flat()).size >= open.length;
 }
