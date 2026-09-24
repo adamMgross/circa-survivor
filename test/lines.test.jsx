@@ -1,6 +1,7 @@
 // Consensus True Win % from data/odds.json: each book de-vigged on its own, median of home probabilities,
 // away = complement; status tiers; exclusions (one-sided, in-game, stale); EV coverage handling.
-import { linesFromOdds, consensusForGame, computeEV, EV_MIN_COVERAGE, devig, buildData } from "../src/CircaSurvivorPlanner.jsx";
+import { linesFromOdds, consensusForGame, devig, buildData } from "../src/model/lines.js";
+import { computeEV, EV_MIN_COVERAGE } from "../src/model/value.js";
 const near = (a, b, eps = 1e-9) => Math.abs(a - b) < eps;
 let fails = 0; const ok = (name, cond, extra = "") => { console.log(name + ":", cond ? "OK" : "FAIL", extra); if (!cond) fails++; };
 const p = (ml, opp) => devig(ml, opp).a;

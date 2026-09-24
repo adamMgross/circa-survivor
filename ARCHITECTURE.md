@@ -35,7 +35,7 @@ in. There is no server.
   - `board.js`: the per-team stats for one leg (`computeStats`) and the board's deltas and
     top-five flags (`boardStats`).
 - `src/CircaSurvivorPlanner.jsx`: the page. State, loading and saving, sorting, layout, CSS
-  and the editors. It re-exports the model functions the tests import.
+  and the editors.
 - `src/github.js`: read and write the data files and dispatch a workflow through the GitHub
   REST API.
 - `scripts/fetch-odds.mjs`, `fit-ratings.mjs`, `fetch-actuals.mjs`: the scheduled jobs, each

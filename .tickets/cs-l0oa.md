@@ -1,6 +1,6 @@
 ---
 id: cs-l0oa
-status: open
+status: closed
 deps: []
 links: []
 created: 2026-09-23T23:29:52Z
@@ -21,3 +21,9 @@ src/model/lines.js (impliedProb, devig, median, STATUS, consensusForGame, linesF
 
 A parity script runs the pre-refactor commit and the new tree on the real data files for every leg, every style and every entry's burned set, and fitParams, modelError, boardStats rows, openLeg, fieldTimeline and availability are exactly equal. npm test passes with test/ unchanged.
 
+
+## Notes
+
+**2026-09-24T00:58:43Z**
+
+Landed as five modules, not seven: project.js and data.js folded into lines.js, which is the line for a team in a leg from market or ratings, because each alone was a shallow module. The model imports src/ratings.js for HFA. Parity: npm run parity against eeafebb gave 3648/3648 identical outputs (buildData, fitParams, modelError, fieldTimeline, openLeg hourly over the season, availability and boardStats for every leg, style and entry burned set), and it catches a 1e-7 change to SURVIVE. The server-rendered page is byte-identical to eeafebb on the same data and clock. Tests were untouched in the move commit and repointed to src/model/ in the next.

@@ -6,9 +6,10 @@ holistically. Entries marked upstream were seeded from Jamie's git history at on
 
 ## Current State
 
-**Phase:** onboard and extract, per `VISION.md`. The layout is in place. Next is
-`cs-l0oa`, moving the model out of `src/CircaSurvivorPlanner.jsx` with the tests untouched,
-which gates the exact EV, holiday feasibility, the likelihood fit and derived future value.
+**Phase:** in season, per `VISION.md`. The layout is in place and the model lives in
+`src/model/`, separate from the page. Next is `cs-ascn`, returning rows as values instead of
+mutating them, which gates the exact EV (`fs-0d0o`). Holiday feasibility (`fs-i6c3`), the
+likelihood fit (`fs-ri3y`) and the deadline odds archive (`fs-rs6a`) are unblocked.
 
 **Deployed vs main:** matches. https://adammgross.github.io/circa-survivor/ is served from
 `main` by `deploy.yml`, and the lines, ratings and actuals jobs run on schedule on the fork
@@ -188,3 +189,18 @@ to W8 before the cron change.
 **Left unfinished:** a GitHub scheduled run can start late, and one run is the only pull in
 each hour before a lock. The post-lock 23:17 pull still overwrites `data/odds.json` on
 daylight-time Saturdays, which `fs-rs6a` addresses by archiving the deadline snapshot.
+
+### 2026-09-23 (cs-l0oa)
+
+**Done:** the model moved from `src/CircaSurvivorPlanner.jsx` into `src/model/` as five
+modules (`lines`, `field`, `value`, `popularity`, `board`), with `computeStats` and the
+board's deltas and top-five flags lifted out of the component body as `boardStats`. The
+ticket's `project.js` and `data.js` were folded into `lines.js` rather than left as shallow
+modules. The move commit left `test/` untouched. The next commit repointed the tests to
+`src/model/` and removed the component's re-exports. `npm run parity -- <ref>` compares the
+model at a ref with the working tree on the same data. Against `eeafebb` it found 3,648 of
+3,648 outputs identical, and it fails on a change of one part in ten million to `SURVIVE`.
+The server-rendered page is byte-identical to `eeafebb` on the same data and clock.
+
+**Left unfinished:** `openLeg` still defaults its clock to `Date.now()` (`cs-h96l`), and
+`computeEV` and `computeDili` still mutate the rows they are given (`cs-ascn`).

@@ -1,5 +1,5 @@
 // Which week the dashboard opens on: the first one whose results are not final.
-import { openLeg } from "../src/CircaSurvivorPlanner.jsx";
+import { openLeg } from "../src/model/field.js";
 import { LEGS } from "../src/schedule.js";
 let fails = 0; const ok = (name, cond, extra = "") => { console.log(name + ":", cond ? "OK" : "FAIL", extra); if (!cond) fails++; };
 const final = { picks: { KC: 1 }, won: ["KC"], lost: [], pending: [] };

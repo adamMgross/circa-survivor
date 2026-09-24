@@ -1,5 +1,7 @@
 // Field timeline + popularity model on the real data files.
-import { buildData, fieldTimeline, modelPick, fitParams, availability } from "../src/CircaSurvivorPlanner.jsx";
+import { buildData } from "../src/model/lines.js";
+import { fieldTimeline, availability } from "../src/model/field.js";
+import { modelPick, fitParams } from "../src/model/popularity.js";
 import picks from "../data/picks.json";
 import actuals from "../data/actuals.json";
 import odds from "../data/odds.json";

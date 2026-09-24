@@ -1,5 +1,5 @@
 // Which entries are still alive, and what that means for picking.
-import { entryStatus } from "../src/CircaSurvivorPlanner.jsx";
+import { entryStatus } from "../src/model/field.js";
 let fails = 0; const ok = (name, cond, extra = "") => { console.log(name + ":", cond ? "OK" : "FAIL", extra); if (!cond) fails++; };
 const leg = (won, lost, pending = []) => ({ picks: {}, won, lost, pending });
 const W1 = leg(["DET", "JAX", "PIT"], ["LAC", "TEN"]);

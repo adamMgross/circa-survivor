@@ -1,5 +1,6 @@
 // DILI: EV net of the future forfeit; and the futures-market prior for ratings.
-import { buildData, computeEV, computeDili, STYLE, fvFor } from "../src/CircaSurvivorPlanner.jsx";
+import { buildData } from "../src/model/lines.js";
+import { computeEV, computeDili, STYLE, fvFor } from "../src/model/value.js";
 import { priorFromFutures } from "../src/ratings.js";
 import { OPP, ALL_TEAMS, LEGS } from "../src/schedule.js";
 let fails = 0; const ok = (name, cond, extra = "") => { console.log(name + ":", cond ? "OK" : "FAIL", extra); if (!cond) fails++; };

@@ -30,11 +30,6 @@ const COLORS = {
   SEA: ["#002244", "#69BE28"], TB: ["#D50A0A", "#FFFFFF"], TEN: ["#0C2340", "#4B92DB"], WAS: ["#5A1414", "#FFB612"],
 };
 
-export { openLeg, entryStatus, fieldTimeline, availability } from "./model/field.js";
-export { linesFromOdds, consensusForGame, buildData, devig } from "./model/lines.js";
-export { computeEV, EV_MIN_COVERAGE, computeDili, STYLE, fvFor } from "./model/value.js";
-export { modelPick, fitParams } from "./model/popularity.js";
-
 function defaultLeg() {
   const now = Date.now();
   for (let i = 0; i < LEGS.length; i++) {
