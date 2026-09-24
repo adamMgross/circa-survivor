@@ -34,6 +34,8 @@ in. There is no server.
     survivor count (`survivorDist`, `expectedShare`, `computeExactEV`), future value, and DILI
     with its forfeit and holiday scarcity terms. DILI still discounts the linearized EV.
   - `popularity.js`: the pick-share model and its grid fit.
+  - `replay.js`: the odds archive's snapshot for a leg, and a leg of `odds.json` rebuilt
+    from one, refusing a snapshot taken at or after the deadline.
   - `board.js`: the per-team stats for one leg (`computeStats`) and the board's deltas and
     top-five flags (`boardStats`).
 - `src/CircaSurvivorPlanner.jsx`: the page. State, loading and saving, sorting, layout, CSS
@@ -68,7 +70,9 @@ Licenses of the nflverse data and of Circa's files have not been checked.
 
 ## Storage
 
-All four files are overwritten in place by each run, and history lives only in `git log`.
+All four files are overwritten in place by each run, and their history lives only in `git log`.
+Beside them, every lines pull writes the raw Odds API games of the leg that locks next to
+`data/archive/odds/<leg>/<pulledAt>.json`, never rewritten (decision 0005).
 `odds.json` keeps each game's latest pre-kickoff quotes plus one `prev` set and never
 overwrites a game after its kickoff. `ratings.json` keeps the latest fit and one `prev`.
 `actuals.json` holds per-team pick counts and results per leg, not per-entry picks. The
@@ -104,12 +108,14 @@ What the code holds to today. Each is checkable in the named place.
   and `resultsFromScoreboard` are pure and take their inputs as arguments. `openLeg` takes
   the clock as an argument that defaults to `Date.now()`.
 - A game that has kicked off is never overwritten by `fetch-odds.mjs`.
+- Every lines pull archives the raw games of the leg that locks next, and every leg has a
+  scheduled pull in the hour before its lock (`test/replay.test.jsx`,
+  `test/deadlines.test.jsx`).
 - A tie is a loss in `resultsFromScoreboard`, and a no-pick is a loss in `fetch-actuals.mjs`.
 - `src/schedule.js` is the only definition of legs, deadlines, teams and the holiday sets,
   shared by the page and the scripts.
 - A scheduled lines pull lands in the hour before every leg's deadline
   (`test/deadlines.test.jsx`).
 
-Not yet held, each with a ticket: raw inputs archived before parsing
-(`fs-gkjt`, `fs-rs6a`), named game keys and pick sources (`cs-8zgr`), and a counted-work pin
+Not yet held, each with a ticket: Circa's files archived before parsing (`fs-gkjt`), named game keys and pick sources (`cs-8zgr`), and a counted-work pin
 on the popularity fit (`cs-q2qb`).

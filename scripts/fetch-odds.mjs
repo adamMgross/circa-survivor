@@ -2,9 +2,10 @@
 // and merge them into data/odds.json, keyed by Circa leg and "AWAY@HOME". Raw per-book prices are stored;
 // the app de-vigs each book and takes the median. A game is only overwritten while it has not kicked off,
 // so each game keeps the last pre-kickoff quotes we saw (used to fit the popularity model later).
-import { readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { legForGame } from "../src/schedule.js";
 import { oddsGameFromApi } from "../src/model/lines.js";
+import { oddsSnapshot } from "../src/model/replay.js";
 import { loadGames } from "./nflverse.mjs";
 import { fetchRetry } from "./http.mjs";
 
@@ -20,6 +21,14 @@ const r = await fetchRetry(url, {}, { label: "The Odds API" });
 if (!r.ok) { console.error("Odds API", r.status, (await r.text()).slice(0, 200)); process.exit(1); }
 console.log(`credits: this pull ${r.headers.get("x-requests-last")}, used ${r.headers.get("x-requests-used")}, remaining ${r.headers.get("x-requests-remaining")}`);
 const games = await r.json();
+
+const snap = oddsSnapshot(games, new Date(now).toISOString());
+if (snap) {
+  const dir = new URL(`../data/archive/odds/${snap.legId}/`, import.meta.url);
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(new URL(`${snap.pulledAt.replace(/:/g, "-")}.json`, dir), JSON.stringify({ source: "The Odds API v4 /odds", books: BOOKS, ...snap }) + "\n");
+  console.log(`archived ${snap.games.length} ${snap.legId} games as of ${snap.pulledAt}`);
+}
 
 let cur = { legs: {} };
 try { cur = JSON.parse(readFileSync(FILE, "utf8")); } catch {}

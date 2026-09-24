@@ -1,6 +1,6 @@
 // Leg deadlines against rules 12 and 13, and the lines pull schedule against the deadlines.
 import { readFileSync } from "node:fs";
-import { LEGS } from "../src/schedule.js";
+import { LEGS, legLockingAfter } from "../src/schedule.js";
 let fails = 0; const ok = (name, cond, extra = "") => { console.log(name + ":", cond ? "OK" : "FAIL", extra); if (!cond) fails++; };
 
 const vegas = (iso) => Object.fromEntries(new Intl.DateTimeFormat("en-US", {
@@ -31,9 +31,9 @@ ok("update-data.yml declares a schedule", crons.length > 0, JSON.stringify(crons
 ok("cron matcher reads a known firing", fires("17 14,23 * * *", new Date("2026-09-26T23:17:00Z")) && !fires("17 14,23 * * *", new Date("2026-09-26T22:17:00Z")));
 for (const l of LEGS) {
   const lock = new Date(l.deadline).getTime(), hits = [];
-  for (let t = lock - 60 * 60e3; t < lock; t += 60e3)
-    if (crons.some((c) => fires(c, new Date(t)))) hits.push(new Date(t).toISOString().slice(11, 16));
-  ok(`${l.id} gets a lines pull in the hour before its lock`, hits.length > 0, hits.join(" "));
+  for (let t = lock - 60 * 60e3; t < lock; t += 60e3) if (crons.some((c) => fires(c, new Date(t)))) hits.push(t);
+  ok(`${l.id} gets a lines pull in the hour before its lock`, hits.length > 0, hits.map((t) => new Date(t).toISOString().slice(11, 16)).join(" "));
+  ok(`${l.id}'s pulls in that hour archive ${l.id}`, hits.length > 0 && hits.every((t) => legLockingAfter(t) === l));
 }
 
 if (fails) { console.error(`\n${fails} FAILED`); process.exit(1); }

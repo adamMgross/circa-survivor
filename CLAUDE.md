@@ -65,7 +65,7 @@ Breaking one of these is a defect, not a tradeoff.
   the two holiday legs. Closing lines, next week's Circa files, and Sunday injury news are
   look-ahead. Any replay given them raises.
 - **Raw before parsed.** Circa's files are a convention, not an API. Archive the bytes, parse
-  from the archive. Not yet held by `fetch-actuals.mjs`, see `fs-gkjt`.
+  from the archive. Held for odds (decision 0005), not yet by `fetch-actuals.mjs` (`fs-gkjt`).
 - **Numbers come from sources or from arithmetic shown.** No estimate is presented with
   confidence when it was not measured.
 
@@ -82,8 +82,9 @@ issue there. Upstream is not synced, and a wanted fix is copied by hand.
 - **`test/model.test.jsx` reads the live `data/*.json`,** so its numbers change with every
   bot commit. A failure there after a pull can be the data, not the change (`cs-hu2d`).
 - **The 23:17 UTC pull lands after the Saturday lock** while Pacific time is on daylight
-  saving, and overwrites `data/odds.json` with post-lock lines. The deadline-time lines are
-  the 22:17 UTC pull's, and until `fs-rs6a` they survive only in `git log`.
+  saving, and overwrites `data/odds.json` with post-lock lines. The deadline-time lines are in
+  `data/archive/odds/<leg>/`, and a replay reads them with `deadlineSnapshot`, never from
+  `odds.json`.
 - **`gh secret set` cannot prompt inside a Claude session.** Without a terminal it reads
   standard input and stores whatever it gets, including an empty string. Set secrets from a
   real terminal.

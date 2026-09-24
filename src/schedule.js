@@ -67,4 +67,6 @@ export function legForGame(away, home) {
   for (const leg of LEGS) if (OPP[leg.id][away] && OPP[leg.id][away].opp === home && !OPP[leg.id][away].home) return leg.id;
   return null;
 }
+// The leg whose selection deadline is the next one strictly after `now` (ms), or null after the last.
+export const legLockingAfter = (now) => LEGS.find((l) => Date.parse(l.deadline) > now) || null;
 export const legLabel = (l) => (l.id === "TG" ? "Thanksgiving" : l.id === "XM" ? "Christmas" : `Week ${l.label}`);

@@ -37,11 +37,13 @@ jobs:
           # These two files are regenerated from scratch every run, so the newest generation simply wins.
           # Rebasing onto a concurrent run's commit conflicted on every line; replaying our files on top
           # of whatever is on main cannot conflict.
-          mkdir -p "$RUNNER_TEMP/out" && cp data/odds.json data/ratings.json "$RUNNER_TEMP/out/"
+          mkdir -p "$RUNNER_TEMP/out" "$RUNNER_TEMP/archive" && cp data/odds.json data/ratings.json "$RUNNER_TEMP/out/"
+          if [ -d data/archive ]; then cp -r data/archive/. "$RUNNER_TEMP/archive/"; fi
           for i in 1 2 3; do
             git fetch -q origin main && git reset -q --hard origin/main
             cp "$RUNNER_TEMP/out/"*.json data/
-            git add data/odds.json data/ratings.json
+            mkdir -p data/archive && cp -r "$RUNNER_TEMP/archive/." data/archive/
+            git add data/odds.json data/ratings.json data/archive
             if git diff --cached --quiet; then echo "no changes"; exit 0; fi
             git commit -q -m "Update lines & ratings"
             if git push -q origin HEAD:main; then gh workflow run deploy.yml; exit 0; fi

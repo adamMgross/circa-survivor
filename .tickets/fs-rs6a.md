@@ -1,6 +1,6 @@
 ---
 id: fs-rs6a
-status: open
+status: closed
 deps: [cs-unkn]
 links: []
 created: 2026-09-16T15:30:14Z
@@ -21,3 +21,9 @@ Append each pull's raw per-book prices with its timestamp to an archive that is 
 ## Acceptance Criteria
 
 Every remaining 2026 leg has an archived snapshot taken before its deadline, and a replay handed a snapshot later than the deadline raises.
+
+## Notes
+
+**2026-09-24T01:12:25Z**
+
+Decision 0005. fetch-odds writes data/archive/odds/<leg>/<pulledAt>.json with the raw API games of the leg locking next, and update-data.yml carries data/archive through its commit step. src/model/replay.js: deadlineSnapshot and legOddsFromSnapshot (raises at or after the deadline). test/replay.test.jsx on a fixture in the API's shape, and deadlines.test checks each leg's pre-lock pull archives that leg. Verified end to end by running fetch-odds on a stubbed API: odds.json byte-identical, one W3 archive file of 16 games. Not yet run on GitHub.
