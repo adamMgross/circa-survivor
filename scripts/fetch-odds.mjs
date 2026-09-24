@@ -3,7 +3,8 @@
 // the app de-vigs each book and takes the median. A game is only overwritten while it has not kicked off,
 // so each game keeps the last pre-kickoff quotes we saw (used to fit the popularity model later).
 import { readFileSync, writeFileSync } from "node:fs";
-import { ABBR, legForGame } from "../src/schedule.js";
+import { legForGame } from "../src/schedule.js";
+import { oddsGameFromApi } from "../src/model/lines.js";
 import { loadGames } from "./nflverse.mjs";
 import { fetchRetry } from "./http.mjs";
 
@@ -34,24 +35,14 @@ for (const leg of Object.values(cur.legs)) for (const g of Object.values(leg.gam
 
 let n = 0, started = 0, skipped = [], perBook = {};
 for (const g of games) {
-  const away = ABBR[g.away_team], home = ABBR[g.home_team];
-  const legId = away && home ? legForGame(away, home) : null;
-  if (!legId) { skipped.push(`${g.away_team} @ ${g.home_team}`); continue; }
+  const game = oddsGameFromApi(g);
+  if (!game) { skipped.push(`${g.away_team} @ ${g.home_team}`); continue; }
   if (new Date(g.commence_time).getTime() <= now) { started++; continue; }   // never overwrite a game that has kicked off
-  const books = {};
-  for (const bk of g.bookmakers) {
-    const h2h = bk.markets.find((m) => m.key === "h2h"), sp = bk.markets.find((m) => m.key === "spreads");
-    if (!h2h) continue;
-    const ml = {}, spread = {};
-    for (const o of h2h.outcomes) { const t = ABBR[o.name]; if (t) ml[t] = o.price; }
-    for (const o of sp?.outcomes || []) { const t = ABBR[o.name]; if (t && o.point != null) spread[t] = o.point; }
-    if (ml[away] == null || ml[home] == null) continue;                     // both prices from the same market object
-    books[bk.key] = { asof: h2h.last_update, ml, spread };
-    perBook[bk.key] = (perBook[bk.key] || 0) + 1;
-  }
-  if (!Object.keys(books).length) { skipped.push(`${away}@${home} (no two-sided ML at any book)`); continue; }
+  const { legId, key, books } = game;
+  for (const bk of Object.keys(books)) perBook[bk] = (perBook[bk] || 0) + 1;
+  if (!Object.keys(books).length) { skipped.push(`${key} (no two-sided ML at any book)`); continue; }
   const leg = (cur.legs[legId] ||= { games: {} });
-  const key = `${away}@${home}`, old = leg.games[key];
+  const old = leg.games[key];
   // keep the quotes from the previous refresh so the app can show how each number moved
   const prev = old?.books ? { asof: Object.values(old.books).map((b) => b.asof).filter(Boolean).sort().pop() || null, books: old.books } : old?.prev || null;
   leg.games[key] = { kickoff: g.commence_time, books, ...(prev ? { prev } : {}) };

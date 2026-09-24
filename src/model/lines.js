@@ -1,4 +1,4 @@
-import { LEGS, OPP } from "../schedule.js";
+import { LEGS, OPP, ABBR, legForGame } from "../schedule.js";
 import { HFA } from "../ratings.js";
 
 const normCdf = (x) => 0.5 * (1 + erf(x / Math.SQRT2));
@@ -110,4 +110,23 @@ export function lineFor(legId, team, data) {
 export function marketLine(legId, team, data) {
   const ln = data?.legs?.[legId]?.lines?.[team];
   return ln && ln.market && ln.win != null ? { ...ln, proj: false } : null;
+}
+
+// One game of The Odds API's /odds response -> { legId, key, kickoff, books } in the data/odds.json shape, keeping only
+// books with both moneylines from the same market. null when the teams or the game are not on the Circa schedule.
+export function oddsGameFromApi(g) {
+  const away = ABBR[g.away_team], home = ABBR[g.home_team];
+  const legId = away && home ? legForGame(away, home) : null;
+  if (!legId) return null;
+  const books = {};
+  for (const bk of g.bookmakers) {
+    const h2h = bk.markets.find((m) => m.key === "h2h"), sp = bk.markets.find((m) => m.key === "spreads");
+    if (!h2h) continue;
+    const ml = {}, spread = {};
+    for (const o of h2h.outcomes) { const t = ABBR[o.name]; if (t) ml[t] = o.price; }
+    for (const o of sp?.outcomes || []) { const t = ABBR[o.name]; if (t && o.point != null) spread[t] = o.point; }
+    if (ml[away] == null || ml[home] == null) continue;
+    books[bk.key] = { asof: h2h.last_update, ml, spread };
+  }
+  return { legId, key: `${away}@${home}`, kickoff: g.commence_time, books };
 }
