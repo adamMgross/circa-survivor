@@ -14,15 +14,15 @@ which gates the exact EV, holiday feasibility, the likelihood fit and derived fu
 `main` by `deploy.yml`, and the lines, ratings and actuals jobs run on schedule on the fork
 with its own `ODDS_API_KEY`, first verified by run 35933411028 on 2026-09-23.
 
-**What works, verified 2026-09-23:** `npm test` passes 105 checks across eight suites and
+**What works, verified 2026-09-23:** `npm test` passes 166 checks across nine suites and
 `npm run build` succeeds. The app is Jamie's v2.0 apart from the repository name. The lines
 pull priced 32 games at DraftKings and FanDuel, 16 at BetMGM and Pinnacle, none at Caesars.
 
 **What the season is doing:** after Week 2, 8,610 of 25,017 entries are alive, a Week 2
 field survival of 0.507. Only CIRCAmcised-2 is ours, having used DET and SF, with KC planned
 for Week 3. CIRCAmcised-3 lost on LAC and CIRCAmcised-4 on TB. The Week 3 deadline is
-Saturday 2026-09-26 at 4:00 PM PT, and the last lines pull before it is Saturday's 14:17 UTC
-run (`cs-unkn`).
+Saturday 2026-09-26 at 4:00 PM PT, and the last lines pull before it is Saturday's 22:17 UTC
+run, 43 minutes before the lock.
 
 **What the model gets right and wrong:** EV is `w / E[survivors | win]`. Against exact
 enumeration on the real fields it is within a few percent but under-credits non-chalk picks
@@ -174,3 +174,17 @@ The evening lines pull lands 17 minutes after the Saturday lock under daylight s
 
 **Left unfinished:** the research documents themselves are not revised (`cs-91lt`). Nothing
 pushed, per the onboarding rule.
+
+### 2026-09-23 (cs-unkn)
+
+**Done:** every leg now has a `deadline` in `src/schedule.js`, taken from rules 12 and 13 of
+the 6/19/2026 rules (re-fetched, sha256 `9c51eee5...`). A new 22:17 UTC cron on September
+and October Saturdays puts a lines pull 43 minutes before each daylight-time lock. The existing
+23:17 UTC pull already covers every lock from November 1 on, the Thanksgiving and Christmas
+legs included. `test/deadlines.test.jsx` checks each deadline against the rule in Las Vegas
+time and each leg's hour before its lock against the workflow's cron lines. It failed on W1
+to W8 before the cron change.
+
+**Left unfinished:** a GitHub scheduled run can start late, and one run is the only pull in
+each hour before a lock. The post-lock 23:17 pull still overwrites `data/odds.json` on
+daylight-time Saturdays, which `fs-rs6a` addresses by archiving the deadline snapshot.

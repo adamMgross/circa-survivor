@@ -80,8 +80,9 @@ issue there. Upstream is not synced, and a wanted fix is copied by hand.
   commits, so pull before pushing, and a local branch goes stale within hours.
 - **`test/model.test.jsx` reads the live `data/*.json`,** so its numbers change with every
   bot commit. A failure there after a pull can be the data, not the change (`cs-hu2d`).
-- **The evening lines pull lands after the Saturday lock** while Pacific time is on daylight
-  saving (`cs-unkn`). The last lines before each deadline are the morning pull's.
+- **The 23:17 UTC pull lands after the Saturday lock** while Pacific time is on daylight
+  saving, and overwrites `data/odds.json` with post-lock lines. The deadline-time lines are
+  the 22:17 UTC pull's, and until `fs-rs6a` they survive only in `git log`.
 - **`gh secret set` cannot prompt inside a Claude session.** Without a terminal it reads
   standard input and stores whatever it gets, including an empty string. Set secrets from a
   real terminal.

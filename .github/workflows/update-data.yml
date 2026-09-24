@@ -3,6 +3,7 @@ name: Update lines & ratings
 on:
   schedule:
     - cron: "17 14,23 * * *"   # twice a day, ~10:17 AM and 7:17 PM Eastern; off the hour because GitHub drops on-the-hour crons under load
+    - cron: "17 22 * 9,10 6"   # 43 minutes before the Saturday 4 PM PT lock while Pacific is on daylight time. The 23:17 pull covers it after Nov 1
   workflow_dispatch:
 
 permissions:

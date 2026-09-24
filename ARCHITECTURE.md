@@ -69,7 +69,10 @@ downloaded PDFs are written to a temporary directory and discarded.
 
 `npm test` bundles each suite in `test/` with esbuild and runs it. `npm run build` produces
 `dist/` for Pages. `deploy.yml` tests and publishes on every push to `main`.
-`update-data.yml` pulls lines and refits ratings at 14:17 and 23:17 UTC.
+`update-data.yml` pulls lines and refits ratings at 14:17 and 23:17 UTC, and at 22:17 UTC on
+September and October Saturdays, so a pull lands in the hour before every leg's deadline.
+The deadlines are `deadline` on each leg in `src/schedule.js`, and `test/deadlines.test.jsx`
+checks the cron lines against them.
 `update-actuals.yml` runs the Circa and ESPN job every three hours. Both data jobs commit to
 `main` and dispatch the deploy.
 
@@ -84,8 +87,10 @@ What the code holds to today. Each is checkable in the named place.
   the clock as an argument that defaults to `Date.now()`.
 - A game that has kicked off is never overwritten by `fetch-odds.mjs`.
 - A tie is a loss in `resultsFromScoreboard`, and a no-pick is a loss in `fetch-actuals.mjs`.
-- `src/schedule.js` is the only definition of legs, teams and the holiday sets, shared by the
-  page and the scripts.
+- `src/schedule.js` is the only definition of legs, deadlines, teams and the holiday sets,
+  shared by the page and the scripts.
+- A scheduled lines pull lands in the hour before every leg's deadline
+  (`test/deadlines.test.jsx`).
 
 Not yet held, each with a ticket: model functions separate from the UI (`cs-l0oa`), rows
 returned as values instead of mutated (`cs-ascn`), raw inputs archived before parsing
