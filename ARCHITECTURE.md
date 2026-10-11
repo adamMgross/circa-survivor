@@ -1,8 +1,8 @@
 # Architecture
 
-A static React page on GitHub Pages over four JSON files in `data/`. Scheduled GitHub Actions
-fetch sportsbook lines, nflverse game data, Circa's weekly Selections PDF and ESPN results,
-reduce them to those files, commit, and redeploy. The page reads the files, runs every model
+A static React page on GitHub Pages over four JSON files in `data/`. Scripts run by hand
+fetch sportsbook lines, nflverse game data, Circa's weekly Selections PDF and ESPN results
+and reduce them to those files. The page reads the files, runs every model
 in the browser on each load, and writes picks back through the GitHub API when the owner signs
 in. There is no server.
 

@@ -6,8 +6,7 @@ Planner for three Circa Survivor entries. A 20-week pick grid with a market win 
 value, EV and a DILI ("do I love it?") score for every team, spreads in every cell, and an Actuals tab tracking the
 whole contest field. Friends can view; the owner signs in to edit.
 
-Everything runs for free on GitHub: the site is GitHub Pages, the data files are JSON in this repo, and scheduled
-GitHub Actions keep the lines, ratings and Circa results fresh. There is no server and no database.
+The data files are JSON in this repo. There is no server and no database. There is no CI: the data scripts run by hand.
 
 ## Strategy research
 
@@ -35,11 +34,6 @@ What the contest pays, what a pick should maximize, and how to validate it: [doc
 - `scripts/fit-ratings.mjs` — refits ratings from market spreads; refreshes the Super Bowl futures prior every 3 days.
 - `scripts/fetch-actuals.mjs` — Circa's weekly Selections PDF for every entry's pick, ESPN's scoreboard for results.
 - `scripts/circa.mjs`, `scripts/nflverse.mjs` — the PDF parser and the nflverse game-data loader.
-
-**The workflows**
-- `deploy.yml` — tests, builds and publishes the site on every push to `main`.
-- `update-data.yml` — twice a day: pull lines, refit ratings, commit, redeploy.
-- `update-actuals.yml` — every 3 h Thu–Mon: Circa's picks and ESPN's results, commit, redeploy.
 
 ## What the columns mean
 `docs/HOW-IT-WORKS.md` is the technical version; `public/guide.html` is the plain-English one.

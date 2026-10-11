@@ -43,7 +43,7 @@ tk ready
 ```
 
 The data jobs in `scripts/` need `ODDS_API_KEY` and, for `fetch-actuals.mjs`, `pdftotext`
-from poppler. On GitHub they run from `.github/workflows/`.
+from poppler. There is no CI. They run by hand.
 
 ## Session protocol
 
@@ -52,7 +52,7 @@ Start: `git pull --rebase`, read `STATE.md` Current State, run `tk ready`, `tk s
 End: `tk close <id>` (or `tk add-note <id>` with what remains), append a dated entry to the
 `STATE.md` Log, refresh Current State, commit. A non-trivial decision gets a record in
 `docs/decisions/` in the same commit. Anything only the owner can resolve becomes
-`tk create ... -t owner`. Push when done, which redeploys the live site.
+`tk create ... -t owner`. Push when done.
 
 ## Invariants
 
